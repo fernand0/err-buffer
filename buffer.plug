@@ -1,0 +1,9 @@
+[Core]
+Name = Buffer
+Module = buffer
+
+[Documentation]
+Description = An Err plugin for buffer API
+
+[Python]
+Version = 2+
