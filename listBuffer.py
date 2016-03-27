@@ -73,19 +73,25 @@ def listPendingPosts(api, pp, service=""):
     logging.debug("Profiles %d" % numProfiles)
     logging.debug("Profiles %s" % pp.pformat(profiles))
     somePending = False
+    outputStr = ""
     for i in range(numProfiles):
         logging.debug("Service %d %s" % (i,profiles[i].formatted_service))
         if (profiles[i].counts.pending > 0):
             somePending = True
-            logging.info("Service %s" % profiles[i].formatted_service)
+            serviceName = profiles[i].formatted_service
+            outputStr = outputStr + "\n" + serviceName
+            logging.info("Service %s" % serviceName)
             logging.debug("Hay: %d" % profiles[i].counts.pending)
             logging.debug(pp.pformat(profiles[i].updates.pending))
     	    for j in range(profiles[i].counts.pending):
                 logging.debug("Service %s" % pp.pformat(profiles[i].updates.pending[j]))
+                selectionStr = "%d%d) " % (i,j)
                 if ('media' in profiles[i].updates.pending[j]): 
-                    logging.info("oo %d%d) %s %s" % (i,j,profiles[i].updates.pending[j].text, profiles[i].updates.pending[j].media.expanded_link))
+                    lineTxt = "oo %s %s %s" % (selectionStr,profiles[i].updates.pending[j].text, profiles[i].updates.pending[j].media.expanded_link)
                 else:
-                    logging.info("++ %d%d) %s" % (i,j,profiles[i].updates.pending[j].text))
+                    lineTxt = "++ %s %s" % (selectionStr,profiles[i].updates.pending[j].text)
+                logging.info(lineTxt)
+                outputStr = outputStr + "\n" + lineTxt
                 update = Update(api=api, id=profiles[i].updates.pending[j].id)
                 logging.debug("-- %s" % (pp.pformat(update)))
                 logging.debug("-- %s" % (pp.pformat(dir(update))))
@@ -94,7 +100,7 @@ def listPendingPosts(api, pp, service=""):
             logging.debug("No")
     
     if somePending:
-        return profiles
+        return (outputStr, profiles)
     else:
         logging.info("No pending posts")
         return somePending
