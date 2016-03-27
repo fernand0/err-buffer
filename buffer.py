@@ -53,6 +53,7 @@ this is not a translation for the whole API).
     def list(self, mess, args):
         """A command which checks for pending updates"""
         pp = pprint.PrettyPrinter(indent=4)
+        # We should use args for selecting the service
         pendingUpdates = listBuffer.listPendingPosts(self['api'], pp, "")
         if pendingUpdates:
             self['profiles'] = pendingUpdates[1]

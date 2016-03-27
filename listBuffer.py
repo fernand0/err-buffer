@@ -87,9 +87,9 @@ def listPendingPosts(api, pp, service=""):
                 logging.debug("Service %s" % pp.pformat(profiles[i].updates.pending[j]))
                 selectionStr = "%d%d) " % (i,j)
                 if ('media' in profiles[i].updates.pending[j]): 
-                    lineTxt = "oo %s %s %s" % (selectionStr,profiles[i].updates.pending[j].text, profiles[i].updates.pending[j].media.expanded_link)
+                    lineTxt = "%s %s %s" % (selectionStr,profiles[i].updates.pending[j].text, profiles[i].updates.pending[j].media.expanded_link)
                 else:
-                    lineTxt = "++ %s %s" % (selectionStr,profiles[i].updates.pending[j].text)
+                    lineTxt = "%s %s" % (selectionStr,profiles[i].updates.pending[j].text)
                 logging.info(lineTxt)
                 outputStr = outputStr + "\n" + lineTxt
                 update = Update(api=api, id=profiles[i].updates.pending[j].id)
