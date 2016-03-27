@@ -1,12 +1,10 @@
-err-skeleton
+err-buffer
 ============
 
-A skeleton for Err plugins. Use this to get started quickly.
-
-Fork & rename, or just download the files, then edit to suit
-your own tastes.
+A plugin to manage our buffer account with the bot (at least some features, this is not a translation for the whole API).
 
 Licence
 -------
 
 Released into public domain. Do with it as you wish!
+Please cite this repository.
