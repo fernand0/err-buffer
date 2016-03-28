@@ -60,7 +60,7 @@ this is not a translation for the whole API).
         if pendingUpdates:
             self['profiles'] = pendingUpdates[1]
             for line in pendingUpdates[0].split('\n'):
-            	formattedUpdates =  formattedUpdates + '\n' + line[:30]
+            	formattedUpdates =  formattedUpdates + '\n' + line[:29]
             yield(formattedUpdates)
         else:
             yield("No pending posts")
