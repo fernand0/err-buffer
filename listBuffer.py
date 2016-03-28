@@ -73,7 +73,7 @@ def listPendingPosts(api, pp, service=""):
     logging.debug("Profiles %d" % numProfiles)
     logging.debug("Profiles %s" % pp.pformat(profiles))
     somePending = False
-    outputStr = ""
+    outputStr = "\n"
     for i in range(numProfiles):
         logging.debug("Service %d %s" % (i,profiles[i].formatted_service))
         if (profiles[i].counts.pending > 0):

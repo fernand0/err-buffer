@@ -9,6 +9,7 @@ from buffpy.managers.updates import Updates
 from buffpy.api import API
 
 
+
 class Buffer(BotPlugin):
     """
     A plugin to manage our buffer account with the bot (at least some features,
@@ -55,9 +56,12 @@ this is not a translation for the whole API).
         pp = pprint.PrettyPrinter(indent=4)
         # We should use args for selecting the service
         pendingUpdates = listBuffer.listPendingPosts(self['api'], pp, "")
+        formattedUpdates = ""
         if pendingUpdates:
             self['profiles'] = pendingUpdates[1]
-            yield(pendingUpdates[0])
+            for line in pendingUpdates[0].split('\n'):
+            	formattedUpdates =  formattedUpdates + '\n' + line[:30]
+            yield(formattedUpdates)
         else:
             yield("No pending posts")
 
