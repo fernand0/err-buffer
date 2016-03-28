@@ -58,4 +58,6 @@ this is not a translation for the whole API).
         if pendingUpdates:
             self['profiles'] = pendingUpdates[1]
             yield(pendingUpdates[0])
+        else:
+            yield("No pending posts")
 
