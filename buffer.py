@@ -48,6 +48,13 @@ this is not a translation for the whole API).
         listBuffer.publishPost(self['api'], pp, self['profiles'], args)
         yield "Published"
 
+    @botcmd
+    def delete(self, mess, args):
+        """A command to delete some update"""
+        pp = pprint.PrettyPrinter(indent=4)
+        listBuffer.deletePost(self['api'], pp, self['profiles'], args)
+        yield "Deleted"
+
     # Passing split_args_with=None will cause arguments to be split on any kind
     # of whitespace, just like Python's split() does
     @botcmd(split_args_with=None)

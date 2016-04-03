@@ -60,6 +60,16 @@ def publishPost(api, pp, profiles, toPublish):
     logging.debug(pp.pformat(update))
     update.publish()
 
+def deletePost(api, pp, profiles, toPublish):
+    logging.info(pp.pformat(toPublish))
+    i = int(toPublish[0])
+    j = int(toPublish[1:])
+    logging.debug("%d %d"  % (i,j))
+    update = Update(api=api, id=profiles[i].updates.pending[j].id)
+    logging.debug(pp.pformat(update))
+    update.delete()
+
+
 def listPendingPosts(api, pp, service=""):
     logging.info("Checking services...")
     
@@ -83,7 +93,12 @@ def listPendingPosts(api, pp, service=""):
             logging.info("Service %s" % serviceName)
             logging.debug("Hay: %d" % profiles[i].counts.pending)
             logging.debug(pp.pformat(profiles[i].updates.pending))
+            due_time=""
     	    for j in range(profiles[i].counts.pending):
+                update = Update(api=api, id=profiles[i].updates.pending[j].id)
+                if (due_time == ""):
+                    due_time=update.due_time
+                    outputStr = outputStr + " (" + due_time + ")"
                 logging.debug("Service %s" % pp.pformat(profiles[i].updates.pending[j]))
                 selectionStr = "%d%d) " % (i,j)
                 if ('media' in profiles[i].updates.pending[j]): 
@@ -92,7 +107,6 @@ def listPendingPosts(api, pp, service=""):
                     lineTxt = "%s %s" % (selectionStr,profiles[i].updates.pending[j].text)
                 logging.info(lineTxt)
                 outputStr = outputStr + "\n" + lineTxt
-                update = Update(api=api, id=profiles[i].updates.pending[j].id)
                 logging.debug("-- %s" % (pp.pformat(update)))
                 logging.debug("-- %s" % (pp.pformat(dir(update))))
         else:
