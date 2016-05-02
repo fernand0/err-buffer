@@ -69,6 +69,55 @@ def deletePost(api, pp, profiles, toPublish):
     logging.debug(pp.pformat(update))
     update.delete()
 
+def listSentPosts(api, pp, service=""):
+    logging.info("Checking services...")
+    
+    if (service == ""):
+	profiles = Profiles(api=api).all()
+    else:
+	profiles = Profiles(api=api).filter(service=service)
+        
+    logging.debug("->%s" % pp.pformat(profiles))
+    numProfiles = len(profiles)
+    logging.debug("Profiles %d" % numProfiles)
+    logging.debug("Profiles %s" % pp.pformat(profiles))
+    someSent = False
+    outputStr = "\n"
+    for i in range(numProfiles):
+        logging.debug("Service %d %s" % (i,profiles[i].formatted_service))
+        if (profiles[i].counts.sent > 0):
+            someSent = True
+            serviceName = profiles[i].formatted_service
+            outputStr = outputStr + "\n" + serviceName
+            logging.info("Service %s" % serviceName)
+            logging.debug("Hay: %d" % profiles[i].counts.sent)
+            logging.debug(pp.pformat(profiles[i].updates.sent))
+            due_time=""
+    	    for j in range(min(5,profiles[i].counts.sent)):
+                update = Update(api=api, id=profiles[i].updates.sent[j].id)
+                if (due_time == ""):
+                    due_time=update.due_time
+                    outputStr = outputStr + " (" + due_time + ")"
+                logging.debug("Service %s" % pp.pformat(profiles[i].updates.sent[j]))
+                selectionStr = "%d%d) " % (i,j)
+                if ('media' in profiles[i].updates.sent[j]): 
+                    lineTxt = "%s %s %s (%d)" % (selectionStr,profiles[i].updates.sent[j].text, profiles[i].updates.sent[j].media.expanded_link, profiles[i].updates.sent[j]['statistics']['clicks'])
+                else:
+                    lineTxt = "%s %s (%d)" % (selectionStr,profiles[i].updates.sent[j].text, profiles[i].updates.sent[j]['statistics']['clicks'])
+                logging.info(lineTxt)
+                outputStr = outputStr + "\n" + lineTxt
+                logging.debug("-- %s" % (pp.pformat(update)))
+                logging.debug("-- %s" % (pp.pformat(dir(update))))
+        else:
+            logging.debug("Service %d %s" % (i, profiles[i].formatted_service))
+            logging.debug("No")
+    
+    if someSent:
+        return (outputStr, profiles)
+    else:
+        logging.info("No sent posts")
+        return someSent
+
 
 def listPendingPosts(api, pp, service=""):
     logging.info("Checking services...")
@@ -141,6 +190,7 @@ def main():
     logging.debug(api.info.services.keys())
 
     profiles = listPendingPosts(api, pp, "")
+
 
     if profiles:
        toPublish = raw_input("Which one do you want to publish? ")

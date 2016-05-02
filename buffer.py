@@ -72,3 +72,18 @@ this is not a translation for the whole API).
         else:
             yield("No pending posts")
 
+    @botcmd(split_args_with=None)
+    def sent(self, mess, args):
+        """A command which checks for pending updates"""
+        pp = pprint.PrettyPrinter(indent=4)
+        # We should use args for selecting the service
+        sentUpdates = listBuffer.listSentPosts(self['api'], pp, "")
+        formattedUpdates = ""
+        if sentUpdates:
+            self['profiles'] = sentUpdates[1]
+            for line in sentUpdates[0].split('\n'):
+            	formattedUpdates =  formattedUpdates + '\n' + line[:23] + ' '+ line[-5:]
+            yield(formattedUpdates)
+        else:
+            yield("No pending posts")
+
