@@ -17,7 +17,7 @@
 # It contains just an URL which is the last one published. 
 # At this moment it only considers one blog
 
-import ConfigParser, os
+import configparser, os
 from bs4 import BeautifulSoup
 import logging
 
@@ -31,13 +31,14 @@ from buffpy.models.update import Update
 from buffpy.managers.profiles import Profiles
 from buffpy.managers.updates import Updates
 from buffpy.api import API
+import importlib
 
 import pprint
 import time
 import sys
 import urllib
-reload(sys)
-sys.setdefaultencoding("UTF-8")
+importlib.reload(sys)
+#sys.setdefaultencoding("UTF-8")
 
 
 # We can put as many items as the service with most items allow
@@ -52,10 +53,21 @@ def listEnabledServices(api, pp):
     return
 
 def publishPost(api, pp, profiles, toPublish):
-    logging.info(pp.pformat(toPublish))
+    logging.info("to Publish %s" % pp.pformat(toPublish))
     i = int(toPublish[0])
     j = int(toPublish[1:])
-    logging.debug("%d %d"  % (i,j))
+    #print("%s"  % toPublish)
+    logging.info("i %d j %d"  % (i,j))
+    #logging.info("Profiles[0]--> %s <--"  % pp.pformat(profiles))
+    #print("Profiles[0]--> %s <--"  % pp.pformat(profiles[0]))
+    #print("Profiles[1]--> %s <--"  % pp.pformat(profiles[1]))
+    #print("Profiles--> %s <--"  % pp.pformat(profiles))
+    #print("%d %d"  % (i,j))
+    #print("len profiles %d"  % len(profiles))
+    #print("pending %d"  % len(profiles[1][i].updates.pending))
+    #print("type updates %s"  % type(profiles[1][i].updates.pending[j].id))
+    logging.info("Profiles[i]--> %s <--"  % pp.pformat(profiles))
+    logging.info("Profiles[i]--> %s <---"  % pp.pformat(profiles[i].updates.pending[j]))
     update = Update(api=api, id=profiles[i].updates.pending[j].id)
     logging.debug(pp.pformat(update))
     update.publish()
@@ -73,9 +85,9 @@ def listSentPosts(api, pp, service=""):
     logging.info("Checking services...")
     
     if (service == ""):
-	profiles = Profiles(api=api).all()
+        profiles = Profiles(api=api).all()
     else:
-	profiles = Profiles(api=api).filter(service=service)
+        profiles = Profiles(api=api).filter(service=service)
         
     logging.debug("->%s" % pp.pformat(profiles))
     numProfiles = len(profiles)
@@ -93,7 +105,7 @@ def listSentPosts(api, pp, service=""):
             logging.debug("Hay: %d" % profiles[i].counts.sent)
             logging.debug(pp.pformat(profiles[i].updates.sent))
             due_time=""
-    	    for j in range(min(5,profiles[i].counts.sent)):
+            for j in range(min(5,profiles[i].counts.sent)):
                 update = Update(api=api, id=profiles[i].updates.sent[j].id)
                 if (due_time == ""):
                     due_time=update.due_time
@@ -123,9 +135,9 @@ def listPendingPosts(api, pp, service=""):
     logging.info("Checking services...")
     
     if (service == ""):
-	profiles = Profiles(api=api).all()
+        profiles = Profiles(api=api).all()
     else:
-	profiles = Profiles(api=api).filter(service=service)
+        profiles = Profiles(api=api).filter(service=service)
         
     logging.debug("->%s" % pp.pformat(profiles))
     numProfiles = len(profiles)
@@ -143,7 +155,7 @@ def listPendingPosts(api, pp, service=""):
             logging.debug("Hay: %d" % profiles[i].counts.pending)
             logging.debug(pp.pformat(profiles[i].updates.pending))
             due_time=""
-    	    for j in range(profiles[i].counts.pending):
+            for j in range(profiles[i].counts.pending):
                 update = Update(api=api, id=profiles[i].updates.pending[j].id)
                 if (due_time == ""):
                     due_time=update.due_time
@@ -151,7 +163,10 @@ def listPendingPosts(api, pp, service=""):
                 logging.debug("Service %s" % pp.pformat(profiles[i].updates.pending[j]))
                 selectionStr = "%d%d) " % (i,j)
                 if ('media' in profiles[i].updates.pending[j]): 
-                    lineTxt = "%s %s %s" % (selectionStr,profiles[i].updates.pending[j].text, profiles[i].updates.pending[j].media.expanded_link)
+                    try:
+                        lineTxt = "%s %s %s" % (selectionStr,profiles[i].updates.pending[j].text, profiles[i].updates.pending[j].media.expanded_link)
+                    except:
+                        lineTxt = "%s %s %s" % (selectionStr,profiles[i].updates.pending[j].text, profiles[i].updates.pending[j].media.link)
                 else:
                     lineTxt = "%s %s" % (selectionStr,profiles[i].updates.pending[j].text)
                 logging.info(lineTxt)
@@ -169,7 +184,7 @@ def listPendingPosts(api, pp, service=""):
         return somePending
 
 def main():
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     config.read([os.path.expanduser('~/.rssBuffer')])
     
     clientId = config.get("appKeys", "client_id")
@@ -183,9 +198,10 @@ def main():
               access_token=accessToken)
 
     logging.basicConfig(#filename='example.log',
-                            level=logging.INFO,format='%(asctime)s %(message)s')
+                            level=logging.DEBUG,format='%(asctime)s %(message)s')
 
     pp = pprint.PrettyPrinter(indent=4)
+    print(pp.pformat(api.info))
     logging.debug(pp.pformat(api.info))
     logging.debug(api.info.services.keys())
 
@@ -193,7 +209,7 @@ def main():
 
 
     if profiles:
-       toPublish = raw_input("Which one do you want to publish? ")
+       toPublish = input("Which one do you want to publish? ")
        publishPost(api, pp, profiles, toPublish)
 
 
@@ -206,70 +222,70 @@ if __name__ == '__main__':
     
     lenMax=0
     for service in serviceList:
-    	print "  %s"%service,
-    	profileList[service] = Profiles(api=api).filter(service=service)[0]
-    	if (len(profileList[service].updates.pending)>lenMax):
-    		lenMax=len(profileList[service].updates.pending)
-    	print "  ok"
+        print("  %s"%service)
+        profileList[service] = Profiles(api=api).filter(service=service)[0]
+        if (len(profileList[service].updates.pending)>lenMax):
+            lenMax=len(profileList[service].updates.pending)
+        print("  ok")
     
-    print "There are", lenMax, "in some buffer, we can put", 10-lenMax
-    print "We have", i, "items to post"
+    print("There are", lenMax, "in some buffer, we can put", 10-lenMax)
+    print("We have", i, "items to post")
     
     for j in range(10-lenMax,0,-1):
     
-    	if (i==0):
-    		break
-    	i = i - 1
-    	if (selectedBlog.find('tumblr') > 0):
-    		soup = BeautifulSoup(feed.entries[i].summary)
-    		pageLink  = soup.findAll("a")
-    		if pageLink:
-    			theLink  = pageLink[0]["href"]
-    			theTitle = pageLink[0].get_text()
-    			if len(re.findall(r'\w+', theTitle)) == 1:
-    				print "Una palabra, probamos con el titulo"
-    				theTitle = feed.entries[i].title
-    			if (theLink[:22] == "https://instagram.com/") and (theTitle[:17] == "A video posted by"):
-    				#exception for Instagram videos
-    				theTitle = feed.entries[i].title
-    			if (theLink[:22] == "https://instagram.com/") and (theTitle.find("(en")>0):
-    				theTitle = theTitle[:theTitle.find("(en")-1]
-    		else:
-    			# Some entries do not have a proper link and the rss contains
-    			# the video, image, ... in the description.
-    			# In this case we use the title and the link of the entry.
-    			theLink   = feed.entries[i].link
-    			theTitle  = feed.entries[i].title.encode('utf-8')
-    	elif (selectedBlog.find('wordpress') > 0):
-    		soup = BeautifulSoup(feed.entries[i].content[0].value)
-    		theTitle = feed.entries[i].title
-    		theLink  = feed.entries[i].link	
-    	else:
-    		print "I don't know what to do!"
+        if (i==0):
+            break
+        i = i - 1
+        if (selectedBlog.find('tumblr') > 0):
+            soup = BeautifulSoup(feed.entries[i].summary)
+            pageLink  = soup.findAll("a")
+            if pageLink:
+                theLink  = pageLink[0]["href"]
+                theTitle = pageLink[0].get_text()
+                if len(re.findall(r'\w+', theTitle)) == 1:
+                    print("Una palabra, probamos con el titulo")
+                    theTitle = feed.entries[i].title
+                if (theLink[:22] == "https://instagram.com/") and (theTitle[:17] == "A video posted by"):
+                    #exception for Instagram videos
+                    theTitle = feed.entries[i].title
+                if (theLink[:22] == "https://instagram.com/") and (theTitle.find("(en")>0):
+                    theTitle = theTitle[:theTitle.find("(en")-1]
+            else:
+                # Some entries do not have a proper link and the rss contains
+                # the video, image, ... in the description.
+                # In this case we use the title and the link of the entry.
+                theLink   = feed.entries[i].link
+                theTitle  = feed.entries[i].title.encode('utf-8')
+        elif (selectedBlog.find('wordpress') > 0):
+            soup = BeautifulSoup(feed.entries[i].content[0].value)
+            theTitle = feed.entries[i].title
+            theLink  = feed.entries[i].link    
+        else:
+            print("I don't know what to do!")
     
-    	#pageImage = soup.findAll("img")
-    	theTitle = urllib.quote(theTitle.encode('utf-8'))
+        #pageImage = soup.findAll("img")
+        theTitle = urllib.quote(theTitle.encode('utf-8'))
     
     
-    	#print i, ": ", re.sub('\n+',' ', theTitle.encode('iso-8859-1','ignore')) + " " + theLink
-    	#print len(re.sub('\n+',' ', theTitle.encode('iso-8859-1','ignore')) + " " + theLink)
-    	
-    	post=re.sub('\n+',' ', theTitle) +" "+theLink
-    	# Sometimes there are newlines and unnecessary spaces
-    	#print "post", post
+        #print i, ": ", re.sub('\n+',' ', theTitle.encode('iso-8859-1','ignore')) + " " + theLink
+        #print len(re.sub('\n+',' ', theTitle.encode('iso-8859-1','ignore')) + " " + theLink)
+        
+        post=re.sub('\n+',' ', theTitle) +" "+theLink
+        # Sometimes there are newlines and unnecessary spaces
+        #print "post", post
     
-    	# There are problems with &
-    	print "Publishing... "+ post
-    	for service in serviceList:
-    		print "  %s service"%service,
-    		profile=profileList[service]
-    		try:
-    			profile.updates.new(post)
-    			print "  ok"
-    			time.sleep(3)
-    		except:
-    			failFile = open(os.path.expanduser("~/"+PREFIX+identifier+".fail"),"w")
-    			failFile.write(post)
+        # There are problems with &
+        print("Publishing... "+ post)
+        for service in serviceList:
+            print("  %s service"%service,
+                profile=profileList[service])
+            try:
+                profile.updates.new(post)
+                print("  ok")
+                time.sleep(3)
+            except:
+                failFile = open(os.path.expanduser("~/"+PREFIX+identifier+".fail"),"w")
+                failFile.write(post)
     
     urlFile = open(os.path.expanduser("~/"+PREFIX+identifier+POSFIX),"w")
     urlFile.write(feed.entries[i].link)

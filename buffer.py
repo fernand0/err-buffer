@@ -1,6 +1,6 @@
 from errbot import BotPlugin, botcmd, webhook
 import listBuffer
-import ConfigParser
+import configparser
 import os
 import pprint
 from buffpy.models.update import Update
@@ -23,10 +23,10 @@ this is not a translation for the whole API).
         """
         super(Buffer, self).activate()
 
-        config = ConfigParser.ConfigParser()
-	config.read([os.path.expanduser('~/.rssBuffer')])
-	# We are not configuring the bot via commands so we do not use the
-	# provided mechanism but some config files.
+        config = configparser.ConfigParser()
+        config.read([os.path.expanduser('~/.rssBuffer')])
+        # We are not configuring the bot via commands so we do not use the
+        # provided mechanism but some config files.
     
         clientId = config.get("appKeys", "client_id")
         clientSecret = config.get("appKeys", "client_secret")
@@ -67,7 +67,7 @@ this is not a translation for the whole API).
         if pendingUpdates:
             self['profiles'] = pendingUpdates[1]
             for line in pendingUpdates[0].split('\n'):
-            	formattedUpdates =  formattedUpdates + '\n' + line[:29]
+                formattedUpdates =  formattedUpdates + '\n' + line[:29]
             yield(formattedUpdates)
         else:
             yield("No pending posts")
@@ -82,7 +82,7 @@ this is not a translation for the whole API).
         if sentUpdates:
             self['profiles'] = sentUpdates[1]
             for line in sentUpdates[0].split('\n'):
-            	formattedUpdates =  formattedUpdates + '\n' + line[:23] + ' '+ line[-5:]
+                formattedUpdates =  formattedUpdates + '\n' + line[:23] + ' '+ line[-5:]
             yield(formattedUpdates)
         else:
             yield("No pending posts")

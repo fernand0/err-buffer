@@ -6,4 +6,4 @@ Module = buffer
 Description = An Err plugin for buffer API
 
 [Python]
-Version = 2+
+Version = 3
