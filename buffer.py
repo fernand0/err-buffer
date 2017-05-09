@@ -8,7 +8,8 @@ from buffpy.managers.profiles import Profiles
 from buffpy.managers.updates import Updates
 from buffpy.api import API
 
-
+def end(msg=""):
+    return("END"+msg)
 
 class Buffer(BotPlugin):
     """
@@ -47,6 +48,9 @@ this is not a translation for the whole API).
         pp = pprint.PrettyPrinter(indent=4)
         listBuffer.publishPost(self['api'], pp, self['profiles'], args)
         yield "Published"
+        yield end()
+
+
 
     @botcmd
     def delete(self, mess, args):
@@ -54,6 +58,7 @@ this is not a translation for the whole API).
         pp = pprint.PrettyPrinter(indent=4)
         listBuffer.deletePost(self['api'], pp, self['profiles'], args)
         yield "Deleted"
+        yield end()
 
     # Passing split_args_with=None will cause arguments to be split on any kind
     # of whitespace, just like Python's split() does
@@ -71,6 +76,7 @@ this is not a translation for the whole API).
             yield(formattedUpdates)
         else:
             yield("No pending posts")
+        yield end()
 
     @botcmd(split_args_with=None)
     def sent(self, mess, args):
@@ -86,4 +92,5 @@ this is not a translation for the whole API).
             yield(formattedUpdates)
         else:
             yield("No pending posts")
+        yield("END")
 
