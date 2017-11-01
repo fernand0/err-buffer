@@ -78,7 +78,6 @@ this is not a translation for the whole API).
             yield(self._bot.bot_identifier)
             if (self._bot.mode == "telegram"):
                 self._bot.telegram.send_message(mess.frm.id, formattedUpdates, parse_mode = 'Markdown')
-                self._bot.telegram.send_message(mess.frm.id, formattedUpdates, parse_mode = 'Markdown')
             else:
                 yield(formattedUpdates)
         else:
