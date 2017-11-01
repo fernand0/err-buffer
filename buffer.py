@@ -72,8 +72,15 @@ this is not a translation for the whole API).
         if pendingUpdates:
             self['profiles'] = pendingUpdates[1]
             for line in pendingUpdates[0].split('\n'):
-                formattedUpdates =  formattedUpdates + '\n' + line[:29]
-            yield(formattedUpdates)
+                formattedUpdates =  formattedUpdates + '\n' + line[:33]
+            
+            yield(self._bot.mode)
+            yield(self._bot.bot_identifier)
+            if (self._bot.mode == "telegram"):
+                self._bot.telegram.send_message(mess.frm.id, formattedUpdates, parse_mode = 'Markdown')
+                self._bot.telegram.send_message(mess.frm.id, formattedUpdates, parse_mode = 'Markdown')
+            else:
+                yield(formattedUpdates)
         else:
             yield("No pending posts")
         yield end()
@@ -89,7 +96,12 @@ this is not a translation for the whole API).
             self['profiles'] = sentUpdates[1]
             for line in sentUpdates[0].split('\n'):
                 formattedUpdates =  formattedUpdates + '\n' + line[:23] + ' '+ line[-5:]
-            yield(formattedUpdates)
+            yield(self._bot.mode)
+            if self._bot.mode == "telegram_messenger":
+                self._bot.telegram.send_message(formattedUpdates, parse_mode = 'Markdown')
+                yield("telegram")
+            else:
+                yield(formattedUpdates)
         else:
             yield("No pending posts")
         yield("END")

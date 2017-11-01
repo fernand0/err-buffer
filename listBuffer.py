@@ -68,6 +68,8 @@ def publishPost(api, pp, profiles, toPublish):
     #print("type updates %s"  % type(profiles[1][i].updates.pending[j].id))
     logging.info("Profiles[i]--> %s <--"  % pp.pformat(profiles))
     logging.info("Profiles[i]--> %s <---"  % pp.pformat(profiles[i].updates.pending[j]))
+    #if self._bot-mode = "telegram_messenger":
+    #    self._bot.telegram
     update = Update(api=api, id=profiles[i].updates.pending[j].id)
     logging.debug(pp.pformat(update))
     update.publish()
@@ -150,7 +152,7 @@ def listPendingPosts(api, pp, service=""):
         if (profiles[i].counts.pending > 0):
             somePending = True
             serviceName = profiles[i].formatted_service
-            outputStr = outputStr + "\n" + serviceName
+            outputStr = outputStr + "\n" + "*" + serviceName + "*"
             logging.info("Service %s" % serviceName)
             logging.debug("Hay: %d" % profiles[i].counts.pending)
             logging.debug(pp.pformat(profiles[i].updates.pending))
