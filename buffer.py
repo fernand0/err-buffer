@@ -74,8 +74,6 @@ this is not a translation for the whole API).
             for line in pendingUpdates[0].split('\n'):
                 formattedUpdates =  formattedUpdates + '\n' + line[:33]
             
-            yield(self._bot.mode)
-            yield(self._bot.bot_identifier)
             if (self._bot.mode == "telegram"):
                 self._bot.telegram.send_message(mess.frm.id, formattedUpdates, parse_mode = 'Markdown')
             else:
@@ -93,12 +91,12 @@ this is not a translation for the whole API).
         formattedUpdates = ""
         if sentUpdates:
             self['profiles'] = sentUpdates[1]
-            for line in sentUpdates[0].split('\n'):
-                formattedUpdates =  formattedUpdates + '\n' + line[:23] + ' '+ line[-5:]
-            yield(self._bot.mode)
-            if self._bot.mode == "telegram_messenger":
-                self._bot.telegram.send_message(formattedUpdates, parse_mode = 'Markdown')
-                yield("telegram")
+            lines = sentUpdates[0][0].split('\n')
+            linesC = sentUpdates[0][1].split('\n')
+            for i in range(len(lines)):
+                formattedUpdates =  formattedUpdates + '\n' + lines[i][:25] + ' '+ linesC[i]
+            if (self._bot.mode == "telegram"):
+                self._bot.telegram.send_message(mess.frm.id, formattedUpdates, parse_mode = 'Markdown')
             else:
                 yield(formattedUpdates)
         else:
