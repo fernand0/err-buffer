@@ -56,20 +56,9 @@ def publishPost(api, pp, profiles, toPublish):
     logging.info("to Publish %s" % pp.pformat(toPublish))
     i = int(toPublish[0])
     j = int(toPublish[1:])
-    #print("%s"  % toPublish)
     logging.info("i %d j %d"  % (i,j))
-    #logging.info("Profiles[0]--> %s <--"  % pp.pformat(profiles))
-    #print("Profiles[0]--> %s <--"  % pp.pformat(profiles[0]))
-    #print("Profiles[1]--> %s <--"  % pp.pformat(profiles[1]))
-    #print("Profiles--> %s <--"  % pp.pformat(profiles))
-    #print("%d %d"  % (i,j))
-    #print("len profiles %d"  % len(profiles))
-    #print("pending %d"  % len(profiles[1][i].updates.pending))
-    #print("type updates %s"  % type(profiles[1][i].updates.pending[j].id))
     logging.info("Profiles[i]--> %s <--"  % pp.pformat(profiles))
     logging.info("Profiles[i]--> %s <---"  % pp.pformat(profiles[i].updates.pending[j]))
-    #if self._bot-mode = "telegram_messenger":
-    #    self._bot.telegram
     update = Update(api=api, id=profiles[i].updates.pending[j].id)
     logging.debug(pp.pformat(update))
     update.publish()
@@ -96,17 +85,18 @@ def listSentPosts(api, pp, service=""):
     logging.debug("Profiles %d" % numProfiles)
     logging.debug("Profiles %s" % pp.pformat(profiles))
     someSent = False
-    outputStr = ("\n","\n")
+    outputStr = ([],[])
     for i in range(numProfiles):
         serviceName = profiles[i].formatted_service
         logging.debug("Service %d %s" % (i,serviceName))
         if (profiles[i].counts.sent > 0):
             someSent = True
-            outputStr = (outputStr[0] + "\n*%s*" % serviceName, outputStr[1] + "\n")
+            outputStr[0].append("*%s*" % serviceName)
+            outputStr[1].append("")
             logging.info("Service %s" % serviceName)
             logging.debug("Hay: %d" % profiles[i].counts.sent)
             logging.debug(pp.pformat(profiles[i].updates.sent))
-            for j in range(min(5,profiles[i].counts.sent)):
+            for j in range(min(8,profiles[i].counts.sent)):
                 update = Update(api=api, id=profiles[i].updates.sent[j].id)
                 logging.debug("Service %s" % pp.pformat(profiles[i].updates.sent[j]))
                 selectionStr = "%d%d) " % (i,j)
@@ -115,7 +105,8 @@ def listSentPosts(api, pp, service=""):
                 else:
                     lineTxt = "%s %s" % (selectionStr,profiles[i].updates.sent[j].text)
                 logging.info(lineTxt)
-                outputStr = (outputStr[0] + "\n" + lineTxt, outputStr[1] + "\n (%d clicks)" % profiles[i].updates.sent[j]['statistics']['clicks'])
+                outputStr[0].append("%s" % lineTxt)
+                outputStr[1].append(" (%d clicks)" % profiles[i].updates.sent[j]['statistics']['clicks'])
                 logging.debug("-- %s" % (pp.pformat(update)))
                 logging.debug("-- %s" % (pp.pformat(dir(update))))
         else:
@@ -142,13 +133,12 @@ def listPendingPosts(api, pp, service=""):
     logging.debug("Profiles %d" % numProfiles)
     logging.debug("Profiles %s" % pp.pformat(profiles))
     somePending = False
-    outputStr = "\n"
+    outputStr = [] 
     for i in range(numProfiles):
-        logging.debug("Service %d %s" % (i,profiles[i].formatted_service))
+        serviceName = profiles[i].formatted_service
+        logging.debug("Service %d %s" % (i,serviceName))
         if (profiles[i].counts.pending > 0):
             somePending = True
-            serviceName = profiles[i].formatted_service
-            outputStr = outputStr + "\n*%s*" % serviceName
             logging.info("Service %s" % serviceName)
             logging.debug("Hay: %d" % profiles[i].counts.pending)
             logging.debug(pp.pformat(profiles[i].updates.pending))
@@ -157,7 +147,7 @@ def listPendingPosts(api, pp, service=""):
                 update = Update(api=api, id=profiles[i].updates.pending[j].id)
                 if (due_time == ""):
                     due_time=update.due_time
-                    outputStr = outputStr + " (" + due_time + ")"
+                    outputStr.append("*%s* ( %s )" % (serviceName, due_time))
                 logging.debug("Service %s" % pp.pformat(profiles[i].updates.pending[j]))
                 selectionStr = "%d%d) " % (i,j)
                 if ('media' in profiles[i].updates.pending[j]): 
@@ -168,7 +158,7 @@ def listPendingPosts(api, pp, service=""):
                 else:
                     lineTxt = "%s %s" % (selectionStr,profiles[i].updates.pending[j].text)
                 logging.info(lineTxt)
-                outputStr = outputStr + "\n" + lineTxt
+                outputStr.append(lineTxt)
                 logging.debug("-- %s" % (pp.pformat(update)))
                 logging.debug("-- %s" % (pp.pformat(dir(update))))
         else:

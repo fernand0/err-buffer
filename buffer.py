@@ -71,7 +71,7 @@ this is not a translation for the whole API).
         formattedUpdates = ""
         if pendingUpdates:
             self['profiles'] = pendingUpdates[1]
-            for line in pendingUpdates[0].split('\n'):
+            for line in pendingUpdates[0]:
                 formattedUpdates =  formattedUpdates + '\n' + line[:33]
             
             if (self._bot.mode == "telegram"):
@@ -91,10 +91,12 @@ this is not a translation for the whole API).
         formattedUpdates = ""
         if sentUpdates:
             self['profiles'] = sentUpdates[1]
-            lines = sentUpdates[0][0].split('\n')
-            linesC = sentUpdates[0][1].split('\n')
+            lines = sentUpdates[0][0]
+            linesC = sentUpdates[0][1]
             for i in range(len(lines)):
-                formattedUpdates =  formattedUpdates + '\n' + lines[i][:25] + ' '+ linesC[i]
+                formattedUpdates = formattedUpdates + '\n' 
+                formattedUpdates = formattedUpdates + lines[i][:25] 
+                formattedUpdates = formattedUpdates + ' '+ linesC[i]
             if (self._bot.mode == "telegram"):
                 self._bot.telegram.send_message(mess.frm.id, formattedUpdates, parse_mode = 'Markdown')
             else:
