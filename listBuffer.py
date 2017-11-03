@@ -84,6 +84,7 @@ def listSentPosts(api, pp, service=""):
     numProfiles = len(profiles)
     logging.debug("Profiles %d" % numProfiles)
     logging.debug("Profiles %s" % pp.pformat(profiles))
+
     someSent = False
     outputStr = ([],[])
     for i in range(numProfiles):
@@ -91,26 +92,35 @@ def listSentPosts(api, pp, service=""):
         logging.debug("Service %d %s" % (i,serviceName))
         if (profiles[i].counts.sent > 0):
             someSent = True
-            outputStr[0].append("*%s*" % serviceName)
-            outputStr[1].append("")
             logging.info("Service %s" % serviceName)
             logging.debug("Hay: %d" % profiles[i].counts.sent)
             logging.debug(pp.pformat(profiles[i].updates.sent))
+            due_time=""
             for j in range(min(8,profiles[i].counts.sent)):
-                update = Update(api=api, id=profiles[i].updates.sent[j].id)
-                logging.debug("Service %s" % pp.pformat(profiles[i].updates.sent[j]))
-                selectionStr = "%d%d) " % (i,j)
-                if ('media' in profiles[i].updates.sent[j]): 
-                    lineTxt = "%s %s %s" % (selectionStr,profiles[i].updates.sent[j].text, profiles[i].updates.sent[j].media.expanded_link)
+                updatesSent = profiles[i].updates.sent[j]
+                update = Update(api=api, id= updatesSent.id)
+                if (due_time == ""):
+                    due_time=update.due_time # Not used here
+                    outputStr[0].append("*%s*" % serviceName)
+                    outputStr[1].append("")
+                logging.debug("Service %s" % pp.pformat(updatesSent))
+                selectionStr = "" #"%d%d) " % (i,j)
+                if ('media' in updatesSent): 
+                    try:
+                        lineTxt = "%s %s %s" % (selectionStr, 
+                                updatesSent.text, updatesSent.media.expanded_link)
+                    except:
+                        lineTxt = "%s %s %s" % (selectionStr,
+                                updatesSent.text, updatesSent.media.link)
                 else:
-                    lineTxt = "%s %s" % (selectionStr,profiles[i].updates.sent[j].text)
+                    lineTxt = "%s %s" % (selectionStr,updatesSent.text)
                 logging.info(lineTxt)
                 outputStr[0].append("%s" % lineTxt)
-                outputStr[1].append(" (%d clicks)" % profiles[i].updates.sent[j]['statistics']['clicks'])
+                outputStr[1].append(" (%d clicks)" % updatesSent['statistics']['clicks'])
                 logging.debug("-- %s" % (pp.pformat(update)))
                 logging.debug("-- %s" % (pp.pformat(dir(update))))
         else:
-            logging.debug("Service %d %s" % (i, profiles[i].formatted_service))
+            logging.debug("Service %d %s" % (i, serviceName))
             logging.debug("No")
     
     if someSent:
@@ -132,6 +142,7 @@ def listPendingPosts(api, pp, service=""):
     numProfiles = len(profiles)
     logging.debug("Profiles %d" % numProfiles)
     logging.debug("Profiles %s" % pp.pformat(profiles))
+
     somePending = False
     outputStr = [] 
     for i in range(numProfiles):
@@ -144,25 +155,29 @@ def listPendingPosts(api, pp, service=""):
             logging.debug(pp.pformat(profiles[i].updates.pending))
             due_time=""
             for j in range(profiles[i].counts.pending):
-                update = Update(api=api, id=profiles[i].updates.pending[j].id)
+                updatesPending = profiles[i].updates.pending[j]
+                update = Update(api=api, id=updatesPending.id)
                 if (due_time == ""):
                     due_time=update.due_time
                     outputStr.append("*%s* ( %s )" % (serviceName, due_time))
-                logging.debug("Service %s" % pp.pformat(profiles[i].updates.pending[j]))
+
+                logging.debug("Service %s" % pp.pformat(updatesPending))
                 selectionStr = "%d%d) " % (i,j)
-                if ('media' in profiles[i].updates.pending[j]): 
+                if ('media' in updatesPending): 
                     try:
-                        lineTxt = "%s %s %s" % (selectionStr,profiles[i].updates.pending[j].text, profiles[i].updates.pending[j].media.expanded_link)
+                        lineTxt = "%s %s %s" % (selectionStr,
+                                updatesPending.text, updatesPending.media.expanded_link)
                     except:
-                        lineTxt = "%s %s %s" % (selectionStr,profiles[i].updates.pending[j].text, profiles[i].updates.pending[j].media.link)
+                        lineTxt = "%s %s %s" % (selectionStr,
+                                updatesPending.text, updatesPending.media.link)
                 else:
-                    lineTxt = "%s %s" % (selectionStr,profiles[i].updates.pending[j].text)
+                    lineTxt = "%s %s" % (selectionStr,updatesPending.text)
                 logging.info(lineTxt)
                 outputStr.append(lineTxt)
                 logging.debug("-- %s" % (pp.pformat(update)))
                 logging.debug("-- %s" % (pp.pformat(dir(update))))
         else:
-            logging.debug("Service %d %s" % (i, profiles[i].formatted_service))
+            logging.debug("Service %d %s" % (i, serviceName))
             logging.debug("No")
     
     if somePending:
