@@ -52,6 +52,24 @@ def listEnabledServices(api, pp):
     logging.info(pp.pformat(profiles))
     return
 
+def movePost(api, pp, profiles, toMove, toWhere):
+    listIds = []
+    i = int(toMove[0])
+    for j in range(profiles[i].counts.pending):
+        listIds.append(profiles[i].updates.pending[j]['id'])
+
+    logging.info("to Move %s to %s" % (pp.pformat(toMove), toWhere))
+    j = int(toMove[1:])
+    logging.info("i %d j %d"  % (i,j))
+    logging.info("Profiles[i]--> %s <--"  % pp.pformat(profiles))
+    logging.info("Profiles[i]--> %s <---"  % pp.pformat(profiles[i].updates.pending[j]))
+    k = int(toWhere[1:])
+    idUpdate = listIds.pop(j)
+    listIds.insert(k, idUpdate)
+
+    update = Update(api=api, id=profiles[i].updates.pending[j].id)
+    profiles[i].updates.reorder(listIds)
+
 def publishPost(api, pp, profiles, toPublish):
     logging.info("to Publish %s" % pp.pformat(toPublish))
     i = int(toPublish[0])

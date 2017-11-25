@@ -51,6 +51,11 @@ this is not a translation for the whole API).
         yield end()
 
 
+    @botcmd(split_args_with=None)
+    def move(self, mess, args):
+        pp = pprint.PrettyPrinter(indent=4)
+        listBuffer.movePost(self['api'], pp, self['profiles'], args[0], args[1])
+        yield end()
 
     @botcmd
     def delete(self, mess, args):
