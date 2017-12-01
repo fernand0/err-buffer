@@ -94,6 +94,7 @@ this is not a translation for the whole API).
         # We should use args for selecting the service
         sentUpdates = listBuffer.listSentPosts(self['api'], pp, "")
         formattedUpdates = ""
+        yield(sentUpdates, type(sentUpdates))
         if sentUpdates:
             self['profiles'] = sentUpdates[1]
             lines = sentUpdates[0][0]

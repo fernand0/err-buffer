@@ -106,6 +106,7 @@ def listSentPosts(api, pp, service=""):
     someSent = False
     outputStr = ([],[])
     for i in range(numProfiles):
+        yield(profiles[i].counts)
         serviceName = profiles[i].formatted_service
         logging.debug("Service %d %s" % (i,serviceName))
         if (profiles[i].counts.sent > 0):
@@ -142,10 +143,11 @@ def listSentPosts(api, pp, service=""):
             logging.debug("No")
     
     if someSent:
+        logging.info("Some sent posts")
         return (outputStr, profiles)
     else:
         logging.info("No sent posts")
-        return someSent
+        return ("", someSent)
 
 
 def listPendingPosts(api, pp, service=""):
