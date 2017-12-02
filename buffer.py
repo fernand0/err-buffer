@@ -74,8 +74,9 @@ this is not a translation for the whole API).
         # We should use args for selecting the service
         pendingUpdates = listBuffer.listPendingPosts(self['api'], pp, "")
         formattedUpdates = ""
+        test = pendingUpdates
         if pendingUpdates:
-            self['profiles'] = pendingUpdates[1]
+            self['profiles'] = test[1]
             for line in pendingUpdates[0]:
                 formattedUpdates =  formattedUpdates + '\n' + line[:33]
             
@@ -94,7 +95,6 @@ this is not a translation for the whole API).
         # We should use args for selecting the service
         sentUpdates = listBuffer.listSentPosts(self['api'], pp, "")
         formattedUpdates = ""
-        yield(sentUpdates, type(sentUpdates))
         if sentUpdates:
             self['profiles'] = sentUpdates[1]
             lines = sentUpdates[0][0]
