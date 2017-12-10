@@ -135,10 +135,10 @@ def listSentPosts(api, pp, service=""):
                 logging.info(lineTxt)
                 outputStr[0].append("%s" % lineTxt)
                 outputStr[1].append(" (%d clicks)" % updatesSent['statistics']['clicks'])
-                logging.debug("-- %s" % (pp.pformat(update)))
-                logging.debug("-- %s" % (pp.pformat(dir(update))))
+                #logging.debug("-- %s" % (pp.pformat(update)))
+                #logging.debug("-- %s" % (pp.pformat(dir(update))))
         else:
-            logging.debug("Service %d %s" % (i, serviceName))
+            #logging.debug("Service %d %s" % (i, serviceName))
             logging.debug("No")
     
     if someSent:
