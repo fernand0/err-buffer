@@ -80,7 +80,7 @@ this is not a translation for the whole API).
             for line in pendingUpdates[0]:
                 formattedUpdates =  formattedUpdates + '\n' + line[:33]
             
-            if (self._bot.mode == "telegram"):
+            if (self._bot.mode == "telegram") and ('frm' in mess):
                 self._bot.telegram.send_message(mess.frm.id, formattedUpdates, parse_mode = 'Markdown')
             else:
                 yield(formattedUpdates)
