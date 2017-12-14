@@ -67,7 +67,7 @@ this is not a translation for the whole API).
 
     # Passing split_args_with=None will cause arguments to be split on any kind
     # of whitespace, just like Python's split() does
-    @botcmd(split_args_with=None)
+    @botcmd(split_args_with=None, template="buffer")
     def list(self, mess, args):
         """A command which checks for pending updates"""
         pp = pprint.PrettyPrinter(indent=4)
@@ -80,7 +80,7 @@ this is not a translation for the whole API).
             for line in pendingUpdates[0]:
                 formattedUpdates =  formattedUpdates + '\n' + line[:33]
             
-            if (self._bot.mode == "telegram") and ('frm' in mess):
+            if (self._bot.mode == "telegram") and not isinstance(mess, dict): 
                 self._bot.telegram.send_message(mess.frm.id, formattedUpdates, parse_mode = 'Markdown')
             else:
                 yield(formattedUpdates)
@@ -103,7 +103,7 @@ this is not a translation for the whole API).
                 formattedUpdates = formattedUpdates + '\n' 
                 formattedUpdates = formattedUpdates + lines[i][:25] 
                 formattedUpdates = formattedUpdates + ' '+ linesC[i]
-            if (self._bot.mode == "telegram") and ('frm' in mess):
+            if (self._bot.mode == "telegram") and not isinstance(mess, dict): 
                 self._bot.telegram.send_message(mess.frm.id, formattedUpdates, parse_mode = 'Markdown')
             else:
                 yield(formattedUpdates)
