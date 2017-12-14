@@ -1,4 +1,4 @@
-from errbot import BotPlugin, botcmd, webhook
+from errbot import BotPlugin, botcmd, webhook, backends
 import listBuffer
 import configparser
 import os
@@ -103,7 +103,8 @@ this is not a translation for the whole API).
                 formattedUpdates = formattedUpdates + '\n' 
                 formattedUpdates = formattedUpdates + lines[i][:25] 
                 formattedUpdates = formattedUpdates + ' '+ linesC[i]
-            if (self._bot.mode == "telegram") and not isinstance(mess, dict): 
+            if (self._bot.mode == "telegram") and isinstance(mess, backends.base.Message): 
+                self.log.debug("mess- %s - %s" % (mess, type(mess)))
                 self._bot.telegram.send_message(mess.frm.id, formattedUpdates, parse_mode = 'Markdown')
             else:
                 yield(formattedUpdates)
