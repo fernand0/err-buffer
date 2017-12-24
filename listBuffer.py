@@ -55,7 +55,7 @@ def listEnabledServices(api, pp):
 def movePost(api, pp, profiles, toMove, toWhere):
     listIds = []
     i = int(toMove[0])
-    for j in range(profiles[i].counts.pending):
+    for j in range(profiles[i].counts['pending']):
         listIds.append(profiles[i].updates.pending[j]['id'])
 
     logging.info("to Move %s to %s" % (pp.pformat(toMove), toWhere))
@@ -90,7 +90,7 @@ def deletePost(api, pp, profiles, toPublish):
     logging.debug(pp.pformat(update))
     update.delete()
 
-def listSentPosts(api, pp, service=""):
+def getProfiles(api, pp, service=""):
     logging.info("Checking services...")
     
     if (service == ""):
@@ -100,21 +100,60 @@ def listSentPosts(api, pp, service=""):
         
     logging.debug("->%s" % pp.pformat(profiles))
     numProfiles = len(profiles)
-    logging.debug("Profiles %d" % numProfiles)
+    logging.debug("Num. Profiles %d" % numProfiles)
     logging.debug("Profiles %s" % pp.pformat(profiles))
+
+    return (profiles)
+
+def listPosts(api, pp, service=""):
+    profiles = getProfiles(api, pp, service)
+
+    outputData = {}
+
+    for i in range(len(profiles)):
+        serviceName = profiles[i].formatted_service
+        outputData[serviceName] = {'sent': [], 'pending': []}
+        logging.debug("Service %d %s" % (i,serviceName))
+        logging.info("Service %s" % serviceName)
+        for method in ['sent', 'pending']:
+            if (profiles[i].counts[method] > 0):
+                logging.debug("There are: %d" % profiles[i].counts[method])
+                logging.debug("Updates %s:" % method)
+                logging.debug(pp.pformat(getattr(profiles[i].updates, method)))
+                for j in range(min(8,profiles[i].counts[method])):
+                    updates = getattr(profiles[i].updates, method)[j]
+                    if method == 'pending':
+                        toShow = updates.due_at
+                    else:
+                        toShow = updates.statistics.clicks
+                    if ('media' in updates): 
+                        if ('expanded_link' in updates.media):
+                            link = updates.media.expanded_link
+                        else:
+                            link = updates.media.link
+                        outputData[serviceName][method].append((updates.text, link, toShow))
+                    else:
+                        outputData[serviceName][method].append((updates.text, toShow))
+
+    return(outputData)
+
+
+
+def listSentPosts(api, pp, service=""):
+    profiles = getProfiles(api, pp, service)
 
     someSent = False
     outputStr = ([],[])
-    for i in range(numProfiles):
+    for i in range(len(profiles)):
         serviceName = profiles[i].formatted_service
         logging.debug("Service %d %s" % (i,serviceName))
-        if (profiles[i].counts.sent > 0):
+        if (profiles[i].counts['sent'] > 0):
             someSent = True
             logging.info("Service %s" % serviceName)
-            logging.debug("Hay: %d" % profiles[i].counts.sent)
+            logging.debug("There are: %d" % profiles[i].counts['sent'])
             logging.debug(pp.pformat(profiles[i].updates.sent))
             due_time=""
-            for j in range(min(8,profiles[i].counts.sent)):
+            for j in range(min(8,profiles[i].counts['sent'])):
                 updatesSent = profiles[i].updates.sent[j]
                 update = Update(api=api, id= updatesSent.id)
                 if (due_time == ""):
@@ -149,30 +188,20 @@ def listSentPosts(api, pp, service=""):
 
 
 def listPendingPosts(api, pp, service=""):
-    logging.info("Checking services...")
+    profiles = getProfiles(api, pp, service)
     
-    if (service == ""):
-        profiles = Profiles(api=api).all()
-    else:
-        profiles = Profiles(api=api).filter(service=service)
-        
-    logging.debug("->%s" % pp.pformat(profiles))
-    numProfiles = len(profiles)
-    logging.debug("Profiles %d" % numProfiles)
-    logging.debug("Profiles %s" % pp.pformat(profiles))
-
     somePending = False
     outputStr = [] 
-    for i in range(numProfiles):
+    for i in range(len(profiles)):
         serviceName = profiles[i].formatted_service
         logging.debug("Service %d %s" % (i,serviceName))
-        if (profiles[i].counts.pending > 0):
+        if (profiles[i].counts['pending'] > 0):
             somePending = True
             logging.info("Service %s" % serviceName)
-            logging.debug("Hay: %d" % profiles[i].counts.pending)
+            logging.debug("There are: %d" % profiles[i].counts['pending'])
             logging.debug(pp.pformat(profiles[i].updates.pending))
             due_time=""
-            for j in range(profiles[i].counts.pending):
+            for j in range(profiles[i].counts['pending']):
                 updatesPending = profiles[i].updates.pending[j]
                 update = Update(api=api, id=updatesPending.id)
                 if (due_time == ""):
@@ -226,7 +255,11 @@ def main():
     logging.debug(pp.pformat(api.info))
     logging.debug(api.info.services.keys())
 
-    profiles = listPendingPosts(api, pp, "")
+    profiles = listPosts(api, pp, "")
+    print("Posts",type(profiles))
+    posts = listPendingPosts(api, pp, "")
+    print(pp.pformat(profiles))
+    sys.exit()
     print("Pending",type(profiles))
     print(pp.pformat(profiles))
     profiles = listSentPosts(api, pp, "")

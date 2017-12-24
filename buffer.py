@@ -81,7 +81,8 @@ this is not a translation for the whole API).
                 formattedUpdates =  formattedUpdates + '\n' + line[:33]
             
             if (self._bot.mode == "telegram") and isinstance(mess, backends.base.Message): 
-                self._bot.telegram.send_message(mess.frm.id, formattedUpdates, parse_mode = 'Markdown')
+                yield(formattedUpdates)
+                #self._bot.telegram.send_message(mess.frm.id, formattedUpdates, parse_mode = 'Markdown')
             else:
                 yield(formattedUpdates)
         else:
