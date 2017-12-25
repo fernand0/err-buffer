@@ -65,6 +65,16 @@ this is not a translation for the whole API).
         yield "Deleted"
         yield end()
 
+    # of whitespace, just like Python's split() does
+    @botcmd(split_args_with=None, template="buffer")
+    def listN(self, mess, args):
+        pp = pprint.PrettyPrinter(indent=4)
+        pendingUpdates = listBuffer.listPosts(self['api'], pp, "")
+        for socialNetwork in pendingUpdates.keys():
+            yield {'nameSocialNetwork': socialNetwork, 
+                    'updates': pendingUpdates[socialNetwork]['pending']}
+
+
     # Passing split_args_with=None will cause arguments to be split on any kind
     # of whitespace, just like Python's split() does
     @botcmd(split_args_with=None, template="buffer")

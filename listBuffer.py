@@ -123,7 +123,7 @@ def listPosts(api, pp, service=""):
                 for j in range(min(8,profiles[i].counts[method])):
                     updates = getattr(profiles[i].updates, method)[j]
                     if method == 'pending':
-                        toShow = updates.due_at
+                        toShow = updates.due_time
                     else:
                         toShow = updates.statistics.clicks
                     if ('media' in updates): 
@@ -133,7 +133,7 @@ def listPosts(api, pp, service=""):
                             link = updates.media.link
                         outputData[serviceName][method].append((updates.text, link, toShow))
                     else:
-                        outputData[serviceName][method].append((updates.text, toShow))
+                        outputData[serviceName][method].append((updates.text, '',  toShow))
 
     return(outputData)
 
