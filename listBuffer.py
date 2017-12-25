@@ -96,12 +96,20 @@ def publishPost(api, pp, profiles, toPublish):
 
 def deletePost(api, pp, profiles, toPublish):
     logging.info(pp.pformat(toPublish))
-    i = int(toPublish[0])
-    j = int(toPublish[1:])
-    logging.debug("%d %d"  % (i,j))
-    update = Update(api=api, id=profiles[i].updates.pending[j].id)
-    logging.debug(pp.pformat(update))
-    update.delete()
+    i = 0
+    profMov = ""
+    while toPublish[i].isalpha():
+        profMov = profMov + toMove[i]
+        i = i + 1
+
+    j = int(toPublish[-1])    
+    for i in range(len(profiles)):
+        serviceName = profiles[i].formatted_service
+        if (serviceName[0] in profMov) or toMove[0]=='*':
+            logging.debug("%d %d"  % (i,j))
+            update = Update(api=api, id=profiles[i].updates.pending[j].id)
+            logging.debug(pp.pformat(update))
+            update.delete()
 
 def getProfiles(api, pp, service=""):
     logging.info("Checking services...")
