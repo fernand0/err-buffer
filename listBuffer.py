@@ -99,13 +99,13 @@ def deletePost(api, pp, profiles, toPublish):
     i = 0
     profMov = ""
     while toPublish[i].isalpha():
-        profMov = profMov + toMove[i]
+        profMov = profMov + toPublish[i]
         i = i + 1
 
     j = int(toPublish[-1])    
     for i in range(len(profiles)):
         serviceName = profiles[i].formatted_service
-        if (serviceName[0] in profMov) or toMove[0]=='*':
+        if (serviceName[0] in profMov) or toPublish[0]=='*':
             logging.debug("%d %d"  % (i,j))
             update = Update(api=api, id=profiles[i].updates.pending[j].id)
             logging.debug(pp.pformat(update))
@@ -141,20 +141,21 @@ def listPosts(api, pp, service=""):
                 logging.debug("There are: %d" % profiles[i].counts[method])
                 logging.debug("Updates %s:" % method)
                 logging.debug(pp.pformat(getattr(profiles[i].updates, method)))
-                for j in range(min(8,profiles[i].counts[method])):
-                    updates = getattr(profiles[i].updates, method)[j]
+                updates = getattr(profiles[i].updates, method)
+                for j in range(min(10,len(updates))):
+                    update = updates[j]
                     if method == 'pending':
-                        toShow = updates.due_time
+                        toShow = update.due_time
                     else:
-                        toShow = updates.statistics.clicks
-                    if ('media' in updates): 
-                        if ('expanded_link' in updates.media):
-                            link = updates.media.expanded_link
+                        toShow = update.statistics.clicks
+                    if ('media' in update): 
+                        if ('expanded_link' in update.media):
+                            link = update.media.expanded_link
                         else:
-                            link = updates.media.link
-                        outputData[serviceName][method].append((updates.text, link, toShow))
+                            link = update.media.link
+                        outputData[serviceName][method].append((update.text, link, toShow))
                     else:
-                        outputData[serviceName][method].append((updates.text, '',  toShow))
+                        outputData[serviceName][method].append((update.text, '',  toShow))
 
     return(outputData)
 
