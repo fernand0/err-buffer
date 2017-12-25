@@ -52,23 +52,36 @@ def listEnabledServices(api, pp):
     logging.info(pp.pformat(profiles))
     return
 
-def movePost(api, pp, profiles, toMove, toWhere):
-    listIds = []
-    i = int(toMove[0])
-    for j in range(profiles[i].counts['pending']):
-        listIds.append(profiles[i].updates.pending[j]['id'])
+def movePost(api, log, pp, profiles, toMove, toWhere):
+    # Moving posts, we identify the profile by the first letter. We can use
+    # several letters and if we put a '*' we'll move the posts in all the
+    # social networks
+    i = 0
+    profMov = ""
+    while toMove[i].isalpha():
+        profMov = profMov + toMove[i]
+        i = i + 1
 
-    logging.info("to Move %s to %s" % (pp.pformat(toMove), toWhere))
-    j = int(toMove[1:])
-    logging.info("i %d j %d"  % (i,j))
-    logging.info("Profiles[i]--> %s <--"  % pp.pformat(profiles))
-    logging.info("Profiles[i]--> %s <---"  % pp.pformat(profiles[i].updates.pending[j]))
-    k = int(toWhere[1:])
-    idUpdate = listIds.pop(j)
-    listIds.insert(k, idUpdate)
+    for i in range(len(profiles)):
+        serviceName = profiles[i].formatted_service
+        log.info("ii: %s" %i)
+        if (serviceName[0] in profMov) or toMove[0]=='*':
+            listIds = []
+            for j in range(len(profiles[i].updates.pending)):
+                # counts seems to be not ok
+                listIds.append(profiles[i].updates.pending[j]['id'])
 
-    update = Update(api=api, id=profiles[i].updates.pending[j].id)
-    profiles[i].updates.reorder(listIds)
+            logging.info("to Move %s to %s" % (pp.pformat(toMove), toWhere))
+            j = int(toMove[-1])
+            logging.info("i %d j %d"  % (i,j))
+            logging.info("Profiles[i]--> %s <--"  % pp.pformat(profiles))
+            logging.info("Profiles[i]--> %s <---"  % pp.pformat(profiles[i].updates.pending[j]))
+            k = int(toWhere[-1])
+            idUpdate = listIds.pop(j)
+            listIds.insert(k, idUpdate)
+
+            update = Update(api=api, id=profiles[i].updates.pending[j].id)
+            profiles[i].updates.reorder(listIds)
 
 def publishPost(api, pp, profiles, toPublish):
     logging.info("to Publish %s" % pp.pformat(toPublish))

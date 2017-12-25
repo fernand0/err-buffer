@@ -1,4 +1,5 @@
 from errbot import BotPlugin, botcmd, webhook, backends
+from errbot.templating import tenv
 import listBuffer
 import configparser
 import os
@@ -54,7 +55,7 @@ this is not a translation for the whole API).
     @botcmd(split_args_with=None)
     def move(self, mess, args):
         pp = pprint.PrettyPrinter(indent=4)
-        listBuffer.movePost(self['api'], pp, self['profiles'], args[0], args[1])
+        listBuffer.movePost(self['api'], self.log, pp, self['profiles'], args[0], args[1])
         yield end()
 
     @botcmd
@@ -65,24 +66,25 @@ this is not a translation for the whole API).
         yield "Deleted"
         yield end()
 
+    def sendReply(self, mess, args, updates, types):
+        for tt in types:
+            for socialNetwork in updates.keys():
+                response = tenv().get_template('buffer.md').render({'type': tt,
+                        'nameSocialNetwork': socialNetwork, 
+                        'updates': updates[socialNetwork][tt]})
+                self.send(mess.frm, response)
+
     @botcmd(split_args_with=None, template="buffer")
     def list(self, mess, args):
         pp = pprint.PrettyPrinter(indent=4)
-        pendingUpdates = listBuffer.listPosts(self['api'], pp, "")
-        for socialNetwork in pendingUpdates.keys():
-            yield {'type': 'pending',
-                    'nameSocialNetwork': socialNetwork, 
-                    'updates': pendingUpdates[socialNetwork]['pending']}
-        yield("END")
+        posts = listBuffer.listPosts(self['api'], pp, "")
+        self.sendReply(mess, args, posts, ['sent','pending'])
 
     @botcmd(split_args_with=None, template="buffer")
     def sent(self, mess, args):
         pp = pprint.PrettyPrinter(indent=4)
-        pendingUpdates = listBuffer.listPosts(self['api'], pp, "")
-        for socialNetwork in pendingUpdates.keys():
-            yield {'type': 'sent',
-                    'nameSocialNetwork': socialNetwork, 
-                    'updates': pendingUpdates[socialNetwork]['sent']}
+        posts = listBuffer.listPosts(self['api'], pp, "")
+        self.sendReply(mess, args, posts, ['pending', 'sent'])
         yield("END")
 
 
