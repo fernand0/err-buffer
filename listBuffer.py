@@ -85,14 +85,20 @@ def movePost(api, log, pp, profiles, toMove, toWhere):
 
 def publishPost(api, pp, profiles, toPublish):
     logging.info("to Publish %s" % pp.pformat(toPublish))
-    i = int(toPublish[0])
-    j = int(toPublish[1:])
-    logging.info("i %d j %d"  % (i,j))
-    logging.info("Profiles[i]--> %s <--"  % pp.pformat(profiles))
-    logging.info("Profiles[i]--> %s <---"  % pp.pformat(profiles[i].updates.pending[j]))
-    update = Update(api=api, id=profiles[i].updates.pending[j].id)
-    logging.debug(pp.pformat(update))
-    update.publish()
+    i = 0
+    profMov = ""    
+    while toPublish[i].isalpha():
+        profMov = profMov + toPublish[i]
+        i = i + 1
+
+    j = int(toPublish[-1])
+    for i in range(len(profiles)): 
+        serviceName = profiles[i].formatted_service 
+        if (serviceName[0] in profMov) or toPublish[0]=='*': 
+            logging.debug("%d %d"  % (i,j)) 
+            update = Update(api=api, id=profiles[i].updates.pending[j].id) 
+            logging.debug(pp.pformat(update)) 
+            update.publish()
 
 def deletePost(api, pp, profiles, toPublish):
     logging.info(pp.pformat(toPublish))
