@@ -67,24 +67,30 @@ this is not a translation for the whole API).
         yield end()
 
     def sendReply(self, mess, args, updates, types):
+        compResponse = ""
         for tt in types:
             for socialNetwork in updates.keys():
                 response = tenv().get_template('buffer.md').render({'type': tt,
                         'nameSocialNetwork': socialNetwork, 
                         'updates': updates[socialNetwork][tt]})
-                self.send(mess.frm, response)
+                compResponse = compResponse + response
+
+        return(compResponse)
 
     @botcmd(split_args_with=None, template="buffer")
     def list(self, mess, args):
         pp = pprint.PrettyPrinter(indent=4)
         posts = listBuffer.listPosts(self['api'], pp, "")
-        self.sendReply(mess, args, posts, ['sent','pending'])
+        response = self.sendReply(mess, args, posts, ['sent','pending'])
+        yield(response)
+        yield("END")
 
     @botcmd(split_args_with=None, template="buffer")
     def sent(self, mess, args):
         pp = pprint.PrettyPrinter(indent=4)
         posts = listBuffer.listPosts(self['api'], pp, "")
-        self.sendReply(mess, args, posts, ['pending', 'sent'])
+        response = self.sendReply(mess, args, posts, ['pending', 'sent'])
+        yield(response)
         yield("END")
 
 
