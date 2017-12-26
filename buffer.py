@@ -85,11 +85,12 @@ this is not a translation for the whole API).
         yield(response)
         yield("END")
 
-    @botcmd(split_args_with=None, template="buffer")
+    @botcmd(split_args_with=None)
     def sent(self, mess, args):
         pp = pprint.PrettyPrinter(indent=4)
         posts = listBuffer.listPosts(self['api'], pp, "")
         response = self.sendReply(mess, args, posts, ['pending', 'sent'])
+        self.log.debug(response)
         yield(response)
         yield("END")
 
