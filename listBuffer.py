@@ -52,6 +52,40 @@ def listEnabledServices(api, pp):
     logging.info(pp.pformat(profiles))
     return
 
+def copyPost(api, log, pp, toCopy, toWhere):
+    profiles = getProfiles(api, pp)
+    profCop = toCopy[0]
+    ii = int(toCopy[1])
+
+    j = 0
+    profWhe = ""
+    i = 0
+    while i < len(toWhere):
+        profWhe = profWhe + toWhere[i]
+        i = i + 1
+    
+    print(toCopy,"|",profCop, ii, profWhe)
+    for i in range(len(profiles)):
+        serviceName = profiles[i].formatted_service
+        print(serviceName)
+        log.info("ii: %s" %i)
+        updates = getattr(profiles[j].updates, 'pending')
+        update = updates[ii]
+        if ('media' in update): 
+            if ('expanded_link' in update.media):
+                link = update.media.expanded_link
+            else:
+                link = update.media.link
+        else:
+            link = ""
+        print(update.text, link)
+       
+        if (serviceName[0] in profCop):
+            for j in range(len(profiles)): 
+                serviceName = profiles[j].formatted_service 
+                if (serviceName[0] in profWhe):
+                    profiles[j].updates.new(urllib.parse.quote(update.text + " " + link).encode('utf-8'))
+
 def movePost(api, log, pp, profiles, toMove, toWhere):
     # Moving posts, we identify the profile by the first letter. We can use
     # several letters and if we put a '*' we'll move the posts in all the
@@ -297,84 +331,9 @@ def main():
 
 
     if profiles:
-       toPublish = input("Which one do you want to publish? ")
-       publishPost(api, pp, profiles, toPublish)
+       toPublish, toWhere = input("Which one do you want to publish? ").split(' ')
+       #publishPost(api, pp, profiles, toPublish)
 
 
 if __name__ == '__main__':
     main()
-    sys.exit()
-
-    serviceList=['twitter','facebook','linkedin']
-    profileList={}
-    
-    lenMax=0
-    for service in serviceList:
-        print("  %s"%service)
-        profileList[service] = Profiles(api=api).filter(service=service)[0]
-        if (len(profileList[service].updates.pending)>lenMax):
-            lenMax=len(profileList[service].updates.pending)
-        print("  ok")
-    
-    print("There are", lenMax, "in some buffer, we can put", 10-lenMax)
-    print("We have", i, "items to post")
-    
-    for j in range(10-lenMax,0,-1):
-    
-        if (i==0):
-            break
-        i = i - 1
-        if (selectedBlog.find('tumblr') > 0):
-            soup = BeautifulSoup(feed.entries[i].summary)
-            pageLink  = soup.findAll("a")
-            if pageLink:
-                theLink  = pageLink[0]["href"]
-                theTitle = pageLink[0].get_text()
-                if len(re.findall(r'\w+', theTitle)) == 1:
-                    print("Una palabra, probamos con el titulo")
-                    theTitle = feed.entries[i].title
-                if (theLink[:22] == "https://instagram.com/") and (theTitle[:17] == "A video posted by"):
-                    #exception for Instagram videos
-                    theTitle = feed.entries[i].title
-                if (theLink[:22] == "https://instagram.com/") and (theTitle.find("(en")>0):
-                    theTitle = theTitle[:theTitle.find("(en")-1]
-            else:
-                # Some entries do not have a proper link and the rss contains
-                # the video, image, ... in the description.
-                # In this case we use the title and the link of the entry.
-                theLink   = feed.entries[i].link
-                theTitle  = feed.entries[i].title.encode('utf-8')
-        elif (selectedBlog.find('wordpress') > 0):
-            soup = BeautifulSoup(feed.entries[i].content[0].value)
-            theTitle = feed.entries[i].title
-            theLink  = feed.entries[i].link    
-        else:
-            print("I don't know what to do!")
-    
-        #pageImage = soup.findAll("img")
-        theTitle = urllib.quote(theTitle.encode('utf-8'))
-    
-    
-        #print i, ": ", re.sub('\n+',' ', theTitle.encode('iso-8859-1','ignore')) + " " + theLink
-        #print len(re.sub('\n+',' ', theTitle.encode('iso-8859-1','ignore')) + " " + theLink)
-        
-        post=re.sub('\n+',' ', theTitle) +" "+theLink
-        # Sometimes there are newlines and unnecessary spaces
-        #print "post", post
-    
-        # There are problems with &
-        print("Publishing... "+ post)
-        for service in serviceList:
-            print("  %s service"%service,
-                profile=profileList[service])
-            try:
-                profile.updates.new(post)
-                print("  ok")
-                time.sleep(3)
-            except:
-                failFile = open(os.path.expanduser("~/"+PREFIX+identifier+".fail"),"w")
-                failFile.write(post)
-    
-    urlFile = open(os.path.expanduser("~/"+PREFIX+identifier+POSFIX),"w")
-    urlFile.write(feed.entries[i].link)
-    urlFile.close()
