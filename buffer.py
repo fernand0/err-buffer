@@ -94,4 +94,11 @@ this is not a translation for the whole API).
         yield(response)
         yield("END")
 
+    @botcmd(split_args_with=None)
+    def copy(self, mess, args):
+        """A command to copy some update"""
+        pp = pprint.PrettyPrinter(indent=4)
+        listBuffer.copyPost(self['api'], self.log, pp, self['profiles'], args[0], args[1])
+        yield "Copied"
+        yield end()
 

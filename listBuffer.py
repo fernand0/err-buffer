@@ -52,8 +52,9 @@ def listEnabledServices(api, pp):
     logging.info(pp.pformat(profiles))
     return
 
-def copyPost(api, log, pp, toCopy, toWhere):
-    profiles = getProfiles(api, pp)
+def copyPost(api, log, pp, profiles, toCopy, toWhere):
+    logging.info(pp.pformat(toCopy+' '+toWhere))
+
     profCop = toCopy[0]
     ii = int(toCopy[1])
 
@@ -64,7 +65,7 @@ def copyPost(api, log, pp, toCopy, toWhere):
         profWhe = profWhe + toWhere[i]
         i = i + 1
     
-    print(toCopy,"|",profCop, ii, profWhe)
+    log.info(toCopy,"|",profCop, ii, profWhe)
     for i in range(len(profiles)):
         serviceName = profiles[i].formatted_service
         print(serviceName)
