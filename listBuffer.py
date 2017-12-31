@@ -320,9 +320,10 @@ def main():
 
     profiles = listPosts(api, pp, "")
     print("Posts",type(profiles))
+    print("Posts",profiles)
+    sys.exit()
     posts = listPendingPosts(api, pp, "")
     print(pp.pformat(profiles))
-    sys.exit()
     print("Pending",type(profiles))
     print(pp.pformat(profiles))
     profiles = listSentPosts(api, pp, "")
