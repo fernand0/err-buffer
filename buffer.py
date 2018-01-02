@@ -47,8 +47,8 @@ this is not a translation for the whole API).
     def publish(self, mess, args):
         """A command to publish some update"""
         pp = pprint.PrettyPrinter(indent=4)
-        listBuffer.publishPost(self['api'], pp, self['profiles'], args)
-        yield "Published"
+        yield(listBuffer.publishPost(self['api'], pp, self['profiles'], args))
+        #yield "Published"
         yield end()
 
 
