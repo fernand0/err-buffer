@@ -71,9 +71,13 @@ this is not a translation for the whole API).
         for tt in types:
             for socialNetwork in updates.keys():
                 self.log.debug("Updates %s End" % updates[socialNetwork][tt])
+                theUpdates = []
+                for update in updates[socialNetwork][tt]:
+                    theUpdatetxt = update[0].replace('_','\_')
+                    theUpdates.append((theUpdatetxt, update[1], update[2])) 
                 response = tenv().get_template('buffer.md').render({'type': tt,
                         'nameSocialNetwork': socialNetwork, 
-                        'updates': updates[socialNetwork][tt]})
+                        'updates': theUpdates})
                 compResponse = compResponse + response
 
         return(compResponse)

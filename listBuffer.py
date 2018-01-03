@@ -133,7 +133,7 @@ def publishPost(api, pp, profiles, toPublish):
             logging.debug("Profile: %d Publishing item: %d" % (i,j)) 
             update = Update(api=api, id=profiles[i].updates.pending[j].id) 
             logging.debug("Publishing update %s" % pp.pformat(update))
-            upd = update.publish():
+            upd = update.publish()
             logging.debug("Published update %s" % pp.pformat(upd))
             logging.debug("Published %s!" % update['text_formatted']) 
 
