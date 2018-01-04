@@ -47,7 +47,8 @@ this is not a translation for the whole API).
     def publish(self, mess, args):
         """A command to publish some update"""
         pp = pprint.PrettyPrinter(indent=4)
-        yield(listBuffer.publishPost(self['api'], pp, self['profiles'], args))
+        update = listBuffer.publishPost(self['api'], pp, self['profiles'], args)
+        yield "Published %s!" % update['text_formatted']
         #yield "Published"
         yield end()
 
@@ -87,6 +88,7 @@ this is not a translation for the whole API).
         pp = pprint.PrettyPrinter(indent=4)
         posts = listBuffer.listPosts(self['api'], pp, "")
         response = self.sendReply(mess, args, posts, ['sent','pending'])
+        self.log.debug("Reponse %s End" % reponse)
         yield(response)
         yield("END")
 
