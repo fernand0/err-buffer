@@ -88,7 +88,7 @@ this is not a translation for the whole API).
         pp = pprint.PrettyPrinter(indent=4)
         posts = listBuffer.listPosts(self['api'], pp, "")
         response = self.sendReply(mess, args, posts, ['sent','pending'])
-        self.log.debug("Reponse %s End" % reponse)
+        self.log.debug("Reponse %s End" % response)
         yield(response)
         yield("END")
 

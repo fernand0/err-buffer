@@ -136,7 +136,7 @@ def publishPost(api, pp, profiles, toPublish):
             upd = update.publish()
             logging.debug("Published update %s" % pp.pformat(upd))
             logging.debug("Published %s!" % update['text_formatted']) 
-            if upd['sucess']:
+            if upd['success']:
                 return(update)
 
 
