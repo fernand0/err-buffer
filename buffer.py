@@ -90,7 +90,7 @@ this is not a translation for the whole API).
         response = self.sendReply(mess, args, posts, ['sent','pending'])
         self.log.debug("Reponse %s End" % response)
         yield(response)
-        yield("END")
+        yield end()
 
     @botcmd(split_args_with=None)
     def sent(self, mess, args):
@@ -99,7 +99,7 @@ this is not a translation for the whole API).
         response = self.sendReply(mess, args, posts, ['pending', 'sent'])
         self.log.debug(response)
         yield(response)
-        yield("END")
+        yield end()
 
     @botcmd(split_args_with=None)
     def copy(self, mess, args):
