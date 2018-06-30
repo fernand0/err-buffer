@@ -39,7 +39,10 @@ this is not a translation for the whole API).
         self['api'] = API(client_id=clientId,
                           client_secret=clientSecret,
                           access_token=accessToken)
-
+        fileName = os.path.expanduser('~/')+ '.rssProgram'
+        if os.path.isfile(fileName): 
+            with open(fileName,'r') as f: 
+                self['files'] = f.read().split()
 
     # Passing split_args_with=None will cause arguments to be split on any kind
     # of whitespace, just like Python's split() does
@@ -86,7 +89,13 @@ this is not a translation for the whole API).
     @botcmd(split_args_with=None, template="buffer")
     def list(self, mess, args):
         pp = pprint.PrettyPrinter(indent=4)
-        posts = listBuffer.listPosts(self['api'], pp, "")
+        if self['api']: 
+            posts = listBuffer.listPosts(self['api'], pp, "")
+        if self['files']: 
+            postsP = listBuffer.listPostsProgram(self['files'], pp, "")
+            posts.update(postsP)
+
+        self.log.debug("Posts %s End" % posts)
         response = self.sendReply(mess, args, posts, ['sent','pending'])
         self.log.debug("Reponse %s End" % response)
         yield(response)

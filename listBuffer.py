@@ -16,8 +16,27 @@
 # - The third one contains the last published URL [~/.rssBuffer.last]
 # It contains just an URL which is the last one published. 
 # At this moment it only considers one blog
+# 
+# We are adding now the ability to read a local queue. It is stored in the
+# following way:
+#
+# Queue files name is composed of a dot, followed by the path of the URL,
+# followed by the name of the social network and the name of the user for
+# posting there.
+# The filename ends in .queue
+# For example:
+#    .my.blog.com_twitter_myUser.queue
+# This file stores a list of pending posts stored as an array of posts as
+# returned by moduleBlog
+# (https://github.com/fernand0/scripts/blob/master/moduleBlog.py)
+#  obtainPostData method.
+# For the moment, it will read the filenames from
+#  .rssProgram
+# One file at each line
+
 
 import configparser, os
+import pickle
 from bs4 import BeautifulSoup
 import logging
 
@@ -172,6 +191,34 @@ def getProfiles(api, pp, service=""):
 
     return (profiles)
 
+def listPostsProgram(files, pp, service=""):    
+    outputData = {}
+    i = 0
+    for fileN in files: 
+        firstPos = fileN.find('_')
+        secondPos = fileN.find('_', firstPos+1)
+        logging.info("first %d %d" % (firstPos, secondPos))
+
+        serviceName = fileN[firstPos+1:secondPos]
+        outputData[serviceName] = {'sent': [], 'pending': []}
+        logging.debug("Service %d %s" % (i,serviceName))
+        logging.info("Service %s" % serviceName)
+        fileName= os.path.expanduser('~/')+fileN
+        print("filename", fileName)
+        with open(os.path.expanduser('~/')+'/'+fileN,'rb') as f: 
+            try: 
+                listP = pickle.load(f) 
+            except: 
+                listP = [] 
+            print(listP)
+            if len(listP) > 0: 
+                logging.debug("Waiting in queue: ", fileN) 
+                for link in listP: 
+                    print("- %s"% link[0])
+                    outputData[serviceName]['pending'].append((link[0], link[1], link[3]))
+        i = i + 1
+        return(outputData)
+
 def listPosts(api, pp, service=""):
     profiles = getProfiles(api, pp, service)
 
@@ -324,6 +371,10 @@ def main():
     logging.debug(api.info.services.keys())
 
     profiles = listPosts(api, pp, "")
+    print("Posts",type(profiles))
+    print("Posts",profiles)
+    profiles = listPostsProgram(['.fernand0-errbot.slack.com_facebook_me.queue','.fernand0-errbot.slack.com_twitter_fernand0.queue']
+, pp, "")
     print("Posts",type(profiles))
     print("Posts",profiles)
     sys.exit()
