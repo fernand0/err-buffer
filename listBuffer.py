@@ -195,11 +195,13 @@ def listPostsProgram(files, pp, service=""):
     outputData = {}
     i = 0
     for fileN in files: 
+        print(fileN)
         firstPos = fileN.find('_')
         secondPos = fileN.find('_', firstPos+1)
         logging.info("first %d %d" % (firstPos, secondPos))
 
         serviceName = fileN[firstPos+1:secondPos]
+        serviceName = serviceName[0].upper() + serviceName[1:]
         outputData[serviceName] = {'sent': [], 'pending': []}
         logging.debug("Service %d %s" % (i,serviceName))
         logging.info("Service %s" % serviceName)
@@ -215,13 +217,18 @@ def listPostsProgram(files, pp, service=""):
                 logging.debug("Waiting in queue: ", fileN) 
                 for link in listP: 
                     print("- %s"% link[0])
-                    outputData[serviceName]['pending'].append((link[0], link[1], link[3]))
+                    if link[0]: 
+                        outputData[serviceName]['pending'].append((link[0], link[1], link[3]))
+                    else:
+                        outputData[serviceName]['pending'].append((link[1], link[1], link[3]))
+            else:
+                        outputData[serviceName]['pending'].append(('Empty', 'Empty', 'Empty'))
         i = i + 1
-        return(outputData)
+    return(outputData)
 
 def listPosts(api, pp, service=""):
-    profiles = getProfiles(api, pp, service)
 
+    profiles = getProfiles(api, pp, service)
     outputData = {}
 
     for i in range(len(profiles)):
@@ -249,8 +256,10 @@ def listPosts(api, pp, service=""):
                         outputData[serviceName][method].append((update.text, link, toShow))
                     else:
                         outputData[serviceName][method].append((update.text, '',  toShow))
+            else:
+                        outputData[serviceName][method].append(('Empty', 'Empty', 'Empty'))
 
-    return(outputData)
+    return(outputData, profiles)
 
 
 
@@ -351,7 +360,10 @@ def listPendingPosts(api, pp, service=""):
 def main():
     config = configparser.ConfigParser()
     config.read([os.path.expanduser('~/.rssBuffer')])
-    
+    pp = pprint.PrettyPrinter(indent=4)
+    postsP = listPostsProgram(['.fernand0-errbot.slack.com_facebook_me.queue','.fernand0-errbot.slack.com_twitter_fernand0.queue']
+, pp, "")
+
     clientId = config.get("appKeys", "client_id")
     clientSecret = config.get("appKeys", "client_secret")
     redirectUrl = config.get("appKeys", "redirect_uri")
@@ -370,13 +382,13 @@ def main():
     logging.debug(pp.pformat(api.info))
     logging.debug(api.info.services.keys())
 
-    profiles = listPosts(api, pp, "")
-    print("Posts",type(profiles))
-    print("Posts",profiles)
-    profiles = listPostsProgram(['.fernand0-errbot.slack.com_facebook_me.queue','.fernand0-errbot.slack.com_twitter_fernand0.queue']
-, pp, "")
-    print("Posts",type(profiles))
-    print("Posts",profiles)
+    posts, profiles = listPosts(api, pp, "")
+    print("-> Posts",posts)
+    print("-> PostsP",postsP)
+    posts.update(postsP)
+    print("-> Posts",posts)
+    #print("Posts",profiles)
+    print("Keys",posts.keys())
     sys.exit()
     posts = listPendingPosts(api, pp, "")
     print(pp.pformat(profiles))

@@ -1,4 +1,4 @@
-{% if type == 'pending' %} {% if updates %} *{{nameSocialNetwork}}* ({{updates[0][2]}})
+{% if type == 'pending' %} {% if updates %} *{{nameSocialNetwork}}* ({{socialTime}})
 {% for text, link, stats in updates %} {{ loop.index0 }}) {{ text | truncate(30, True)}} 
 {% endfor %} {% else %}
 *{{nameSocialNetwork}}*

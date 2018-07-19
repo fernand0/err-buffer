@@ -39,6 +39,7 @@ this is not a translation for the whole API).
         self['api'] = API(client_id=clientId,
                           client_secret=clientSecret,
                           access_token=accessToken)
+        self['files'] = ['.fernand0-errbot.slack.com_facebook_me.queue','.fernand0-errbot.slack.com_twitter_fernand0.queue']
         fileName = os.path.expanduser('~/')+ '.rssProgram'
         if os.path.isfile(fileName): 
             with open(fileName,'r') as f: 
@@ -79,6 +80,13 @@ this is not a translation for the whole API).
                 for update in updates[socialNetwork][tt]:
                     theUpdatetxt = update[0].replace('_','\_')
                     theUpdates.append((theUpdatetxt, update[1], update[2])) 
+                if updates[socialNetwork][tt]: 
+                    if theUpdates[0][0] != 'Empty': 
+                        socialTime = theUpdates[0][2] 
+                    else: 
+                        socialTime = ""
+                else:
+                    socialTime = ""
                 response = tenv().get_template('buffer.md').render({'type': tt,
                         'nameSocialNetwork': socialNetwork, 
                         'updates': theUpdates})
@@ -90,7 +98,14 @@ this is not a translation for the whole API).
     def list(self, mess, args):
         pp = pprint.PrettyPrinter(indent=4)
         if self['api']: 
-            posts = listBuffer.listPosts(self['api'], pp, "")
+            (posts, profiles) = listBuffer.listPosts(self['api'], pp, "")
+            
+            if profiles: 
+                # This got lost sometime in the past. It is needed to publish
+                # pending posts in buffer. We should consider adding something
+                # similar in '.queue' files.
+                self['profiles'] = profiles
+
         if self['files']: 
             postsP = listBuffer.listPostsProgram(self['files'], pp, "")
             posts.update(postsP)
