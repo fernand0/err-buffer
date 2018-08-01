@@ -1,6 +1,6 @@
 from errbot import BotPlugin, botcmd, webhook, backends
 from errbot.templating import tenv
-import listBuffer
+import moduleBuffer
 import configparser
 import os
 import pprint
@@ -39,7 +39,7 @@ this is not a translation for the whole API).
         self['api'] = API(client_id=clientId,
                           client_secret=clientSecret,
                           access_token=accessToken)
-        self['files'] = ['.fernand0-errbot.slack.com_facebook_me.queue','.fernand0-errbot.slack.com_twitter_fernand0.queue']
+        #self['files'] = ['.fernand0-errbot.slack.com_facebook_me.queue','.fernand0-errbot.slack.com_twitter_fernand0.queue']
         fileName = os.path.expanduser('~/')+ '.rssProgram'
         if os.path.isfile(fileName): 
             with open(fileName,'r') as f: 
@@ -51,7 +51,7 @@ this is not a translation for the whole API).
     def publish(self, mess, args):
         """A command to publish some update"""
         pp = pprint.PrettyPrinter(indent=4)
-        update = listBuffer.publishPost(self['api'], pp, self['profiles'], args)
+        update = moduleBuffer.publishPost(self['api'], pp, self['profiles'], args)
         yield "Published %s!" % update['text_formatted']
         #yield "Published"
         yield end()
@@ -60,14 +60,14 @@ this is not a translation for the whole API).
     @botcmd(split_args_with=None)
     def move(self, mess, args):
         pp = pprint.PrettyPrinter(indent=4)
-        listBuffer.movePost(self['api'], self.log, pp, self['profiles'], args[0], args[1])
+        moduleBuffer.movePost(self['api'], self.log, pp, self['profiles'], args[0], args[1])
         yield end()
 
     @botcmd
     def delete(self, mess, args):
         """A command to delete some update"""
         pp = pprint.PrettyPrinter(indent=4)
-        listBuffer.deletePost(self['api'], pp, self['profiles'], args)
+        moduleBuffer.deletePost(self['api'], pp, self['profiles'], args)
         yield "Deleted"
         yield end()
 
@@ -98,7 +98,7 @@ this is not a translation for the whole API).
     def list(self, mess, args):
         pp = pprint.PrettyPrinter(indent=4)
         if self['api']: 
-            (posts, profiles) = listBuffer.listPosts(self['api'], pp, "")
+            (posts, profiles) = moduleBuffer.listPosts(self['api'], pp, "")
             
             if profiles: 
                 # This got lost sometime in the past. It is needed to publish
@@ -107,7 +107,7 @@ this is not a translation for the whole API).
                 self['profiles'] = profiles
 
         if self['files']: 
-            postsP = listBuffer.listPostsProgram(self['files'], pp, "")
+            postsP = moduleBuffer.listPostsProgram(self['files'], pp, "")
             posts.update(postsP)
 
         self.log.debug("Posts %s End" % posts)
@@ -119,7 +119,7 @@ this is not a translation for the whole API).
     @botcmd(split_args_with=None)
     def sent(self, mess, args):
         pp = pprint.PrettyPrinter(indent=4)
-        posts = listBuffer.listPosts(self['api'], pp, "")
+        posts = moduleBuffer.listPosts(self['api'], pp, "")
         response = self.sendReply(mess, args, posts, ['pending', 'sent'])
         self.log.debug(response)
         yield(response)
@@ -129,7 +129,7 @@ this is not a translation for the whole API).
     def copy(self, mess, args):
         """A command to copy some update"""
         pp = pprint.PrettyPrinter(indent=4)
-        listBuffer.copyPost(self['api'], self.log, pp, self['profiles'], args[0], args[1])
+        moduleBuffer.copyPost(self['api'], self.log, pp, self['profiles'], args[0], args[1])
         yield "Copied"
         yield end()
 

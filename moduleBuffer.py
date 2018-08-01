@@ -164,8 +164,14 @@ def deletePost(api, pp, profiles, toPublish):
     i = 0
     profMov = ""
     while toPublish[i].isalpha():
+        print(i)
         profMov = profMov + toPublish[i]
         i = i + 1
+
+    postsP = listPostsProgram(['.fernand0-errbot.slack.com_facebook_me.queue','.fernand0-errbot.slack.com_twitter_fernand0.queue'], pp, "")
+
+    print(postsP)
+    sys.exit()
 
     j = int(toPublish[-1])    
     for i in range(len(profiles)):
@@ -361,6 +367,7 @@ def main():
     config = configparser.ConfigParser()
     config.read([os.path.expanduser('~/.rssBuffer')])
     pp = pprint.PrettyPrinter(indent=4)
+    deletePost(None, pp, "", "T2")
     postsP = listPostsProgram(['.fernand0-errbot.slack.com_facebook_me.queue','.fernand0-errbot.slack.com_twitter_fernand0.queue']
 , pp, "")
 
