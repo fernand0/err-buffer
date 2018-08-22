@@ -66,10 +66,66 @@ importlib.reload(sys)
 
 #[{'_Profile__schedules': None, u'formatted_service': u'Twitter', u'cover_photo': u'https://pbs.twimg.com/profile_banners/62983/1355263933', u'verb': u'tweet', u'formatted_username': u'@fernand0', u'shortener': {u'domain': u'buff.ly'}, u'timezone': u'Europe/Madrid', u'counts': {u'daily_suggestions': 25, u'pending': 0, u'sent': 10862, u'drafts': 0}, u'service_username': u'fernand0', u'id': u'4ed35f97512f7ebb5d00000b', u'disconnected': False, u'statistics': {u'followers': 5736}, u'user_id': u'4ed35f8e512f7e325e000001', u'avatar_https': u'https://pbs.twimg.com/profile_images/487165212391256066/DFRGycds_normal.jpeg', u'service': u'twitter', u'default': True, u'schedules': [{u'days': [u'mon', u'tue', u'wed', u'thu', u'fri', u'sat', u'sun'], u'times': [u'09:10', u'09:45', u'10:09', u'10:34', u'11:10', u'11:45', u'12:07', u'13:29', u'15:15', u'16:07', u'16:42', u'17:07', u'17:40', u'18:10', u'18:33', u'19:05', u'19:22', u'20:15', u'21:30', u'22:45', u'23:10', u'23:25', u'23:45']}], u'reports_logo': None, 'api': <buffpy.api.API object at 0x7f4f1a8508d0>, u'avatar': u'http://pbs.twimg.com/profile_images/487165212391256066/DFRGycds_normal.jpeg', u'service_type': u'profile', u'service_id': u'62983', u'_id': u'4ed35f97512f7ebb5d00000b', u'utm_tracking': u'enabled', u'disabled_features': []}, {'_Profile__schedules': None, u'formatted_service': u'LinkedIn', u'cover_photo': u'https://d3ijcis4e2ziok.cloudfront.net/default-cover-photos/blurry-blue-background-iii_facebook_timeline_cover.jpg', u'verb': u'post', u'timezone_city': u'Madrid - Spain', u'formatted_username': u'Fernando Tricas', u'shortener': {u'domain': u'buff.ly'}, u'timezone': u'Europe/Madrid', u'counts': {u'daily_suggestions': 25, u'pending': 0, u'sent': 4827, u'drafts': 0}, u'service_username': u'Fernando Tricas', u'id': u'4f4606ec512f7e0766000003', u'disconnected': False, u'statistics': {u'connections': 500}, u'user_id': u'4ed35f8e512f7e325e000001', u'avatar_https': u'https://media.licdn.com/mpr/mprx/0_zVbmG3KX1MsA8cT9vyLgGCt5Ay0Aucl9BjPAGC1ZaMIhPPQnMpBCuGbn0-xffrKVqJ5KDLD_G-D1', u'service': u'linkedin', u'default': True, u'schedules': [{u'days': [u'mon', u'tue', u'wed', u'thu', u'fri', u'sat', u'sun'], u'times': [u'01:46', u'05:52', u'07:13', u'08:54', u'09:27', u'10:13', u'10:49', u'11:58', u'12:03', u'12:03', u'12:41', u'13:05', u'15:23', u'16:35', u'16:57', u'17:23', u'18:02', u'18:37', u'19:58', u'20:17', u'21:13', u'22:00', u'23:05', u'23:07', u'23:49']}], u'reports_logo': None, 'api': <buffpy.api.API object at 0x7f4f1a8508d0>, u'avatar': u'https://media.licdn.com/mpr/mprx/0_zVbmG3KX1MsA8cT9vyLgGCt5Ay0Aucl9BjPAGC1ZaMIhPPQnMpBCuGbn0-xffrKVqJ5KDLD_G-D1', u'service_type': u'profile', u'service_id': u'x4Eu0cqIhj', u'_id': u'4f4606ec512f7e0766000003', u'utm_tracking': u'enabled', u'disabled_features': []}, {'_Profile__schedules': None, u'formatted_service': u'Facebook', u'cover_photo': u'https://scontent.xx.fbcdn.net/hphotos-xfp1/t31.0-8/s720x720/904264_10151421662663264_1461180243_o.jpg', u'verb': u'post', u'timezone_city': u'Zaragoza - Spain', u'formatted_username': u'Fernando Tricas', u'shortener': {u'domain': u'buff.ly'}, u'timezone': u'Europe/Madrid', u'counts': {u'pending': 0, u'sent': 5971, u'drafts': 0}, u'service_username': u'Fernando Tricas', u'id': u'5241b3f0351ff0a83500001b', u'disconnected': False, u'user_id': u'4ed35f8e512f7e325e000001', u'avatar_https': u'https://scontent.xx.fbcdn.net/hprofile-xpf1/v/t1.0-1/c0.0.50.50/p50x50/10500300_10152337396498264_6509296623992251600_n.jpg?oh=1870d57d20aa70388bed86f1383051f2&oe=578BF216', u'service': u'facebook', u'default': True, u'schedules': [{u'days': [u'mon', u'tue', u'wed', u'thu', u'fri', u'sat', u'sun'], u'times': [u'00:58', u'07:53', u'09:06', u'09:44', u'10:03', u'10:30', u'11:07', u'11:37', u'12:16', u'13:04', u'13:40', u'16:02', u'16:32', u'16:51', u'17:18', u'17:38', u'18:03', u'18:44', u'19:14', u'23:02', u'23:41']}], u'reports_logo': None, 'api': <buffpy.api.API object at 0x7f4f1a8508d0>, u'avatar': u'https://scontent.xx.fbcdn.net/hprofile-xpf1/v/t1.0-1/c0.0.50.50/p50x50/10500300_10152337396498264_6509296623992251600_n.jpg?oh=1870d57d20aa70388bed86f1383051f2&oe=578BF216', u'service_type': u'profile', u'service_id': u'503403263', u'_id': u'5241b3f0351ff0a83500001b', u'utm_tracking': u'enabled', u'disabled_features': []}, {'_Profile__schedules': None, u'formatted_service': u'Google+ Page', u'cover_photo': u'https://d3ijcis4e2ziok.cloudfront.net/default-cover-photos/blurry-blue-background-iii_facebook_timeline_cover.jpg', u'verb': u'post', u'formatted_username': u'Reflexiones e Irreflexiones', u'shortener': {u'domain': u'buff.ly'}, u'timezone': u'Europe/London', u'counts': {u'daily_suggestions': 25, u'pending': 0, u'sent': 0, u'drafts': 0}, u'service_username': u'Reflexiones e Irreflexiones', u'id': u'521f6df14ddfcbc91600004a', u'disconnected': False, u'user_id': u'4ed35f8e512f7e325e000001', u'avatar_https': u'https://lh6.googleusercontent.com/-yAIEsEEQ220/AAAAAAAAAAI/AAAAAAAAAC8/Q8K1Li_kZSY/photo.jpg?sz=50', u'service': u'google', u'default': False, u'schedules': [{u'days': [u'mon', u'tue', u'wed', u'thu', u'fri', u'sat', u'sun'], u'times': [u'10:50', u'17:48']}], u'reports_logo': None, 'api': <buffpy.api.API object at 0x7f4f1a8508d0>, u'avatar': u'https://lh6.googleusercontent.com/-yAIEsEEQ220/AAAAAAAAAAI/AAAAAAAAAC8/Q8K1Li_kZSY/photo.jpg?sz=50', u'service_type': u'page', u'service_id': u'117187804556943229940', u'_id': u'521f6df14ddfcbc91600004a', u'utm_tracking': u'enabled', u'disabled_features': []}]
 
-def listEnabledServices(api, pp):
-    profiles = Profiles(api=api).all()
-    logging.info(pp.pformat(profiles))
-    return
+def getProfiles(api, pp, service=""):
+    logging.info("Checking services...")
+    
+    if (service == ""):
+        profiles = Profiles(api=api).all()
+    else:
+        profiles = Profiles(api=api).filter(service=service)
+        
+    logging.debug("->%s" % pp.pformat(profiles))
+    numProfiles = len(profiles)
+    logging.debug("Num. Profiles %d" % numProfiles)
+    logging.debug("Profiles %s" % pp.pformat(profiles))
+
+    return (profiles)
+
+#def listEnabledServices(api, pp):
+#    profiles = Profiles(api=api).all()
+#    logging.info(pp.pformat(profiles))
+#    return
+
+def listPosts(api, pp, service=""):
+
+    profiles = getProfiles(api, pp, service)
+    outputData = {}
+
+    for i in range(len(profiles)):
+        serviceName = profiles[i].formatted_service
+        outputData[serviceName] = {'sent': [], 'pending': []}
+        logging.debug("Service %d %s" % (i,serviceName))
+        logging.info("Service %s" % serviceName)
+        for method in ['sent', 'pending']:
+            if (profiles[i].counts[method] > 0):
+                logging.debug("There are: %d" % profiles[i].counts[method])
+                logging.debug("Updates %s:" % method)
+                logging.debug(pp.pformat(getattr(profiles[i].updates, method)))
+                updates = getattr(profiles[i].updates, method)
+                for j in range(min(10,len(updates))):
+                    update = updates[j]
+                    if method == 'pending':
+                        toShow = update.due_time
+                    else:
+                        toShow = update.statistics.clicks
+                    if ('media' in update): 
+                        if ('expanded_link' in update.media):
+                            link = update.media.expanded_link
+                        else:
+                            link = update.media.link
+                        if update.text: 
+                            outputData[serviceName][method].append((update.text, link, toShow))
+                        else:
+                            outputData[serviceName][method].append((link, link, toShow))
+                    else:
+                        if update.text: 
+                            outputData[serviceName][method].append((update.text, '',  toShow))
+                        else:
+                            outputData[serviceName][method].append((link, 'Empty',  toShow))
+            else:
+                        outputData[serviceName][method].append(('Empty', 'Empty', 'Empty'))
+
+    return(outputData, profiles)
 
 def copyPost(api, log, pp, profiles, toCopy, toWhere):
     logging.info(pp.pformat(toCopy+' '+toWhere))
@@ -139,17 +195,12 @@ def movePost(api, log, pp, profiles, toMove, toWhere):
 
 def publishPost(api, pp, profiles, toPublish):
     logging.info("To publish %s" % pp.pformat(toPublish))
-    i = 0
-    profMov = ""    
-    while toPublish[i].isalpha():
-        profMov = profMov + toPublish[i]
-        i = i + 1
-
-    j = int(toPublish[-1])
+    profMov = toPublish[0]
+    j = toPublish[1]
     for i in range(len(profiles)): 
         serviceName = profiles[i].formatted_service 
         if (serviceName[0] in profMov) or toPublish[0]=='*': 
-            logging.debug("Profile: %d Publishing item: %d" % (i,j)) 
+            logging.debug("%d %d"  % (i,j))
             update = Update(api=api, id=profiles[i].updates.pending[j].id) 
             logging.debug("Publishing update %s" % pp.pformat(update))
             upd = update.publish()
@@ -157,23 +208,15 @@ def publishPost(api, pp, profiles, toPublish):
             logging.debug("Published %s!" % update['text_formatted']) 
             if upd['success']:
                 return(update)
+    return("")
 
 
 def deletePost(api, pp, profiles, toPublish):
+    logging.info("To delete %s" % pp.pformat(toPublish))
     logging.info(pp.pformat(toPublish))
-    i = 0
-    profMov = ""
-    while toPublish[i].isalpha():
-        print(i)
-        profMov = profMov + toPublish[i]
-        i = i + 1
+    profMov = toPublish[0]
+    j = toPublish[1]
 
-    postsP = listPostsProgram(['.fernand0-errbot.slack.com_facebook_me.queue','.fernand0-errbot.slack.com_twitter_fernand0.queue'], pp, "")
-
-    print(postsP)
-    sys.exit()
-
-    j = int(toPublish[-1])    
     for i in range(len(profiles)):
         serviceName = profiles[i].formatted_service
         if (serviceName[0] in profMov) or toPublish[0]=='*':
@@ -182,92 +225,40 @@ def deletePost(api, pp, profiles, toPublish):
             logging.debug(pp.pformat(update))
             update.delete()
 
-def getProfiles(api, pp, service=""):
-    logging.info("Checking services...")
-    
-    if (service == ""):
-        profiles = Profiles(api=api).all()
-    else:
-        profiles = Profiles(api=api).filter(service=service)
-        
-    logging.debug("->%s" % pp.pformat(profiles))
-    numProfiles = len(profiles)
-    logging.debug("Num. Profiles %d" % numProfiles)
-    logging.debug("Profiles %s" % pp.pformat(profiles))
-
-    return (profiles)
-
-def listPostsProgram(files, pp, service=""):    
-    outputData = {}
-    i = 0
-    for fileN in files: 
-        print(fileN)
-        firstPos = fileN.find('_')
-        secondPos = fileN.find('_', firstPos+1)
-        logging.info("first %d %d" % (firstPos, secondPos))
-
-        serviceName = fileN[firstPos+1:secondPos]
-        serviceName = serviceName[0].upper() + serviceName[1:]
-        outputData[serviceName] = {'sent': [], 'pending': []}
-        logging.debug("Service %d %s" % (i,serviceName))
-        logging.info("Service %s" % serviceName)
-        fileName= os.path.expanduser('~/')+fileN
-        print("filename", fileName)
-        with open(os.path.expanduser('~/')+'/'+fileN,'rb') as f: 
-            try: 
-                listP = pickle.load(f) 
-            except: 
-                listP = [] 
-            print(listP)
-            if len(listP) > 0: 
-                logging.debug("Waiting in queue: ", fileN) 
-                for link in listP: 
-                    print("- %s"% link[0])
-                    if link[0]: 
-                        outputData[serviceName]['pending'].append((link[0], link[1], link[3]))
-                    else:
-                        outputData[serviceName]['pending'].append((link[1], link[1], link[3]))
-            else:
-                        outputData[serviceName]['pending'].append(('Empty', 'Empty', 'Empty'))
-        i = i + 1
-    return(outputData)
-
-def listPosts(api, pp, service=""):
-
-    profiles = getProfiles(api, pp, service)
-    outputData = {}
-
-    for i in range(len(profiles)):
-        serviceName = profiles[i].formatted_service
-        outputData[serviceName] = {'sent': [], 'pending': []}
-        logging.debug("Service %d %s" % (i,serviceName))
-        logging.info("Service %s" % serviceName)
-        for method in ['sent', 'pending']:
-            if (profiles[i].counts[method] > 0):
-                logging.debug("There are: %d" % profiles[i].counts[method])
-                logging.debug("Updates %s:" % method)
-                logging.debug(pp.pformat(getattr(profiles[i].updates, method)))
-                updates = getattr(profiles[i].updates, method)
-                for j in range(min(10,len(updates))):
-                    update = updates[j]
-                    if method == 'pending':
-                        toShow = update.due_time
-                    else:
-                        toShow = update.statistics.clicks
-                    if ('media' in update): 
-                        if ('expanded_link' in update.media):
-                            link = update.media.expanded_link
-                        else:
-                            link = update.media.link
-                        outputData[serviceName][method].append((update.text, link, toShow))
-                    else:
-                        outputData[serviceName][method].append((update.text, '',  toShow))
-            else:
-                        outputData[serviceName][method].append(('Empty', 'Empty', 'Empty'))
-
-    return(outputData, profiles)
-
-
+#def listPostsProgram(files, pp, service=""):    
+#    outputData = {}
+#    i = 0
+#    for fileN in files: 
+#        print(fileN)
+#        firstPos = fileN.find('_')
+#        secondPos = fileN.find('_', firstPos+1)
+#        logging.info("first %d %d" % (firstPos, secondPos))
+#
+#        serviceName = fileN[firstPos+1:secondPos]
+#        serviceName = serviceName[0].upper() + serviceName[1:]
+#        outputData[serviceName] = {'sent': [], 'pending': []}
+#        logging.debug("Service %d %s" % (i,serviceName))
+#        logging.info("Service %s" % serviceName)
+#        fileName= os.path.expanduser('~/')+fileN
+#        print("filename", fileName)
+#        with open(os.path.expanduser('~/')+'/'+fileN,'rb') as f: 
+#            try: 
+#                listP = pickle.load(f) 
+#            except: 
+#                listP = [] 
+#            print(listP)
+#            if len(listP) > 0: 
+#                logging.debug("Waiting in queue: ", fileN) 
+#                for link in listP: 
+#                    print("- %s"% link[0])
+#                    if link[0]: 
+#                        outputData[serviceName]['pending'].append((link[0], link[1], link[3]))
+#                    else:
+#                        outputData[serviceName]['pending'].append((link[1], link[1], link[3]))
+#            else:
+#                        outputData[serviceName]['pending'].append(('Empty', 'Empty', 'Empty'))
+#        i = i + 1
+#    return(outputData)
 
 def listSentPosts(api, pp, service=""):
     profiles = getProfiles(api, pp, service)
@@ -367,9 +358,6 @@ def main():
     config = configparser.ConfigParser()
     config.read([os.path.expanduser('~/.rssBuffer')])
     pp = pprint.PrettyPrinter(indent=4)
-    deletePost(None, pp, "", "T2")
-    postsP = listPostsProgram(['.fernand0-errbot.slack.com_facebook_me.queue','.fernand0-errbot.slack.com_twitter_fernand0.queue']
-, pp, "")
 
     clientId = config.get("appKeys", "client_id")
     clientSecret = config.get("appKeys", "client_secret")
@@ -389,8 +377,14 @@ def main():
     logging.debug(pp.pformat(api.info))
     logging.debug(api.info.services.keys())
 
+    profiles = getProfiles(api, pp, '')
+    print("profiles")
+    print(profiles)
+
     posts, profiles = listPosts(api, pp, "")
     print("-> Posts",posts)
+
+    sys.exit()
     print("-> PostsP",postsP)
     posts.update(postsP)
     print("-> Posts",posts)
