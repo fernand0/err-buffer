@@ -214,13 +214,14 @@ def publishPost(api, pp, profiles, toPublish):
 def deletePost(api, pp, profiles, toPublish):
     logging.info("To delete %s" % pp.pformat(toPublish))
     logging.info(pp.pformat(toPublish))
+
     profMov = toPublish[0]
     j = toPublish[1]
 
     for i in range(len(profiles)):
         serviceName = profiles[i].formatted_service
         if (serviceName[0] in profMov) or toPublish[0]=='*':
-            logging.debug("%d %d"  % (i,j))
+            logging.debug("%s %d"  % (i,j))
             update = Update(api=api, id=profiles[i].updates.pending[j].id)
             logging.debug(pp.pformat(update))
             update.delete()
@@ -356,7 +357,7 @@ def listPendingPosts(api, pp, service=""):
 
 def main():
     config = configparser.ConfigParser()
-    config.read([os.path.expanduser('~/.rssBuffer')])
+    config.read([os.path.expanduser('~/.mySocial/config/.rssBuffer')])
     pp = pprint.PrettyPrinter(indent=4)
 
     clientId = config.get("appKeys", "client_id")

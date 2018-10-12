@@ -11,6 +11,7 @@ from buffpy.managers.profiles import Profiles
 from buffpy.managers.updates import Updates
 from buffpy.api import API
 
+
 def end(msg=""):
     return("END"+msg)
 
@@ -28,7 +29,7 @@ this is not a translation for the whole API).
         super(Buffer, self).activate()
 
         config = configparser.ConfigParser()
-        config.read([os.path.expanduser('~/.rssBuffer')])
+        config.read([os.path.expanduser('~/.mySocial/config/.rssBuffer')])
         # We are not configuring the bot via commands so we do not use the
         # provided mechanism but some config files.
     
@@ -45,7 +46,7 @@ this is not a translation for the whole API).
         self.cache = moduleCache.API('Blog7', pp)
         self.posts = {}
         self.log.info("Cache %s " % self.cache['profiles']) 
-        fileName = os.path.expanduser('~/')+ '.rssProgram'
+        fileName = os.path.expanduser('~/.mySocial/config/')+ '.rssProgram'
         if os.path.isfile(fileName): 
             with open(fileName,'r') as f: 
                 self.files = f.read().split()
