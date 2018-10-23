@@ -216,7 +216,7 @@ def deletePost(api, pp, profiles, toPublish):
     logging.info(pp.pformat(toPublish))
 
     profMov = toPublish[0]
-    j = toPublish[1]
+    j = int(toPublish[1])
 
     for i in range(len(profiles)):
         serviceName = profiles[i].formatted_service
