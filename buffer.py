@@ -2,6 +2,7 @@ from errbot import BotPlugin, botcmd, webhook, backends
 from errbot.templating import tenv
 import moduleBuffer
 import moduleCache
+import moduleGmail
 import configparser
 import logging
 import os
@@ -44,6 +45,8 @@ this is not a translation for the whole API).
                           client_secret=clientSecret,
                           access_token=accessToken)
         self.cache = moduleCache.API('Blog7', pp)
+        self.gmail = moduleGmail.API(pp)
+        self.log.info("Gmail %s " % self.gmail) 
         self.posts = {}
         self.log.info("Cache %s " % self.cache['profiles']) 
         fileName = os.path.expanduser('~/.mySocial/config/')+ '.rssProgram'
@@ -146,6 +149,15 @@ this is not a translation for the whole API).
             self.log.info("Self Posts despues %s" % (self.posts))
             self.log.info("Profiles despuees %s " % self.cache['profiles']) 
         self.log.info("Profiles despueees %s " % self.cache['profiles']) 
+
+        if self.gmail:
+            self.log.info("Testing Gmail ")
+            postsP, prof = moduleGmail.listPosts(self.gmail, pp, '')
+            posts.update(postsP)
+            self.log.info("Self Posts despues gmail local %s" % (posts))
+            self.posts.update(posts)
+            self.log.info("Self Posts despues gmail %s" % (self.posts))
+
 
         self.log.info("Cache Profiles %s End" % self.cache['profiles'])
         response = self.sendReply(mess, args, posts, ['sent','pending'])
