@@ -76,11 +76,14 @@ this is not a translation for the whole API).
         logging.info("Looking post in Buffer")
         update = moduleBuffer.publishPost(self.api, pp, self.profiles, (post, j))
         update2 = moduleCache.publishPost(self.cache, pp, self.posts, (post, j))
+        update3 = moduleGmail.publishPost(self.gmail, pp, self.posts, (post, j))
         logging.info("Looking post in Local cache bot %s", self.posts)
         if update: 
             yield "Published %s!" % update['text_formatted']
         if update2: 
             yield "Published %s!" % pp.pformat(update2)
+        if update2: 
+            yield "Published %s!" % pp.pformat(update3)
         logging.info("Post in Local cache %s", pp.pformat(self.posts))
         yield end()
 
@@ -151,7 +154,7 @@ this is not a translation for the whole API).
         self.log.info("Profiles despueees %s " % self.cache['profiles']) 
 
         if self.gmail:
-            self.log.info("Testing Gmail ")
+            self.log.info("Testing Mail ")
             postsP, prof = moduleGmail.listPosts(self.gmail, pp, '')
             posts.update(postsP)
             self.log.info("Self Posts despues gmail local %s" % (posts))
