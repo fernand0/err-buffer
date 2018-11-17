@@ -45,7 +45,9 @@ this is not a translation for the whole API).
                           client_secret=clientSecret,
                           access_token=accessToken)
         self.cache = moduleCache.API('Blog7', pp)
-        self.gmail = moduleGmail.API(pp)
+        self.gmail = []
+        self.gmail.append(moduleGmail.API('ACC1', pp))
+        self.gmail.append(moduleGmail.API('ACC2', pp))
         self.log.info("Gmail %s " % self.gmail) 
         self.posts = {}
         self.log.info("Cache %s " % self.cache['profiles']) 
@@ -63,7 +65,11 @@ this is not a translation for the whole API).
             i = i + 1
     
         j = int(post[-1])
-        return(profMov, j)
+        if post[-2].isdigit():
+            # Qualifier when there are several accounts 
+            return(profMov, j, post[-2])
+        else: 
+            return(profMov, j)
 
     # Passing split_args_with=None will cause arguments to be split on any kind
     # of whitespace, just like Python's split() does
@@ -71,18 +77,18 @@ this is not a translation for the whole API).
     def publish(self, mess, args):
         """A command to publish some update"""
         pp = pprint.PrettyPrinter(indent=4)
-        (post, j) = self.selectPost(pp, args)
+        toPublish = self.selectPost(pp, args)
 
         logging.info("Looking post in Buffer")
-        update = moduleBuffer.publishPost(self.api, pp, self.profiles, (post, j))
-        update2 = moduleCache.publishPost(self.cache, pp, self.posts, (post, j))
-        update3 = moduleGmail.publishPost(self.gmail, pp, self.posts, (post, j))
+        update = moduleBuffer.publishPost(self.api, pp, self.profiles, toPublish)
+        update2 = moduleCache.publishPost(self.cache, pp, self.posts, toPublish)
+        update3 = moduleGmail.publishPost(self.gmail, pp, self.posts, toPublish)
         logging.info("Looking post in Local cache bot %s", self.posts)
         if update: 
             yield "Published %s!" % update['text_formatted']
         if update2: 
             yield "Published %s!" % pp.pformat(update2)
-        if update2: 
+        if update3: 
             yield "Published %s!" % pp.pformat(update3)
         logging.info("Post in Local cache %s", pp.pformat(self.posts))
         yield end()
@@ -154,12 +160,15 @@ this is not a translation for the whole API).
         self.log.info("Profiles despueees %s " % self.cache['profiles']) 
 
         if self.gmail:
-            self.log.info("Testing Mail ")
-            postsP, prof = moduleGmail.listPosts(self.gmail, pp, '')
-            posts.update(postsP)
-            self.log.info("Self Posts despues gmail local %s" % (posts))
-            self.posts.update(posts)
-            self.log.info("Self Posts despues gmail %s" % (self.posts))
+            accC = 0
+            for accG in self.gmail:
+                self.log.info("Testing Mail ")
+                postsP, prof = moduleGmail.listPosts(accG, pp, str(accC))
+                posts.update(postsP)
+                self.log.info("Self Posts despues gmail local %s" % (posts))
+                self.posts.update(posts)
+                self.log.info("Self Posts despues gmail %s" % (self.posts))
+                accC = accC + 1
 
 
         self.log.info("Cache Profiles %s End" % self.cache['profiles'])
