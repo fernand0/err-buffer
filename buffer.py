@@ -103,9 +103,10 @@ this is not a translation for the whole API).
     def delete(self, mess, args):
         """A command to delete some update"""
         pp = pprint.PrettyPrinter(indent=4)
-        (post, j) = self.selectPost(pp, args)
+        toDelete = self.selectPost(pp, args)
         moduleBuffer.deletePost(self.api, pp, self.profiles, args)
-        moduleCache.deletePost(self.cache, pp, self.posts, (post, j))
+        moduleCache.deletePost(self.cache, pp, self.posts, toDelete)
+        moduleGmail.deletePost(self.gmail, pp, self.posts, toDelete)
         yield "Deleted"
         yield end()
 
