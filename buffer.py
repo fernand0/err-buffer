@@ -100,16 +100,16 @@ this is not a translation for the whole API).
         toPublish = self.selectPost(pp, args)
 
         logging.info("Looking post in Buffer")
-        #update = moduleBuffer.publishPost(self.api, pp, self.profiles, toPublish)
+        update = moduleBuffer.showPost(self.api, pp, self.profiles, toPublish)
         update2 = moduleCache.showPost(self.cache, pp, self.posts, toPublish)
-        #update3 = moduleGmail.publishPost(self.gmail, pp, self.posts, toPublish)
+        update3 = moduleGmail.showPost(self.gmail, pp, self.posts, toPublish)
         logging.info("Looking post in Local cache bot %s", self.posts)
-        #if update: 
-        #    yield "Published %s!" % update['text_formatted']
+        if update: 
+            yield "Post %s!" % update['text_formatted']
         if update2: 
             yield "Post %s!" % pp.pformat(update2)
-        #if update3: 
-        #    yield "Published %s!" % pp.pformat(update3)
+        if update3: 
+            yield "Post %s!" % pp.pformat(update3)
         logging.info("Post in Local cache %s", pp.pformat(self.posts))
         yield end()
 

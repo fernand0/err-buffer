@@ -193,6 +193,18 @@ def movePost(api, log, pp, profiles, toMove, toWhere):
             update = Update(api=api, id=profiles[i].updates.pending[j].id)
             profiles[i].updates.reorder(listIds)
 
+def showPost(api, pp, profiles, toPublish):
+    logging.info("To publish %s" % pp.pformat(toPublish))
+    profMov = toPublish[0]
+    j = toPublish[1]
+    for i in range(len(profiles)): 
+        serviceName = profiles[i].formatted_service 
+        if (serviceName[0] in profMov) or toPublish[0]=='*': 
+            logging.debug("%d %d"  % (i,j))
+            update = Update(api=api, id=profiles[i].updates.pending[j].id) 
+            return(update)
+    return(None)
+
 def publishPost(api, pp, profiles, toPublish):
     logging.info("To publish %s" % pp.pformat(toPublish))
     profMov = toPublish[0]
