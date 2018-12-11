@@ -93,6 +93,27 @@ this is not a translation for the whole API).
         logging.info("Post in Local cache %s", pp.pformat(self.posts))
         yield end()
 
+    @botcmd
+    def show(self, mess, args):
+        """A command to publish some update"""
+        pp = pprint.PrettyPrinter(indent=4)
+        toPublish = self.selectPost(pp, args)
+
+        logging.info("Looking post in Buffer")
+        #update = moduleBuffer.publishPost(self.api, pp, self.profiles, toPublish)
+        update2 = moduleCache.showPost(self.cache, pp, self.posts, toPublish)
+        #update3 = moduleGmail.publishPost(self.gmail, pp, self.posts, toPublish)
+        logging.info("Looking post in Local cache bot %s", self.posts)
+        #if update: 
+        #    yield "Published %s!" % update['text_formatted']
+        if update2: 
+            yield "Post %s!" % pp.pformat(update2)
+        #if update3: 
+        #    yield "Published %s!" % pp.pformat(update3)
+        logging.info("Post in Local cache %s", pp.pformat(self.posts))
+        yield end()
+
+
 
     @botcmd(split_args_with=None)
     def move(self, mess, args):
