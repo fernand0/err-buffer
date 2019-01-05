@@ -103,9 +103,9 @@ def prepareReply(updates, types):
             else:
                 socialTime = ""
 
-            comResponse.append((tt, socialNetwork, theUpdates))
+            compResponse.append((tt, socialNetwork, theUpdates))
 
-    return(comResponse)
+    return(compResponse)
 
 
 def listPosts(api, pp, service=""):
