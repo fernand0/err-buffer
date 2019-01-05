@@ -90,7 +90,7 @@ def prepareReply(updates, types):
     compResponse = [] 
     for tt in types:
         for socialNetwork in updates.keys():
-            self.log.debug("Updates %s End" % updates[socialNetwork][tt])
+            logging.debug("Updates %s End" % updates[socialNetwork][tt])
             theUpdates = []
             for update in updates[socialNetwork][tt]:
                 theUpdatetxt = update[0].replace('_','\_')
