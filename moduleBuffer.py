@@ -86,6 +86,28 @@ def getProfiles(api, pp, service=""):
 #    logging.info(pp.pformat(profiles))
 #    return
 
+def prepareReply(updates, types):
+    compResponse = [] 
+    for tt in types:
+        for socialNetwork in updates.keys():
+            self.log.debug("Updates %s End" % updates[socialNetwork][tt])
+            theUpdates = []
+            for update in updates[socialNetwork][tt]:
+                theUpdatetxt = update[0].replace('_','\_')
+                theUpdates.append((theUpdatetxt, update[1], update[2])) 
+            if updates[socialNetwork][tt]: 
+                if theUpdates[0][0] != 'Empty': 
+                    socialTime = theUpdates[0][2] 
+                else: 
+                    socialTime = ""
+            else:
+                socialTime = ""
+
+            comResponse.append((tt, socialNetwork, theUpdates))
+
+    return(comResponse)
+
+
 def listPosts(api, pp, service=""):
 
     profiles = getProfiles(api, pp, service)

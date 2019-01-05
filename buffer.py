@@ -132,25 +132,13 @@ this is not a translation for the whole API).
         yield end()
 
     def sendReply(self, mess, args, updates, types):
+        reps = moduleBuffer.prepareReply(updates, types) 
         compResponse = ""
-        for tt in types:
-            for socialNetwork in updates.keys():
-                self.log.debug("Updates %s End" % updates[socialNetwork][tt])
-                theUpdates = []
-                for update in updates[socialNetwork][tt]:
-                    theUpdatetxt = update[0].replace('_','\_')
-                    theUpdates.append((theUpdatetxt, update[1], update[2])) 
-                if updates[socialNetwork][tt]: 
-                    if theUpdates[0][0] != 'Empty': 
-                        socialTime = theUpdates[0][2] 
-                    else: 
-                        socialTime = ""
-                else:
-                    socialTime = ""
-                response = tenv().get_template('buffer.md').render({'type': tt,
-                        'nameSocialNetwork': socialNetwork, 
-                        'updates': theUpdates})
-                compResponse = compResponse + response
+        for rep in compResponse:
+            response = tenv().get_template('buffer.md').render({'type': rep[0],
+                        'nameSocialNetwork': rep[1], 
+                        'updates': rep[2]})
+            compResponse = compResponse + response
 
         return(compResponse)
 
