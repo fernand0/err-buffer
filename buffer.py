@@ -134,7 +134,7 @@ this is not a translation for the whole API).
     def sendReply(self, mess, args, updates, types):
         reps = moduleBuffer.prepareReply(updates, types) 
         compResponse = ""
-        for rep in compResponse:
+        for rep in reps:
             response = tenv().get_template('buffer.md').render({'type': rep[0],
                         'nameSocialNetwork': rep[1], 
                         'updates': rep[2]})
