@@ -117,6 +117,7 @@ this is not a translation for the whole API).
 
     @botcmd(split_args_with=None)
     def move(self, mess, args):
+        pp = pprint.PrettyPrinter(indent=4)
         moduleBuffer.movePost(self.api, self.log, pp, self.profiles, args[0], args[1])
         yield end()
 
