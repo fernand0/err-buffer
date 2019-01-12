@@ -113,12 +113,25 @@ this is not a translation for the whole API).
         logging.info("Post in Local cache %s", pp.pformat(self.posts))
         yield end()
 
+    @botcmd
+    def edit(self, mess, args):
+        """A command to edit some update"""
+        pp = pprint.PrettyPrinter(indent=4)
+        toPublish = self.selectPost(pp, args.split()[0])
 
+        title = args[len(toPublish)+1:]
+
+        yield("Only available for Cache")
+
+        res = moduleCache.editPost(self.cache, pp, self.posts, toPublish, title)
+        yield(res)
+        yield end()
 
     @botcmd(split_args_with=None)
     def move(self, mess, args):
         pp = pprint.PrettyPrinter(indent=4)
         moduleBuffer.movePost(self.api, self.log, pp, self.profiles, args[0], args[1])
+        yield(moduleCache.movePost(self.cache, pp, self.posts, args[0], args[1]))
         yield end()
 
     @botcmd
@@ -127,7 +140,7 @@ this is not a translation for the whole API).
         pp = pprint.PrettyPrinter(indent=4)
         toDelete = self.selectPost(pp, args)
         moduleBuffer.deletePost(self.api, pp, self.profiles, args)
-        moduleCache.deletePost(self.cache, pp, self.posts, toDelete)
+        yield(moduleCache.deletePost(self.cache, pp, self.posts, toDelete))
         moduleGmail.deletePost(self.gmail, pp, self.posts, toDelete)
         yield "Deleted"
         yield end()
