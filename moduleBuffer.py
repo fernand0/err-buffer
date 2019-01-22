@@ -420,10 +420,11 @@ def main():
 
     profiles = getProfiles(api, pp, '')
     print("profiles")
-    print(profiles)
+    #print(profiles)
 
     posts, profiles = listPosts(api, pp, "")
-    print("-> Posts",posts)
+    print(prepareReply(posts, ['pending']))
+    #ºprint("-> Posts",posts)
 
     sys.exit()
     print("-> PostsP",postsP)

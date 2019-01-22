@@ -46,8 +46,14 @@ this is not a translation for the whole API).
                           access_token=accessToken)
         self.cache = moduleCache.API('Blog7', pp)
         self.gmail = []
-        self.gmail.append(moduleGmail.API('ACC1', pp))
-        self.gmail.append(moduleGmail.API('ACC2', pp))
+        gmailAcc = moduleGmail.moduleGmail()
+        gmailAcc.API('ACC1', pp)
+        self.gmail.append(gmailAcc) 
+        gmailAcc = moduleGmail.moduleGmail()
+        gmailAcc.API('ACC2', pp)
+        self.gmail.append(gmailAcc) 
+        #moduleGmail.API('ACC1', pp))
+        #self.gmail.append(moduleGmail.API('ACC2', pp))
         self.log.info("Gmail %s " % self.gmail) 
         self.posts = {}
         self.log.info("Cache %s " % self.cache['profiles']) 
@@ -82,7 +88,7 @@ this is not a translation for the whole API).
         logging.info("Looking post in Buffer")
         update = moduleBuffer.publishPost(self.api, pp, self.profiles, toPublish)
         update2 = moduleCache.publishPost(self.cache, pp, self.posts, toPublish)
-        update3 = moduleGmail.publishPost(self.gmail, pp, self.posts, toPublish)
+        update3 = self.gmail[1].publishPost(pp, self.posts, toPublish)
         logging.info("Looking post in Local cache bot %s", self.posts)
         if update: 
             yield "Published %s!" % update['text_formatted']
@@ -102,7 +108,8 @@ this is not a translation for the whole API).
         logging.info("Looking post in Buffer")
         update = moduleBuffer.showPost(self.api, pp, self.profiles, toPublish)
         update2 = moduleCache.showPost(self.cache, pp, self.posts, toPublish)
-        update3 = moduleGmail.showPost(self.gmail, pp, self.posts, toPublish)
+        #update3 = self.gmail[0].showPost(pp, self.posts, toPublish)
+        update3 = self.gmail[1].showPost(pp, self.posts, toPublish)
         logging.info("Looking post in Local cache bot %s", self.posts)
         if update: 
             yield "Post %s!" % update['text_formatted']
@@ -187,7 +194,7 @@ this is not a translation for the whole API).
             accC = 0
             for accG in self.gmail:
                 self.log.info("Testing Mail ")
-                postsP, prof = moduleGmail.listPosts(accG, pp, str(accC))
+                postsP, prof = accG.listPosts(pp, str(accC))
                 posts.update(postsP)
                 self.log.info("Self Posts despues gmail local %s" % (posts))
                 self.posts.update(posts)
