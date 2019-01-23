@@ -268,25 +268,23 @@ def movePost(api, log, pp, profiles, toMove, toWhere):
             update = Update(api=api, id=profiles[i].updates.pending[j].id)
             profiles[i].updates.reorder(listIds)
 
-def showPost(api, pp, profiles, toPublish):
-    logging.info("To publish %s" % pp.pformat(toPublish))
-    profMov = toPublish[0]
-    j = toPublish[1]
+def showPost(api, pp, profiles, profIni, j):
+    logging.info("To publish %s %d" % (profIni,j))
+
     for i in range(len(profiles)): 
         serviceName = profiles[i].formatted_service 
-        if (serviceName[0] in profMov) or toPublish[0]=='*': 
+        if (serviceName[0] in profIni) or profIni == '*': 
             logging.debug("%d %d"  % (i,j))
             update = Update(api=api, id=profiles[i].updates.pending[j].id) 
             return(update)
     return(None)
 
-def publishPost(api, pp, profiles, toPublish):
-    logging.info("To publish %s" % pp.pformat(toPublish))
-    profMov = toPublish[0]
-    j = toPublish[1]
+def publishPost(api, pp, profiles, profIni, j):
+    logging.info("To publish %s %d" % (profIni, j))
+
     for i in range(len(profiles)): 
         serviceName = profiles[i].formatted_service 
-        if (serviceName[0] in profMov) or toPublish[0]=='*': 
+        if (serviceName[0] in profIni) or profIni == '*': 
             logging.debug("%d %d"  % (i,j))
             update = Update(api=api, id=profiles[i].updates.pending[j].id) 
             logging.debug("Publishing update %s" % pp.pformat(update))
@@ -295,24 +293,20 @@ def publishPost(api, pp, profiles, toPublish):
             logging.debug("Published %s!" % update['text_formatted']) 
             if upd['success']:
                 return(update)
-    return("")
+    return(None)
 
-
-def deletePost(api, pp, profiles, toPublish):
-    logging.info("To delete %s" % pp.pformat(toPublish))
-    logging.info(pp.pformat(toPublish))
-
-    profMov = toPublish[0]
-    j = int(toPublish[1])
+def deletePost(api, pp, profiles, profIni, j):
+    logging.info("To Delete %s %d" % (profIni, j))
 
     for i in range(len(profiles)):
         serviceName = profiles[i].formatted_service
-        if (serviceName[0] in profMov) or toPublish[0]=='*':
+        if (serviceName[0] in profIni) or profIni == '*':
             logging.debug("%s %d"  % (i,j))
             update = Update(api=api, id=profiles[i].updates.pending[j].id)
             logging.debug(pp.pformat(update))
             update.delete()
 
+    return(update)
 
 def listSentPosts(api, pp, service=""):
     profiles = getProfiles(api, pp, service)

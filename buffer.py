@@ -85,10 +85,14 @@ this is not a translation for the whole API).
         pp = pprint.PrettyPrinter(indent=4)
         toPublish = self.selectPost(pp, args)
 
+        profMov = toPublish[0]
+        j = toPublish[1]
+
         logging.info("Looking post in Buffer")
-        update = moduleBuffer.publishPost(self.api, pp, self.profiles, toPublish)
-        update2 = moduleCache.publishPost(self.cache, pp, self.posts, toPublish)
-        update3 = self.gmail[1].publishPost(pp, self.posts, toPublish)
+        update = moduleBuffer.publishPost(self.api, pp, self.profiles, profIni, j)
+        update2 = moduleCache.publishPost(self.cache, pp, self.posts, profIni, j)
+        update3 = self.gmail[0].publishPost(pp, self.posts, profIni, j)
+        update4 = self.gmail[1].publishPost(pp, self.posts, profIni, j)
         logging.info("Looking post in Local cache bot %s", self.posts)
         if update: 
             yield "Published %s!" % update['text_formatted']
@@ -96,6 +100,8 @@ this is not a translation for the whole API).
             yield "Published %s!" % pp.pformat(update2)
         if update3: 
             yield "Published %s!" % pp.pformat(update3)
+        if update4: 
+            yield "Published %s!" % pp.pformat(update4)
         logging.info("Post in Local cache %s", pp.pformat(self.posts))
         yield end()
 
@@ -105,11 +111,14 @@ this is not a translation for the whole API).
         pp = pprint.PrettyPrinter(indent=4)
         toPublish = self.selectPost(pp, args)
 
+        profIni = toPublish[0]
+        j = toPublish[1]
+
         logging.info("Looking post in Buffer")
-        update = moduleBuffer.showPost(self.api, pp, self.profiles, toPublish)
-        update2 = moduleCache.showPost(self.cache, pp, self.posts, toPublish)
-        #update3 = self.gmail[0].showPost(pp, self.posts, toPublish)
-        update3 = self.gmail[1].showPost(pp, self.posts, toPublish)
+        update = moduleBuffer.showPost(self.api, pp, self.profiles, profIni, j)
+        update2 = moduleCache.showPost(self.cache, pp, self.posts, profIni, j)
+        update3 = self.gmail[0].showPost(pp, self.posts, profIni, j)
+        update4 = self.gmail[1].showPost(pp, self.posts, profIni, j)
         logging.info("Looking post in Local cache bot %s", self.posts)
         if update: 
             yield "Post %s!" % update['text_formatted']
@@ -117,6 +126,8 @@ this is not a translation for the whole API).
             yield "Post %s!" % pp.pformat(update2)
         if update3: 
             yield "Post %s!" % pp.pformat(update3)
+        if update4: 
+            yield "Post %s!" % pp.pformat(update4)
         logging.info("Post in Local cache %s", pp.pformat(self.posts))
         yield end()
 
@@ -126,11 +137,14 @@ this is not a translation for the whole API).
         pp = pprint.PrettyPrinter(indent=4)
         toPublish = self.selectPost(pp, args.split()[0])
 
+        profIni = toPublish[0]
+        j = toPublish[1]
+
         title = args[len(toPublish)+1:]
 
         yield("Only available for Cache")
 
-        res = moduleCache.editPost(self.cache, pp, self.posts, toPublish, title)
+        res = moduleCache.editPost(self.cache, pp, self.posts, profIni, j, title)
         yield(res)
         yield end()
 
@@ -146,9 +160,13 @@ this is not a translation for the whole API).
         """A command to delete some update"""
         pp = pprint.PrettyPrinter(indent=4)
         toDelete = self.selectPost(pp, args)
-        moduleBuffer.deletePost(self.api, pp, self.profiles, args)
-        yield(moduleCache.deletePost(self.cache, pp, self.posts, toDelete))
-        moduleGmail.deletePost(self.gmail, pp, self.posts, toDelete)
+
+        profIni = toDelete[0]
+        j = toDelete[1]
+
+        moduleBuffer.deletePost(self.api, pp, self.profiles, profIni, j)
+        yield(moduleCache.deletePost(self.cache, pp, self.posts, profIni, j))
+        moduleGmail.deletePost(self.gmail, pp, self.posts, profIni, j)
         yield "Deleted"
         yield end()
 
