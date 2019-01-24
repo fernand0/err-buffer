@@ -47,10 +47,10 @@ this is not a translation for the whole API).
         self.cache = moduleCache.API('Blog7', pp)
         self.gmail = []
         gmailAcc = moduleGmail.moduleGmail()
-        gmailAcc.API('ACC1', pp)
+        gmailAcc.API('ACC0', pp)
         self.gmail.append(gmailAcc) 
         gmailAcc = moduleGmail.moduleGmail()
-        gmailAcc.API('ACC2', pp)
+        gmailAcc.API('ACC1', pp)
         self.gmail.append(gmailAcc) 
         #moduleGmail.API('ACC1', pp))
         #self.gmail.append(moduleGmail.API('ACC2', pp))
@@ -85,8 +85,10 @@ this is not a translation for the whole API).
         pp = pprint.PrettyPrinter(indent=4)
         toPublish = self.selectPost(pp, args)
 
-        profMov = toPublish[0]
+        profIni = toPublish[0]
         j = toPublish[1]
+        if len(toPublish)>2:
+            profIni = profIni + toPublish[2]
 
         logging.info("Looking post in Buffer")
         update = moduleBuffer.publishPost(self.api, pp, self.profiles, profIni, j)
@@ -209,15 +211,13 @@ this is not a translation for the whole API).
         self.log.info("Profiles despueees %s " % self.cache['profiles']) 
 
         if self.gmail:
-            accC = 0
             for accG in self.gmail:
                 self.log.info("Testing Mail ")
-                postsP, prof = accG.listPosts(pp, str(accC))
+                postsP, prof = accG.listPosts(pp)
                 posts.update(postsP)
                 self.log.info("Self Posts despues gmail local %s" % (posts))
                 self.posts.update(posts)
                 self.log.info("Self Posts despues gmail %s" % (self.posts))
-                accC = accC + 1
 
 
         self.log.info("Cache Profiles %s End" % self.cache['profiles'])

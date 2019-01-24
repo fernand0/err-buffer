@@ -280,7 +280,7 @@ def showPost(api, pp, profiles, profIni, j):
     return(None)
 
 def publishPost(api, pp, profiles, profIni, j):
-    logging.info("To publish %s %d" % (profIni, j))
+    logging.info("To publish %s %s" % (profIni, j))
 
     for i in range(len(profiles)): 
         serviceName = profiles[i].formatted_service 
