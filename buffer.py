@@ -94,8 +94,8 @@ this is not a translation for the whole API).
         logging.info("Looking post in Buffer")
         update = moduleBuffer.publishPost(self.api, pp, self.profiles, profIni, j)
         update2 = moduleCache.publishPost(self.cache, pp, self.posts, profIni, j)
-        update3 = self.gmail[0].publishPost(pp, self.posts, profIni, j)
-        update4 = self.gmail[1].publishPost(pp, self.posts, profIni, j)
+        update3 = self.gmail[0].publishPost(pp, self.posts, args)
+        update4 = self.gmail[1].publishPost(pp, self.posts, args)
         logging.info("Looking post in Local cache bot %s", self.posts)
         if update: 
             yield "Published %s!" % update['text_formatted']
@@ -120,8 +120,8 @@ this is not a translation for the whole API).
         logging.info("Looking post in Buffer")
         update = moduleBuffer.showPost(self.api, pp, self.profiles, profIni, j)
         update2 = moduleCache.showPost(self.cache, pp, self.posts, profIni, j)
-        update3 = self.gmail[0].showPost(pp, self.posts, profIni, j)
-        update4 = self.gmail[1].showPost(pp, self.posts, profIni, j)
+        update3 = self.gmail[0].showPost(pp, self.posts, args)
+        update4 = self.gmail[1].showPost(pp, self.posts, args)
         logging.info("Looking post in Local cache bot %s", self.posts)
         if update: 
             yield "Post %s!" % update['text_formatted']
@@ -169,7 +169,8 @@ this is not a translation for the whole API).
 
         moduleBuffer.deletePost(self.api, pp, self.profiles, profIni, j)
         yield(moduleCache.deletePost(self.cache, pp, self.posts, profIni, j))
-        moduleGmail.deletePost(self.gmail, pp, self.posts, profIni, j)
+        self.gmail[0].deletePost(self.gmail, pp, self.posts, args)
+        self.gmail[1].deletePost(self.gmail, pp, self.posts, args)
         yield "Deleted"
         yield end()
 

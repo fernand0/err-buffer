@@ -270,7 +270,7 @@ def movePost(api, log, pp, profiles, toMove, toWhere):
 
 def showPost(api, pp, profiles, profIni, j):
     logging.info("To publish %s %d" % (profIni,j))
-
+    
     for i in range(len(profiles)): 
         serviceName = profiles[i].formatted_service 
         if (serviceName[0] in profIni) or profIni == '*': 
@@ -298,6 +298,7 @@ def publishPost(api, pp, profiles, profIni, j):
 def deletePost(api, pp, profiles, profIni, j):
     logging.info("To Delete %s %d" % (profIni, j))
 
+    update = None
     for i in range(len(profiles)):
         serviceName = profiles[i].formatted_service
         if (serviceName[0] in profIni) or profIni == '*':
