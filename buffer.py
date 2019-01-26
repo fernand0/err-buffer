@@ -66,6 +66,7 @@ this is not a translation for the whole API).
         logging.info("Selecting %s" % pp.pformat(post))
         i = 0
         profMov = ""    
+
         while post[i].isalpha():
             profMov = profMov + post[i]
             i = i + 1
