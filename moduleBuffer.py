@@ -83,7 +83,6 @@ def API():
 
     return(api)
 
-
 def getProfiles(api, pp, service=""):
     logging.info("Checking services...")
     
@@ -103,11 +102,15 @@ def prepareReply(updates, types):
     compResponse = [] 
     for tt in types:
         for socialNetwork in updates.keys():
-            logging.debug("Updates %s End" % updates[socialNetwork][tt])
+            logging.info("Updates %s End" % updates[socialNetwork][tt])
             theUpdates = []
             for update in updates[socialNetwork][tt]:
-                theUpdatetxt = update[0].replace('_','\_')
-                theUpdates.append((theUpdatetxt, update[1], update[2])) 
+                if update:
+                    if len(update)>0:
+                        #logging.info("Update %s " % update)
+                        logging.info("Update %s " % update[0])
+                        theUpdatetxt = update[0].replace('_','\_')
+                        theUpdates.append((theUpdatetxt, update[1], update[2])) 
             if updates[socialNetwork][tt]: 
                 if theUpdates[0][0] != 'Empty': 
                     socialTime = theUpdates[0][2] 
@@ -159,7 +162,6 @@ def listPosts(api, pp, service=""):
 
     return(outputData, profiles)
 
-
 def oldlistPosts(api, pp, service=""):
     outputData = {}
 
@@ -201,6 +203,53 @@ def oldlistPosts(api, pp, service=""):
                         outputData[serviceName][method].append(('Empty', 'Empty', 'Empty'))
 
     return(outputData, profiles)
+
+def isForMe(serviceName, args):
+    if (serviceName[0] in args) or ('*' in args): 
+        return True
+    return False
+
+def showPost(api, pp, profiles, args):
+    logging.info("To publish %s" % args)
+    
+    for i in range(len(profiles)): 
+        serviceName = profiles[i].formatted_service 
+        if isForMe(serviceName, args):
+            j = int(args[-1])
+            update = Update(api=api, id=profiles[i].updates.pending[j].id) 
+            return(update)
+    return(None)
+
+def publishPost(api, pp, profiles, args):
+    logging.info("To publish %s" % args)
+
+    for i in range(len(profiles)): 
+        serviceName = profiles[i].formatted_service 
+        if isForMe(serviceName, args):
+            j = int(args[-1])
+            logging.debug("Publishing update %d" % j)
+            update = Update(api=api, id=profiles[i].updates.pending[j].id) 
+            logging.debug("Publishing update %s" % pp.pformat(update))
+            upd = update.publish()
+            logging.debug("Published update %s" % pp.pformat(upd))
+            logging.debug("Published %s!" % update['text_formatted']) 
+            if upd['success']:
+                return(update)
+    return(None)
+
+def deletePost(api, pp, profiles, args):
+    logging.info("To Delete %s" % args)
+
+    update = None
+    for i in range(len(profiles)):
+        serviceName = profiles[i].formatted_service
+        if isForMe(serviceName, args):
+            j = int(args[-1])
+            update = Update(api=api, id=profiles[i].updates.pending[j].id)
+            logging.debug(pp.pformat(update))
+            update.delete()
+
+    return(update)
 
 def copyPost(api, log, pp, profiles, toCopy, toWhere):
     logging.info(pp.pformat(toCopy+' '+toWhere))
@@ -268,46 +317,6 @@ def movePost(api, log, pp, profiles, toMove, toWhere):
             update = Update(api=api, id=profiles[i].updates.pending[j].id)
             profiles[i].updates.reorder(listIds)
 
-def showPost(api, pp, profiles, profIni, j):
-    logging.info("To publish %s %d" % (profIni,j))
-    
-    for i in range(len(profiles)): 
-        serviceName = profiles[i].formatted_service 
-        if (serviceName[0] in profIni) or profIni == '*': 
-            logging.debug("%d %d"  % (i,j))
-            update = Update(api=api, id=profiles[i].updates.pending[j].id) 
-            return(update)
-    return(None)
-
-def publishPost(api, pp, profiles, profIni, j):
-    logging.info("To publish %s %s" % (profIni, j))
-
-    for i in range(len(profiles)): 
-        serviceName = profiles[i].formatted_service 
-        if (serviceName[0] in profIni) or profIni == '*': 
-            logging.debug("%d %d"  % (i,j))
-            update = Update(api=api, id=profiles[i].updates.pending[j].id) 
-            logging.debug("Publishing update %s" % pp.pformat(update))
-            upd = update.publish()
-            logging.debug("Published update %s" % pp.pformat(upd))
-            logging.debug("Published %s!" % update['text_formatted']) 
-            if upd['success']:
-                return(update)
-    return(None)
-
-def deletePost(api, pp, profiles, profIni, j):
-    logging.info("To Delete %s %d" % (profIni, j))
-
-    update = None
-    for i in range(len(profiles)):
-        serviceName = profiles[i].formatted_service
-        if (serviceName[0] in profIni) or profIni == '*':
-            logging.debug("%s %d"  % (i,j))
-            update = Update(api=api, id=profiles[i].updates.pending[j].id)
-            logging.debug(pp.pformat(update))
-            update.delete()
-
-    return(update)
 
 def listSentPosts(api, pp, service=""):
     profiles = getProfiles(api, pp, service)

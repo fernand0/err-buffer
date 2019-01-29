@@ -92,8 +92,8 @@ this is not a translation for the whole API).
             profIni = profIni + toPublish[2]
 
         logging.info("Looking post in Buffer")
-        update = moduleBuffer.publishPost(self.api, pp, self.profiles, profIni, j)
-        update2 = moduleCache.publishPost(self.cache, pp, self.posts, profIni, j)
+        update = moduleBuffer.publishPost(self.api, pp, self.profiles, args)
+        update2 = moduleCache.publishPost(self.cache, pp, self.posts, args)
         update3 = self.gmail[0].publishPost(pp, self.posts, args)
         update4 = self.gmail[1].publishPost(pp, self.posts, args)
         logging.info("Looking post in Local cache bot %s", self.posts)
@@ -118,11 +118,11 @@ this is not a translation for the whole API).
         j = toPublish[1]
 
         logging.info("Looking post in Buffer")
-        update = moduleBuffer.showPost(self.api, pp, self.profiles, profIni, j)
-        update2 = moduleCache.showPost(self.cache, pp, self.posts, profIni, j)
+        update = moduleBuffer.showPost(self.api, pp, self.profiles, args)
+        update2 = moduleCache.showPost(self.cache, pp, self.posts, args)
         update3 = self.gmail[0].showPost(pp, self.posts, args)
         update4 = self.gmail[1].showPost(pp, self.posts, args)
-        logging.info("Looking post in Local cache bot %s", self.posts)
+        logging.debug("Looking post in Local cache bot %s", self.posts)
         if update: 
             yield "Post %s!" % update['text_formatted']
         if update2: 
@@ -145,9 +145,16 @@ this is not a translation for the whole API).
 
         title = args[len(toPublish)+1:]
 
-        yield("Only available for Cache")
+        args, title = args.split(maxsplit=1)
+        yield("Only available for Cache and Gmail")
 
-        res = moduleCache.editPost(self.cache, pp, self.posts, profIni, j, title)
+        resTxt = ""
+        res = moduleCache.editPost(self.cache, pp, self.posts, args, title)
+        if res: resTxt = resTxt + res + '\n'
+        res = self.gmail[0].editPost(pp, self.posts, args, title)
+        if res: resTxt = resTxt + res + '\n'
+        res = self.gmail[1].editPost(pp, self.posts, args, title)
+        if res: resTxt = resTxt + res + '\n'
         yield(res)
         yield end()
 
@@ -167,8 +174,8 @@ this is not a translation for the whole API).
         profIni = toDelete[0]
         j = toDelete[1]
 
-        moduleBuffer.deletePost(self.api, pp, self.profiles, profIni, j)
-        yield(moduleCache.deletePost(self.cache, pp, self.posts, profIni, j))
+        moduleBuffer.deletePost(self.api, pp, self.profiles, args)
+        yield(moduleCache.deletePost(self.cache, pp, self.posts, args))
         self.gmail[0].deletePost(self.gmail, pp, self.posts, args)
         self.gmail[1].deletePost(self.gmail, pp, self.posts, args)
         yield "Deleted"
