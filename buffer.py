@@ -56,7 +56,7 @@ this is not a translation for the whole API).
         #self.gmail.append(moduleGmail.API('ACC2', pp))
         self.log.info("Gmail %s " % self.gmail) 
         self.posts = {}
-        self.log.info("Cache %s " % self.cache['profiles']) 
+        self.log.debug("Cache %s " % self.cache['profiles']) 
         fileName = os.path.expanduser('~/.mySocial/config/')+ '.rssProgram'
         if os.path.isfile(fileName): 
             with open(fileName,'r') as f: 
@@ -177,8 +177,9 @@ this is not a translation for the whole API).
         moduleBuffer.deletePost(self.api, pp, self.profiles, args)
         yield(moduleCache.deletePost(self.cache, pp, self.posts, args))
         self.gmail[0].deletePost(self.gmail, pp, self.posts, args)
-        self.gmail[1].deletePost(self.gmail, pp, self.posts, args)
+        update = self.gmail[1].deletePost(self.gmail, pp, self.posts, args)
         yield "Deleted"
+        yield update
         yield end()
 
     def sendReply(self, mess, args, updates, types):
@@ -204,32 +205,32 @@ this is not a translation for the whole API).
                 # similar in '.queue' files.
                 self.profiles = profiles
 
-        self.log.info("Posts buffer %s" % (posts))
+        self.log.debug("Posts buffer %s" % (posts))
 
         if self.cache['profiles']:
-            self.log.info("Profiles antes %s " % self.cache['profiles'])
+            self.log.debug("Profiles antes %s " % self.cache['profiles'])
             postsP, prof = moduleCache.listPosts(self.cache, pp, '')
-            self.log.info("Profiles despues %s " % prof) 
+            self.log.debug("Profiles despues %s " % prof) 
             self.cache['profiles'] = prof
             posts.update(postsP)
-            self.log.info("Posts despues %s" % (posts))
-            self.log.info("Self Posts antes %s" % (self.posts))
+            self.log.debug("Posts despues %s" % (posts))
+            self.log.debug("Self Posts antes %s" % (self.posts))
             self.posts.update(posts)
-            self.log.info("Self Posts despues %s" % (self.posts))
-            self.log.info("Profiles despuees %s " % self.cache['profiles']) 
-        self.log.info("Profiles despueees %s " % self.cache['profiles']) 
+            self.log.debug("Self Posts despues %s" % (self.posts))
+            self.log.debug("Profiles despuees %s " % self.cache['profiles']) 
+        self.log.debug("Profiles despueees %s " % self.cache['profiles']) 
 
         if self.gmail:
             for accG in self.gmail:
                 self.log.info("Testing Mail ")
                 postsP, prof = accG.listPosts(pp)
                 posts.update(postsP)
-                self.log.info("Self Posts despues gmail local %s" % (posts))
+                self.log.debug("Self Posts despues gmail local %s" % (posts))
                 self.posts.update(posts)
-                self.log.info("Self Posts despues gmail %s" % (self.posts))
+                self.log.debug("Self Posts despues gmail %s" % (self.posts))
 
 
-        self.log.info("Cache Profiles %s End" % self.cache['profiles'])
+        self.log.debug("Cache Profiles %s End" % self.cache['profiles'])
         response = self.sendReply(mess, args, posts, ['sent','pending'])
         self.log.debug("Reponse %s End" % response)
         yield(response)

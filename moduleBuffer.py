@@ -102,14 +102,18 @@ def prepareReply(updates, types):
     compResponse = [] 
     for tt in types:
         for socialNetwork in updates.keys():
-            logging.info("Updates %s End" % updates[socialNetwork][tt])
+            logging.debug("Updates %s End" % updates[socialNetwork][tt])
             theUpdates = []
             for update in updates[socialNetwork][tt]:
                 if update:
                     if len(update)>0:
                         #logging.info("Update %s " % update)
                         logging.info("Update %s " % update[0])
-                        theUpdatetxt = update[0].replace('_','\_')
+                        if update[0]:
+                            theUpdatetxt = update[0].replace('_','\_')
+                        else:
+                            # This should not happen
+                            theUpdatetxt = ''
                         theUpdates.append((theUpdatetxt, update[1], update[2])) 
             if updates[socialNetwork][tt]: 
                 if theUpdates[0][0] != 'Empty': 
