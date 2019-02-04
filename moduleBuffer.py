@@ -87,8 +87,10 @@ def getProfiles(api, pp, service=""):
     logging.info("Checking services...")
     
     if (service == ""):
+        logging.info("All available")
         profiles = Profiles(api=api).all()
     else:
+        logging.info(service)
         profiles = Profiles(api=api).filter(service=service)
         
     logging.debug("->%s" % pp.pformat(profiles))
@@ -97,35 +99,6 @@ def getProfiles(api, pp, service=""):
     logging.debug("Profiles %s" % pp.pformat(profiles))
 
     return (profiles)
-
-def prepareReply(updates, types):
-    compResponse = [] 
-    for tt in types:
-        for socialNetwork in updates.keys():
-            logging.debug("Updates %s End" % updates[socialNetwork][tt])
-            theUpdates = []
-            for update in updates[socialNetwork][tt]:
-                if update:
-                    if len(update)>0:
-                        #logging.info("Update %s " % update)
-                        logging.info("Update %s " % update[0])
-                        if update[0]:
-                            theUpdatetxt = update[0].replace('_','\_')
-                        else:
-                            # This should not happen
-                            theUpdatetxt = ''
-                        theUpdates.append((theUpdatetxt, update[1], update[2])) 
-            if updates[socialNetwork][tt]: 
-                if theUpdates[0][0] != 'Empty': 
-                    socialTime = theUpdates[0][2] 
-                else: 
-                    socialTime = ""
-            else:
-                socialTime = ""
-
-            compResponse.append((tt, socialNetwork, theUpdates))
-
-    return(compResponse)
 
 def listPosts(api, pp, service=""):
     outputData = {}
@@ -161,48 +134,6 @@ def listPosts(api, pp, service=""):
                         outputData[serviceName][method].append((update.text, link, toShow))
                     else:
                         outputData[serviceName][method].append((link, link, toShow))
-            else:
-                        outputData[serviceName][method].append(('Empty', 'Empty', 'Empty'))
-
-    return(outputData, profiles)
-
-def oldlistPosts(api, pp, service=""):
-    outputData = {}
-
-
-    profiles = getProfiles(api, pp, service)
-    logging.info("** %s" % profiles)
-
-    for i in range(len(profiles)):
-
-        serviceName = profiles[i].formatted_service
-
-        logging.info("Profile %s" % serviceName)
-
-        outputData[serviceName] = {'sent': [], 'pending': []}
-        for method in ['sent', 'pending']:
-            if (profiles[i].counts[method] > 0):
-                updates = getattr(profiles[i].updates, method)
-                for j in range(min(10,len(updates))):
-                    update = updates[j]
-                    if method == 'pending':
-                        toShow = update.due_time
-                    else:
-                        toShow = update.statistics.clicks
-                    if ('media' in update): 
-                        if ('expanded_link' in update.media):
-                            link = update.media.expanded_link
-                        else:
-                            link = update.media.link
-                        if update.text: 
-                            outputData[serviceName][method].append((update.text, link, toShow))
-                        else:
-                            outputData[serviceName][method].append((link, link, toShow))
-                    else:
-                        if update.text: 
-                            outputData[serviceName][method].append((update.text, '',  toShow))
-                        else:
-                            outputData[serviceName][method].append((link, 'Empty',  toShow))
             else:
                         outputData[serviceName][method].append(('Empty', 'Empty', 'Empty'))
 
@@ -431,8 +362,6 @@ def main():
     #print(profiles)
 
     posts, profiles = listPosts(api, pp, "")
-    print(prepareReply(posts, ['pending']))
-    #ºprint("-> Posts",posts)
 
     sys.exit()
     print("-> PostsP",postsP)
