@@ -182,7 +182,7 @@ this is not a translation for the whole API).
         yield update
         yield end()
 
-    def prepareReply(updates, types):
+    def prepareReply(self, updates, types):
         compResponse = [] 
         for tt in types:
             # This define the ordering 'pending', 'sent'
@@ -214,7 +214,7 @@ this is not a translation for the whole API).
         return(compResponse)
 
     def sendReply(self, mess, args, updates, types):
-        reps = moduleBuffer.prepareReply(updates, types) 
+        reps = self.prepareReply(updates, types) 
         compResponse = ""
         for rep in reps:
             response = tenv().get_template('buffer.md').render({'type': rep[0],
