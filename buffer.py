@@ -124,7 +124,7 @@ this is not a translation for the whole API).
         update4 = self.gmail[1].showPost(pp, self.posts, args)
         logging.debug("Looking post in Local cache bot %s", self.posts)
         if update: 
-            yield "Post %s!" % update['text_formatted']
+            yield "Post %s!" % update['text_formatted']+' '+update['media']['expanded_link']
         if update2: 
             yield "Post %s!" % pp.pformat(update2)
         if update3: 
