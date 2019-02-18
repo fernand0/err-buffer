@@ -12,6 +12,7 @@ from buffpy.managers.profiles import Profiles
 from buffpy.managers.updates import Updates
 from buffpy.api import API
 
+from configMod import *
 
 def end(msg=""):
     return("END"+msg)
@@ -44,7 +45,14 @@ this is not a translation for the whole API).
         self.api = API(client_id=clientId,
                           client_secret=clientSecret,
                           access_token=accessToken)
-        self.cache = moduleCache.API('Blog7', pp)
+        confBlog = configparser.ConfigParser() 
+        confBlog.read(CONFIGDIR + '/.rssBlogs')
+
+        section = "Blog7"
+        url = confBlog.get(section, 'url')
+        socialNetworks = {'twitter':'fernand0', 
+                'facebook':'Enlaces de fernand0'}
+        self.cache = moduleCache.moduleCache(url, socialNetworks) 
         self.gmail = []
         gmailAcc = moduleGmail.moduleGmail()
         gmailAcc.API('ACC0', pp)
@@ -56,7 +64,7 @@ this is not a translation for the whole API).
         #self.gmail.append(moduleGmail.API('ACC2', pp))
         self.log.info("Gmail %s " % self.gmail) 
         self.posts = {}
-        self.log.debug("Cache %s " % self.cache['profiles']) 
+        #self.log.debug("Cache %s " % self.cache['profiles']) 
         fileName = os.path.expanduser('~/.mySocial/config/')+ '.rssProgram'
         if os.path.isfile(fileName): 
             with open(fileName,'r') as f: 
@@ -93,7 +101,7 @@ this is not a translation for the whole API).
 
         logging.info("Looking post in Buffer")
         update = moduleBuffer.publishPost(self.api, pp, self.profiles, args)
-        update2 = moduleCache.publishPost(self.cache, pp, self.posts, args)
+        update2 = self.cache.publishPost(args)
         update3 = self.gmail[0].publishPost(pp, self.posts, args)
         update4 = self.gmail[1].publishPost(pp, self.posts, args)
         logging.info("Looking post in Local cache bot %s", self.posts)
@@ -238,18 +246,18 @@ this is not a translation for the whole API).
 
         self.log.debug("Posts buffer %s" % (posts))
 
-        if self.cache['profiles']:
-            self.log.debug("Profiles antes %s " % self.cache['profiles'])
-            postsP, prof = moduleCache.listPosts(self.cache, pp, '')
+        self.cache.getProfiles()
+        if self.cache.profiles:
+            #self.log.debug("Profiles antes %s " % self.cache['profiles'])
+            postsP, prof = self.cache.listPosts()
             self.log.debug("Profiles despues %s " % prof) 
-            self.cache['profiles'] = prof
             posts.update(postsP)
-            self.log.debug("Posts despues %s" % (posts))
-            self.log.debug("Self Posts antes %s" % (self.posts))
-            self.posts.update(posts)
-            self.log.debug("Self Posts despues %s" % (self.posts))
-            self.log.debug("Profiles despuees %s " % self.cache['profiles']) 
-        self.log.debug("Profiles despueees %s " % self.cache['profiles']) 
+            self.log.debug("Posts despues %s" % posts)
+            #self.log.debug("Self Posts antes %s" % (self.posts))
+            #posts.update(self.posts)
+            #self.log.debug("Self Posts despues %s" % (self.posts))
+            #self.log.debug("Profiles despuees %s " % self.cache['profiles']) 
+        #self.log.debug("Profiles despueees %s " % self.cache['profiles']) 
 
         if self.gmail:
             for accG in self.gmail:
@@ -261,7 +269,7 @@ this is not a translation for the whole API).
                 self.log.debug("Self Posts despues gmail %s" % (self.posts))
 
 
-        self.log.debug("Cache Profiles %s End" % self.cache['profiles'])
+        #self.log.debug("Cache Profiles %s End" % self.cache['profiles'])
         response = self.sendReply(mess, args, posts, ['sent','pending'])
         self.log.debug("Reponse %s End" % response)
         yield(response)
