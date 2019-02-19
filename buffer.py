@@ -183,7 +183,7 @@ this is not a translation for the whole API).
         j = toDelete[1]
 
         moduleBuffer.deletePost(self.api, pp, self.profiles, args)
-        yield(moduleCache.deletePost(self.cache, pp, self.posts, args))
+        yield(self.cache.deletePost(args))
         self.gmail[0].deletePost(self.gmail, pp, self.posts, args)
         update = self.gmail[1].deletePost(self.gmail, pp, self.posts, args)
         yield "Deleted"
