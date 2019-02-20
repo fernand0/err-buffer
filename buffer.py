@@ -127,7 +127,7 @@ this is not a translation for the whole API).
 
         logging.info("Looking post in Buffer")
         update = moduleBuffer.showPost(self.api, pp, self.profiles, args)
-        update2 = moduleCache.showPost(self.cache, pp, self.posts, args)
+        update2 = self.cache.showPost(args)
         update3 = self.gmail[0].showPost(pp, self.posts, args)
         update4 = self.gmail[1].showPost(pp, self.posts, args)
         logging.debug("Looking post in Local cache bot %s", self.posts)
@@ -157,7 +157,7 @@ this is not a translation for the whole API).
         yield("Only available for Cache and Gmail")
 
         resTxt = ""
-        res = moduleCache.editPost(self.cache, pp, self.posts, args, title)
+        res = self.cache.editPost(args, title)
         if res: resTxt = resTxt + res + '\n'
         res = self.gmail[0].editPost(pp, self.posts, args, title)
         if res: resTxt = resTxt + res + '\n'
