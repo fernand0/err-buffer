@@ -52,7 +52,14 @@ this is not a translation for the whole API).
         url = confBlog.get(section, 'url')
         socialNetworks = {'twitter':'fernand0', 
                 'facebook':'Enlaces de fernand0'}
-        self.cache = moduleCache.moduleCache(url, socialNetworks) 
+        self.cache = {}
+        for sN in socialNetworks:
+            cacheAcc = moduleCache.moduleCache(url, sN, socialNetworks[sN]) 
+            cacheAcc.setPosts()
+            cacheAcc.setPostsFormatted()
+            # Maybe adding 'Cache_'?
+            self.cache[sN+'_'+socialNetworks[sN]] = cacheAcc
+
         self.gmail = []
         gmailAcc = moduleGmail.moduleGmail()
         gmailAcc.API('ACC0', pp)
@@ -101,7 +108,9 @@ this is not a translation for the whole API).
 
         logging.info("Looking post in Buffer")
         update = moduleBuffer.publishPost(self.api, pp, self.profiles, args)
-        update2 = self.cache.publishPost(args)
+        update2 = ""
+        for ca in self.cache:
+            update2 = update2 + self.cache[ca].publishPost(args)
         update3 = self.gmail[0].publishPost(pp, self.posts, args)
         update4 = self.gmail[1].publishPost(pp, self.posts, args)
         logging.info("Looking post in Local cache bot %s", self.posts)
@@ -127,7 +136,10 @@ this is not a translation for the whole API).
 
         logging.info("Looking post in Buffer")
         update = moduleBuffer.showPost(self.api, pp, self.profiles, args)
-        update2 = self.cache.showPost(args)
+        update2 = ""
+        for ca in self.cache:
+            update2 = update2 + self.cache[ca].showPost(args)
+
         update3 = self.gmail[0].showPost(pp, self.posts, args)
         update4 = self.gmail[1].showPost(pp, self.posts, args)
         logging.debug("Looking post in Local cache bot %s", self.posts)
@@ -157,8 +169,9 @@ this is not a translation for the whole API).
         yield("Only available for Cache and Gmail")
 
         resTxt = ""
-        res = self.cache.editPost(args, title)
-        if res: resTxt = resTxt + res + '\n'
+        for ca in self.cache:
+            res = self.cache[ca].editPost(args, title)
+            if res: resTxt = resTxt + res + '\n'
         res = self.gmail[0].editPost(pp, self.posts, args, title)
         if res: resTxt = resTxt + res + '\n'
         res = self.gmail[1].editPost(pp, self.posts, args, title)
@@ -166,11 +179,12 @@ this is not a translation for the whole API).
         yield(res)
         yield end()
 
-    @botcmd(split_args_with=None)
+    @botcmd
     def move(self, mess, args):
         pp = pprint.PrettyPrinter(indent=4)
+        yield(args)
         moduleBuffer.movePost(self.api, self.log, pp, self.profiles, args[0], args[1])
-        yield(moduleCache.movePost(self.cache, pp, self.posts, args[0], args[1]))
+        yield(moduleCache.movePost(args))
         yield end()
 
     @botcmd
@@ -246,18 +260,9 @@ this is not a translation for the whole API).
 
         self.log.debug("Posts buffer %s" % (posts))
 
-        self.cache.getProfiles()
-        if self.cache.profiles:
-            #self.log.debug("Profiles antes %s " % self.cache['profiles'])
-            postsP, prof = self.cache.listPosts()
-            self.log.debug("Profiles despues %s " % prof) 
+        for ca in self.cache:
+            postsP = self.cache[ca].postsFormatted
             posts.update(postsP)
-            self.log.debug("Posts despues %s" % posts)
-            #self.log.debug("Self Posts antes %s" % (self.posts))
-            #posts.update(self.posts)
-            #self.log.debug("Self Posts despues %s" % (self.posts))
-            #self.log.debug("Profiles despuees %s " % self.cache['profiles']) 
-        #self.log.debug("Profiles despueees %s " % self.cache['profiles']) 
 
         if self.gmail:
             for accG in self.gmail:
