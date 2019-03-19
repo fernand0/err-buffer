@@ -283,7 +283,7 @@ this is not a translation for the whole API).
 
         #self.log.debug("Cache Profiles %s End" % self.cache['profiles'])
         response = self.sendReply(mess, args, posts, ['sent','pending'])
-        self.log.debug("Reponse %s End" % response)
+        self.log.info("Reponse %s End" % response)
         yield(response)
         yield end()
 
