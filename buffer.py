@@ -3,6 +3,7 @@ from errbot.templating import tenv
 import moduleBuffer
 import moduleCache
 import moduleGmail
+import moduleTwitter
 import configparser
 import logging
 import os
@@ -31,7 +32,7 @@ this is not a translation for the whole API).
         super(Buffer, self).activate()
 
         config = configparser.ConfigParser()
-        config.read([os.path.expanduser('~/.mySocial/config/.rssBuffer')])
+        config.read([os.path.expanduser(CONFIGDIR + '/.rssBuffer')])
         # We are not configuring the bot via commands so we do not use the
         # provided mechanism but some config files.
     
@@ -76,6 +77,8 @@ this is not a translation for the whole API).
         if os.path.isfile(fileName): 
             with open(fileName,'r') as f: 
                 self.files = f.read().split()
+        self.twitter = moduleTwitter.moduleTwitter()
+        self.twitter.setClient('fernand0')
 
     def selectPost(self, pp, post):
         logging.info("Selecting %s" % pp.pformat(post))
@@ -113,8 +116,8 @@ this is not a translation for the whole API).
             theUpdate = self.cache[ca].publishPost(args)
             logging.info("Update ... %s" % str(theUpdate))
             update2 = update2 + theUpdate
-        update3 = self.gmail[0].publishPost(pp, self.posts, args)
-        update4 = self.gmail[1].publishPost(pp, self.posts, args)
+        update3 = self.gmail[0].publishPost(args)
+        update4 = self.gmail[1].publishPost(args)
         logging.info("Looking post in Local cache bot %s", self.posts)
         if update: 
             yield "Published %s!" % update['text_formatted']
@@ -253,6 +256,7 @@ this is not a translation for the whole API).
     @botcmd(split_args_with=None, template="buffer")
     def list(self, mess, args):
         pp = pprint.PrettyPrinter(indent=4)
+
         if self.api: 
             (posts, profiles) = moduleBuffer.listPosts(self.api, pp, "")
             
@@ -263,6 +267,11 @@ this is not a translation for the whole API).
                 self.profiles = profiles
 
         self.log.debug("Posts buffer %s" % (posts))
+
+        if self.twitter:
+            self.twitter.setPosts()
+            postsP = self.twitter.getPostsFormatted()
+            posts.update(postsP)
 
         for ca in self.cache:
             self.cache[ca].setPosts()
