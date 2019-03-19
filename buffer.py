@@ -110,7 +110,9 @@ this is not a translation for the whole API).
         update = moduleBuffer.publishPost(self.api, pp, self.profiles, args)
         update2 = ""
         for ca in self.cache:
-            update2 = update2 + self.cache[ca].publishPost(args)
+            theUpdate = self.cache[ca].publishPost(args)
+            logging.info("Update ... %s" % str(theUpdate))
+            update2 = update2 + theUpdate
         update3 = self.gmail[0].publishPost(pp, self.posts, args)
         update4 = self.gmail[1].publishPost(pp, self.posts, args)
         logging.info("Looking post in Local cache bot %s", self.posts)
@@ -197,7 +199,9 @@ this is not a translation for the whole API).
         j = toDelete[1]
 
         moduleBuffer.deletePost(self.api, pp, self.profiles, args)
-        yield(self.cache.deletePost(args))
+        res = ""
+        for ca in self.cache:
+            res = res + self.cache[ca].deletePost(args)
         self.gmail[0].deletePost(self.gmail, pp, self.posts, args)
         update = self.gmail[1].deletePost(self.gmail, pp, self.posts, args)
         yield "Deleted"
@@ -214,7 +218,7 @@ this is not a translation for the whole API).
                 for update in updates[socialNetwork][tt]:
                     if update:
                         if len(update)>0:
-                            #logging.info("Update %s " % update)
+                            logging.info("Update %s " % str(update))
                             logging.info("Update %s " % update[0])
                             if update[0]:
                                 theUpdatetxt = update[0].replace('_','\_')
@@ -261,13 +265,16 @@ this is not a translation for the whole API).
         self.log.debug("Posts buffer %s" % (posts))
 
         for ca in self.cache:
-            postsP = self.cache[ca].postsFormatted
+            self.cache[ca].setPosts()
+            self.cache[ca].setPostsFormatted()
+            postsP = self.cache[ca].getPostsFormatted()
             posts.update(postsP)
 
         if self.gmail:
             for accG in self.gmail:
                 self.log.info("Testing Mail ")
-                postsP, prof = accG.listPosts(pp)
+                accG.setPosts()
+                postsP = accG.getPostsFormatted()
                 posts.update(postsP)
                 self.log.debug("Self Posts despues gmail local %s" % (posts))
                 self.posts.update(posts)
