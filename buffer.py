@@ -142,16 +142,15 @@ this is not a translation for the whole API).
         j = toPublish[1]
 
         logging.info("Looking post in Buffer")
-        update = moduleBuffer.showPost(self.api, pp, self.profiles, args)
-        update2 = ""
-        self.cache.selectAndExecute('show', args)
+        update = self.buffer.selectAndExecute('show', args)
+        update2 = self.cache.selectAndExecute('show', args)
 
         update3 = self.gmail[0].selectAndExecute('show', args)
         update4 = self.gmail[1].selectAndExecute('show', args)
         update5 = self.gmail[2].selectAndExecute('show', args)
         logging.debug("Looking post in Local cache bot %s", self.posts)
         if update: 
-            yield "Post %s!" % update['text_formatted']+' '+update['media']['expanded_link']
+            yield "Post %s!" % update#['text_formatted']+' '+update['media']['expanded_link']
         if update2: 
             yield "Post %s!" % pp.pformat(update2)
         if update3: 
