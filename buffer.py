@@ -54,19 +54,18 @@ this is not a translation for the whole API).
         socialNetworks = {'twitter':'fernand0', 
                 'facebook':'Enlaces de fernand0'}
         self.cache = {}
-        for sN in socialNetworks:
-            cacheAcc = moduleCache.moduleCache(url, sN, socialNetworks[sN]) 
-            cacheAcc.setPosts()
-            cacheAcc.setPostsFormatted()
-            # Maybe adding 'Cache_'?
-            self.cache[sN+'_'+socialNetworks[sN]] = cacheAcc
+        self.cache = moduleCache.moduleCache()
+        self.cache.setClient(url, socialNetworks) 
 
         self.gmail = []
         gmailAcc = moduleGmail.moduleGmail()
-        gmailAcc.API('ACC0', pp)
+        gmailAcc.setClient('ACC0')
         self.gmail.append(gmailAcc) 
         gmailAcc = moduleGmail.moduleGmail()
-        gmailAcc.API('ACC1', pp)
+        gmailAcc.setClient('ACC1')
+        self.gmail.append(gmailAcc) 
+        gmailAcc = moduleGmail.moduleGmail()
+        gmailAcc.setClient('ACC2')
         self.gmail.append(gmailAcc) 
         #moduleGmail.API('ACC1', pp))
         #self.gmail.append(moduleGmail.API('ACC2', pp))
@@ -118,7 +117,7 @@ this is not a translation for the whole API).
             update2 = update2 + theUpdate
         update3 = self.gmail[0].publishPost(args)
         update4 = self.gmail[1].publishPost(args)
-        logging.info("Looking post in Local cache bot %s", self.posts)
+        logging.debug("Looking post in Local cache bot %s", self.posts)
         if update: 
             yield "Published %s!" % update['text_formatted']
         if update2: 
@@ -142,11 +141,11 @@ this is not a translation for the whole API).
         logging.info("Looking post in Buffer")
         update = moduleBuffer.showPost(self.api, pp, self.profiles, args)
         update2 = ""
-        for ca in self.cache:
-            update2 = update2 + self.cache[ca].showPost(args)
+        self.cache.selectAndExecute('show', args)
 
-        update3 = self.gmail[0].showPost(pp, self.posts, args)
-        update4 = self.gmail[1].showPost(pp, self.posts, args)
+        update3 = self.gmail[0].selectAndExecute('show', args)
+        update4 = self.gmail[1].selectAndExecute('show', args)
+        update5 = self.gmail[2].selectAndExecute('show', args)
         logging.debug("Looking post in Local cache bot %s", self.posts)
         if update: 
             yield "Post %s!" % update['text_formatted']+' '+update['media']['expanded_link']
@@ -156,6 +155,8 @@ this is not a translation for the whole API).
             yield "Post %s!" % pp.pformat(update3)
         if update4: 
             yield "Post %s!" % pp.pformat(update4)
+        if update5: 
+            yield "Post %s!" % pp.pformat(update5)
         logging.info("Post in Local cache %s", pp.pformat(self.posts))
         yield end()
 
@@ -216,6 +217,7 @@ this is not a translation for the whole API).
         for tt in types:
             # This define the ordering 'pending', 'sent'
             for socialNetwork in updates.keys():
+                logging.info("Update social network %s " % str(socialNetwork))
                 logging.debug("Updates %s End" % updates[socialNetwork][tt])
                 theUpdates = []
                 for update in updates[socialNetwork][tt]:
@@ -268,16 +270,18 @@ this is not a translation for the whole API).
 
         self.log.debug("Posts buffer %s" % (posts))
 
-        if self.twitter:
-            self.twitter.setPosts()
-            postsP = self.twitter.getPostsFormatted()
-            posts.update(postsP)
+        #if self.twitter:
+        #    self.twitter.setPosts()
+        #    postsP = self.twitter.getPostsFormatted()
+        #    posts.update(postsP)
 
-        for ca in self.cache:
-            self.cache[ca].setPosts()
-            self.cache[ca].setPostsFormatted()
-            postsP = self.cache[ca].getPostsFormatted()
-            posts.update(postsP)
+        self.socialNetworks = {'twitter': 'fernand0', 'facebook': 'Enlaces de fernand0'}
+        self.cache.program ='tf'
+        self.cache.setPosts()
+ 
+        posts = self.cache.getPostsFormatted()
+        logging.info("posts: %s", posts)
+        self.posts.update(posts)
 
         if self.gmail:
             for accG in self.gmail:
