@@ -53,7 +53,8 @@ this is not a translation for the whole API).
         url = confBlog.get(section, 'url')
         socialNetworks = {'twitter':'fernand0', 
                 'facebook':'Enlaces de fernand0'}
-        self.cache = {}
+        self.buffer = moduleBuffer.moduleBuffer()
+        self.buffer.setBuffer()
         self.cache = moduleCache.moduleCache()
         self.cache.setClient(url, socialNetworks) 
 
@@ -111,12 +112,12 @@ this is not a translation for the whole API).
         logging.info("Looking post in Buffer")
         update = moduleBuffer.publishPost(self.api, pp, self.profiles, args)
         update2 = ""
-        for ca in self.cache:
-            theUpdate = self.cache[ca].publishPost(args)
-            logging.info("Update ... %s" % str(theUpdate))
-            update2 = update2 + theUpdate
-        update3 = self.gmail[0].publishPost(args)
-        update4 = self.gmail[1].publishPost(args)
+        theUpdate = self.cache.selectAndExecute("publish", args)
+        logging.info("Update ... %s" % str(theUpdate))
+        update2 = update2 + theUpdate
+        update3 = self.gmail[0].selectAndExecute("publish", args)
+        update4 = self.gmail[1].selectAndExecute("publish", args)
+        update5 = self.gmail[2].selectAndExecute("publish", args)
         logging.debug("Looking post in Local cache bot %s", self.posts)
         if update: 
             yield "Published %s!" % update['text_formatted']
@@ -126,6 +127,8 @@ this is not a translation for the whole API).
             yield "Published %s!" % pp.pformat(update3)
         if update4: 
             yield "Published %s!" % pp.pformat(update4)
+        if update5: 
+            yield "Published %s!" % pp.pformat(update5)
         logging.info("Post in Local cache %s", pp.pformat(self.posts))
         yield end()
 
@@ -216,6 +219,7 @@ this is not a translation for the whole API).
         compResponse = [] 
         for tt in types:
             # This define the ordering 'pending', 'sent'
+            logging.info("Keys %s" % updates.keys())
             for socialNetwork in updates.keys():
                 logging.info("Update social network %s " % str(socialNetwork))
                 logging.debug("Updates %s End" % updates[socialNetwork][tt])
@@ -259,16 +263,11 @@ this is not a translation for the whole API).
     def list(self, mess, args):
         pp = pprint.PrettyPrinter(indent=4)
 
-        if self.api: 
-            (posts, profiles) = moduleBuffer.listPosts(self.api, pp, "")
-            
-            if profiles: 
-                # This got lost sometime in the past. It is needed to publish
-                # pending posts in buffer. We should consider adding something
-                # similar in '.queue' files.
-                self.profiles = profiles
-
+        self.buffer.setPosts()
+        posts = self.buffer.getPostsFormatted()            
         self.log.debug("Posts buffer %s" % (posts))
+        self.posts.update(posts)
+        self.log.debug("Posts posts %s" % (self.posts))
 
         #if self.twitter:
         #    self.twitter.setPosts()
@@ -280,8 +279,9 @@ this is not a translation for the whole API).
         self.cache.setPosts()
  
         posts = self.cache.getPostsFormatted()
-        logging.info("posts: %s", posts)
+        logging.debug("posts: %s", posts)
         self.posts.update(posts)
+        self.log.debug("Posts posts %s" % (self.posts))
 
         if self.gmail:
             for accG in self.gmail:
@@ -294,8 +294,9 @@ this is not a translation for the whole API).
                 self.log.debug("Self Posts despues gmail %s" % (self.posts))
 
 
+        self.log.debug("Posts posts %s" % (self.posts))
         #self.log.debug("Cache Profiles %s End" % self.cache['profiles'])
-        response = self.sendReply(mess, args, posts, ['sent','pending'])
+        response = self.sendReply(mess, args, self.posts, ['sent','pending'])
         self.log.info("Reponse %s End" % response)
         yield(response)
         yield end()
