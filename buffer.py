@@ -48,6 +48,7 @@ this is not a translation for the whole API).
         for profile in self.socialNetworks:
             nick = self.socialNetworks[profile]
             if profile[0] in self.program:
+                logging.info("Cache %s %s"% (profile, nick))
                 cache = moduleCache.moduleCache()
                 cache.setClient(url, (profile, nick))
                 cache.setPosts()
@@ -129,27 +130,33 @@ this is not a translation for the whole API).
     @botcmd
     def show(self, mess, args):
         """A command to publish some update"""
-        logging.info("Looking post in Buffer")
 
-        pp = pprint.PrettyPrinter(indent=4)
-        update = self.buffer.selectAndExecute('show', args)
-        update2 = self.cache.selectAndExecute('show', args)
+        updates = ""
+        for profile in self.socialNetworks:
+            nick = self.socialNetworks[profile]
+            if profile[0] in self.program: 
+                update = self.cache[(profile, nick)].selectAndExecute('show',args)
+                if update:
+                    updates = updates + update + '\n'
+            if profile[0] in self.bufferapp: 
+                update = self.buffer[(profile, nick)].selectAndExecute('show',args)
+                if update:
+                    updates = updates + update + '\n'
 
-        update3 = self.gmail[0].selectAndExecute('show', args)
-        update4 = self.gmail[1].selectAndExecute('show', args)
-        update5 = self.gmail[2].selectAndExecute('show', args)
-        logging.debug("Looking post in Local cache bot %s", self.posts)
-        if update: 
-            yield "Post %s!" % pp.pformat(update)#['text_formatted']+' '+update['media']['expanded_link']
-        if update2: 
-            yield "Post %s!" % pp.pformat(update2)
-        if update3: 
-            yield "Post %s!" % pp.pformat(update3)
-        if update4: 
-            yield "Post %s!" % pp.pformat(update4)
-        if update5: 
-            yield "Post %s!" % pp.pformat(update5)
-        logging.info("Post in Local cache %s", pp.pformat(self.posts))
+        if self.gmail:
+            for i, accG in enumerate(self.gmail):
+                profile  = accG.name
+                nick = accG.nick
+                update = accG.selectAndExecute('show', args)
+                if update:
+                    updates = updates + update + '\n'
+        if updates: 
+            #import pprint
+            #pp = pprint.PrettyPrinter(indent=4)
+            yield "Post %s!" % updates #['text_formatted']+' '+update['media']['expanded_link']
+            #yield "Post %s!" % pp.pformat(update)#['text_formatted']+' '+update['media']['expanded_link']
+        logging.debug("Post in Local cache %s", self.posts)
+        #logging.debug("Post in Local cache %s", pp.pformat(self.posts))
         yield end()
 
     @botcmd
@@ -200,34 +207,35 @@ this is not a translation for the whole API).
 
     def prepareReply(self, updates, types):
         compResponse = [] 
-        for tt in types:
-            # This define the ordering 'pending', 'sent'
-            logging.info("Keys %s" % updates.keys())
-            for socialNetwork in updates.keys():
-                logging.info("Update social network %s " % str(socialNetwork))
-                logging.debug("Updates %s End" % updates[socialNetwork][tt])
-                theUpdates = []
-                for update in updates[socialNetwork][tt]:
-                    if update:
-                        if len(update)>0:
-                            logging.info("Update %s " % str(update))
-                            logging.info("Update %s " % update[0])
-                            if update[0]:
-                                theUpdatetxt = update[0].replace('_','\_')
-                            else:
-                                # This should not happen
-                                theUpdatetxt = ''
-                            theUpdates.append((theUpdatetxt, update[1], update[2])) 
-                                #time.strftime("%Y-%m-%d-%H:%m", 
-                if updates[socialNetwork][tt]: 
-                    if theUpdates[0][0] != 'Empty': 
-                        socialTime = theUpdates[0][2] 
-                    else: 
-                        socialTime = ""
-                else:
+        logging.info("Pposts %s" % updates)
+        logging.info("Keys %s" % updates.keys())
+        for socialNetwork in updates.keys():
+            logging.info("Update social network %s " % str(socialNetwork))
+            logging.debug("Updates %s End" % updates[socialNetwork])
+            theUpdates = []
+            for update in updates[socialNetwork]:
+                if update:
+                    if len(update)>0:
+                        logging.info("Update %s " % str(update))
+                        logging.info("Update %s " % update[0])
+                        if update[0]:
+                            theUpdatetxt = update[0].replace('_','\_')
+                        else:
+                            # This should not happen
+                            theUpdatetxt = ''
+                        theUpdates.append((theUpdatetxt, update[1], update[2])) 
+                            #time.strftime("%Y-%m-%d-%H:%m", 
+            if updates[socialNetwork]: 
+                if theUpdates[0][0] != 'Empty': 
+                    socialTime = theUpdates[0][2] 
+                else: 
                     socialTime = ""
+            else:
+                socialTime = ""
     
-                compResponse.append((tt, socialNetwork, theUpdates))
+            tt = 'pending'
+            compResponse.append((tt, 
+                socialNetwork[0]+'_'+socialNetwork[1], theUpdates))
     
         return(compResponse)
 
@@ -250,32 +258,38 @@ this is not a translation for the whole API).
         self.posts = {}
         for profile in self.socialNetworks:
             nick = self.socialNetworks[profile]
+            logging.info("socialNetworks %s %s"% (profile, nick))
             if profile[0] in self.program: 
                 posts = []
                 for post in self.cache[(profile, nick)].getPosts():
                     title = self.cache[(profile, nick)].getPostTitle(post)
                     link = self.cache[(profile, nick)].getPostLink(post)
                     posts.append((title, link, ''))
-                self.posts[(profile, link)] = posts
+                self.posts[(profile, nick)] = posts
             if profile[0] in self.bufferapp: 
                 posts = []
+                self.buffer[(profile, nick)].setPosts()
                 for post in self.buffer[(profile, nick)].getPosts():
                     title = self.buffer[(profile, nick)].getPostTitle(post)
                     link = self.buffer[(profile, nick)].getPostLink(post)
                     posts.append((title, link, ''))
-                self.posts[(profile, link)] = posts
+                self.posts[(profile, nick)] = posts
 
         self.log.debug("Posts posts %s" % (self.posts))
 
         if self.gmail:
-            for accG in self.gmail:
+            for i, accG in enumerate(self.gmail):
+                posts = []
+                profile  = accG.name
+                nick = accG.nick
                 self.log.info("Testing Mail ")
                 accG.setPosts()
-                postsP = accG.getPostsFormatted()
-                posts.update(postsP)
-                self.log.debug("Self Posts despues gmail local %s" % (posts))
-                self.posts.update(posts)
-                self.log.debug("Self Posts despues gmail %s" % (self.posts))
+                for post in accG.getPosts():
+                    logging.info("Gmail post %s" %post)
+                    title = accG.getHeader(post)
+                    link = ''
+                    posts.append((title, link, ''))
+                self.posts[(profile, nick)] = posts
 
         self.log.debug("Posts posts %s" % (self.posts))
         #self.log.debug("Cache Profiles %s End" % self.cache['profiles'])
