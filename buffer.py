@@ -31,32 +31,32 @@ this is not a translation for the whole API).
         """
         super(Buffer, self).activate()
 
-        config = configparser.ConfigParser()
-        config.read([os.path.expanduser(CONFIGDIR + '/.rssBuffer')])
-        # We are not configuring the bot via commands so we do not use the
-        # provided mechanism but some config files.
-    
-        clientId = config.get("appKeys", "client_id")
-        clientSecret = config.get("appKeys", "client_secret")
-        redirectUrl = config.get("appKeys", "redirect_uri")
-        accessToken = config.get("appKeys", "access_token")
-        
-        pp = pprint.PrettyPrinter(indent=4)
-        # instantiate the api object 
-        self.api = API(client_id=clientId,
-                          client_secret=clientSecret,
-                          access_token=accessToken)
         confBlog = configparser.ConfigParser() 
         confBlog.read(CONFIGDIR + '/.rssBlogs')
 
         section = "Blog7"
         url = confBlog.get(section, 'url')
-        socialNetworks = {'twitter':'fernand0', 
-                'facebook':'Enlaces de fernand0'}
-        self.buffer = moduleBuffer.moduleBuffer()
-        self.buffer.setBuffer()
-        self.cache = moduleCache.moduleCache()
-        self.cache.setClient(url, socialNetworks) 
+        self.socialNetworks = {'twitter':'fernand0', 
+                'facebook':'Enlaces de fernand0', 
+                'mastodon':'fernand0',
+                'linkedin': 'Fernando Tricas'}
+
+        self.bufferapp ='l'
+        self.program ='tfm'
+        self.cache = {}
+        self.buffer = {}
+        for profile in self.socialNetworks:
+            nick = self.socialNetworks[profile]
+            if profile[0] in self.program:
+                cache = moduleCache.moduleCache()
+                cache.setClient(url, (profile, nick))
+                cache.setPosts()
+                self.cache[(profile, nick)] = cache
+            if profile[0] in self.bufferapp: 
+                buff = moduleBuffer.moduleBuffer() 
+                buff.setClient(url, (profile, nick)) 
+                buff.setPosts()
+                self.buffer[(profile, nick)] = buff
 
         self.gmail = []
         gmailAcc = moduleGmail.moduleGmail()
@@ -102,15 +102,9 @@ this is not a translation for the whole API).
     def publish(self, mess, args):
         """A command to publish some update"""
         pp = pprint.PrettyPrinter(indent=4)
-        toPublish = self.selectPost(pp, args)
-
-        profIni = toPublish[0]
-        j = toPublish[1]
-        if len(toPublish)>2:
-            profIni = profIni + toPublish[2]
 
         logging.info("Looking post in Buffer")
-        update = moduleBuffer.publishPost(self.api, pp, self.profiles, args)
+        update = self.buffer.selectAndExecute('publish', args)
         update2 = ""
         theUpdate = self.cache.selectAndExecute("publish", args)
         logging.info("Update ... %s" % str(theUpdate))
@@ -129,19 +123,15 @@ this is not a translation for the whole API).
             yield "Published %s!" % pp.pformat(update4)
         if update5: 
             yield "Published %s!" % pp.pformat(update5)
-        logging.info("Post in Local cache %s", pp.pformat(self.posts))
+        logging.debug("Post in Local cache %s", pp.pformat(self.posts))
         yield end()
 
     @botcmd
     def show(self, mess, args):
         """A command to publish some update"""
-        pp = pprint.PrettyPrinter(indent=4)
-        toPublish = self.selectPost(pp, args)
-
-        profIni = toPublish[0]
-        j = toPublish[1]
-
         logging.info("Looking post in Buffer")
+
+        pp = pprint.PrettyPrinter(indent=4)
         update = self.buffer.selectAndExecute('show', args)
         update2 = self.cache.selectAndExecute('show', args)
 
@@ -150,7 +140,7 @@ this is not a translation for the whole API).
         update5 = self.gmail[2].selectAndExecute('show', args)
         logging.debug("Looking post in Local cache bot %s", self.posts)
         if update: 
-            yield "Post %s!" % update#['text_formatted']+' '+update['media']['expanded_link']
+            yield "Post %s!" % pp.pformat(update)#['text_formatted']+' '+update['media']['expanded_link']
         if update2: 
             yield "Post %s!" % pp.pformat(update2)
         if update3: 
@@ -166,23 +156,17 @@ this is not a translation for the whole API).
     def edit(self, mess, args):
         """A command to edit some update"""
         pp = pprint.PrettyPrinter(indent=4)
-        toPublish = self.selectPost(pp, args.split()[0])
-
-        profIni = toPublish[0]
-        j = toPublish[1]
-
-        title = args[len(toPublish)+1:]
-
-        args, title = args.split(maxsplit=1)
-        yield("Only available for Cache and Gmail")
 
         resTxt = ""
-        for ca in self.cache:
-            res = self.cache[ca].editPost(args, title)
-            if res: resTxt = resTxt + res + '\n'
-        res = self.gmail[0].editPost(pp, self.posts, args, title)
+        res = self.buffer.selectAndExecute("edit", args)
         if res: resTxt = resTxt + res + '\n'
-        res = self.gmail[1].editPost(pp, self.posts, args, title)
+        res = self.cache.selectAndExecute("edit", args)
+        if res: resTxt = resTxt + res + '\n'
+        res = self.gmail[0].selectAndExecute("edit", args)
+        if res: resTxt = resTxt + res + '\n'
+        res = self.gmail[1].selectAndExecute("edit", args)
+        if res: resTxt = resTxt + res + '\n'
+        res = self.gmail[2].selectAndExecute("edit", args)
         if res: resTxt = resTxt + res + '\n'
         yield(res)
         yield end()
@@ -199,19 +183,19 @@ this is not a translation for the whole API).
     def delete(self, mess, args):
         """A command to delete some update"""
         pp = pprint.PrettyPrinter(indent=4)
-        toDelete = self.selectPost(pp, args)
 
-        profIni = toDelete[0]
-        j = toDelete[1]
-
-        moduleBuffer.deletePost(self.api, pp, self.profiles, args)
-        res = ""
-        for ca in self.cache:
-            res = res + self.cache[ca].deletePost(args)
-        self.gmail[0].deletePost(self.gmail, pp, self.posts, args)
-        update = self.gmail[1].deletePost(self.gmail, pp, self.posts, args)
-        yield "Deleted"
-        yield update
+        resTxt = "Deleted! "
+        res = self.buffer.selectAndExecute("delete", args)
+        if res: resTxt = resTxt + res + '\n'
+        res = self.cache.selectAndExecute("delete", args)
+        if res: resTxt = resTxt + res + '\n'
+        res = self.gmail[0].selectAndExecute("delete", args)
+        if res: resTxt = resTxt + res + '\n'
+        res = self.gmail[1].selectAndExecute("delete", args)
+        if res: resTxt = resTxt + res + '\n'
+        res = self.gmail[2].selectAndExecute("delete", args)
+        if res: resTxt = resTxt + res + '\n'
+        yield(res)
         yield end()
 
     def prepareReply(self, updates, types):
@@ -262,24 +246,25 @@ this is not a translation for the whole API).
     def list(self, mess, args):
         pp = pprint.PrettyPrinter(indent=4)
 
-        self.buffer.setPosts()
-        posts = self.buffer.getPostsFormatted()            
-        self.log.debug("Posts buffer %s" % (posts))
-        self.posts.update(posts)
         self.log.debug("Posts posts %s" % (self.posts))
+        self.posts = {}
+        for profile in self.socialNetworks:
+            nick = self.socialNetworks[profile]
+            if profile[0] in self.program: 
+                posts = []
+                for post in self.cache[(profile, nick)].getPosts():
+                    title = self.cache[(profile, nick)].getPostTitle(post)
+                    link = self.cache[(profile, nick)].getPostLink(post)
+                    posts.append((title, link, ''))
+                self.posts[(profile, link)] = posts
+            if profile[0] in self.bufferapp: 
+                posts = []
+                for post in self.buffer[(profile, nick)].getPosts():
+                    title = self.buffer[(profile, nick)].getPostTitle(post)
+                    link = self.buffer[(profile, nick)].getPostLink(post)
+                    posts.append((title, link, ''))
+                self.posts[(profile, link)] = posts
 
-        #if self.twitter:
-        #    self.twitter.setPosts()
-        #    postsP = self.twitter.getPostsFormatted()
-        #    posts.update(postsP)
-
-        self.socialNetworks = {'twitter': 'fernand0', 'facebook': 'Enlaces de fernand0'}
-        self.cache.program ='tf'
-        self.cache.setPosts()
- 
-        posts = self.cache.getPostsFormatted()
-        logging.debug("posts: %s", posts)
-        self.posts.update(posts)
         self.log.debug("Posts posts %s" % (self.posts))
 
         if self.gmail:
@@ -291,7 +276,6 @@ this is not a translation for the whole API).
                 self.log.debug("Self Posts despues gmail local %s" % (posts))
                 self.posts.update(posts)
                 self.log.debug("Self Posts despues gmail %s" % (self.posts))
-
 
         self.log.debug("Posts posts %s" % (self.posts))
         #self.log.debug("Cache Profiles %s End" % self.cache['profiles'])
