@@ -164,17 +164,29 @@ this is not a translation for the whole API).
         """A command to edit some update"""
         pp = pprint.PrettyPrinter(indent=4)
 
-        resTxt = ""
-        res = self.buffer.selectAndExecute("edit", args)
-        if res: resTxt = resTxt + res + '\n'
-        res = self.cache.selectAndExecute("edit", args)
-        if res: resTxt = resTxt + res + '\n'
-        res = self.gmail[0].selectAndExecute("edit", args)
-        if res: resTxt = resTxt + res + '\n'
-        res = self.gmail[1].selectAndExecute("edit", args)
-        if res: resTxt = resTxt + res + '\n'
-        res = self.gmail[2].selectAndExecute("edit", args)
-        if res: resTxt = resTxt + res + '\n'
+        resTxt = 'Edited! '
+        updates = ''
+        for profile in self.socialNetworks:
+            nick = self.socialNetworks[profile]
+            if profile[0] in self.program: 
+                update = self.cache[(profile, nick)].selectAndExecute('edit',args)
+                if update:
+                    updates = updates + update + '\n'
+            if profile[0] in self.bufferapp: 
+                update = self.buffer[(profile, nick)].selectAndExecute('edit',args)
+                if update:
+                    updates = updates + update + '\n'
+
+        if self.gmail:
+            for i, accG in enumerate(self.gmail):
+                profile  = accG.name
+                nick = accG.nick
+                update = accG.selectAndExecute('edit', args)
+                if update:
+                    updates = updates + update + '\n'
+
+        if updates: res = resTxt + updates + '\n'
+
         yield(res)
         yield end()
 
@@ -192,16 +204,27 @@ this is not a translation for the whole API).
         pp = pprint.PrettyPrinter(indent=4)
 
         resTxt = "Deleted! "
-        res = self.buffer.selectAndExecute("delete", args)
-        if res: resTxt = resTxt + res + '\n'
-        res = self.cache.selectAndExecute("delete", args)
-        if res: resTxt = resTxt + res + '\n'
-        res = self.gmail[0].selectAndExecute("delete", args)
-        if res: resTxt = resTxt + res + '\n'
-        res = self.gmail[1].selectAndExecute("delete", args)
-        if res: resTxt = resTxt + res + '\n'
-        res = self.gmail[2].selectAndExecute("delete", args)
-        if res: resTxt = resTxt + res + '\n'
+        updates = ''
+        for profile in self.socialNetworks:
+            nick = self.socialNetworks[profile]
+            if profile[0] in self.program: 
+                update = self.cache[(profile, nick)].selectAndExecute('delete',args)
+                if update:
+                    updates = updates + update + '\n'
+            if profile[0] in self.bufferapp: 
+                update = self.buffer[(profile, nick)].selectAndExecute('delete',args)
+                if update:
+                    updates = updates + update + '\n'
+
+        if self.gmail:
+            for i, accG in enumerate(self.gmail):
+                profile  = accG.name
+                nick = accG.nick
+                update = accG.selectAndExecute('delete', args)
+                if update:
+                    updates = updates + update + '\n'
+
+        if updates: res = resTxt + updates + '\n'
         yield(res)
         yield end()
 
