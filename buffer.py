@@ -258,8 +258,9 @@ this is not a translation for the whole API).
                 socialTime = ""
     
             tt = 'pending'
-            compResponse.append((tt, 
-                socialNetwork[0]+'_'+socialNetwork[1], theUpdates))
+            if theUpdates: 
+                compResponse.append((tt, 
+                    socialNetwork[0].capitalize()+' ('+socialNetwork[1]+')', theUpdates))
     
         return(compResponse)
 
@@ -285,18 +286,20 @@ this is not a translation for the whole API).
             logging.info("socialNetworks %s %s"% (profile, nick))
             if profile[0] in self.program: 
                 posts = []
-                for post in self.cache[(profile, nick)].getPosts():
-                    title = self.cache[(profile, nick)].getPostTitle(post)
-                    link = self.cache[(profile, nick)].getPostLink(post)
-                    posts.append((title, link, ''))
+                if self.cache[(profile, nick)].getPosts():
+                    for post in self.cache[(profile, nick)].getPosts():
+                        title = self.cache[(profile, nick)].getPostTitle(post)
+                        link = self.cache[(profile, nick)].getPostLink(post)
+                        posts.append((title, link, ''))
                 self.posts[(profile, nick)] = posts
             if profile[0] in self.bufferapp: 
                 posts = []
                 self.buffer[(profile, nick)].setPosts()
-                for post in self.buffer[(profile, nick)].getPosts():
-                    title = self.buffer[(profile, nick)].getPostTitle(post)
-                    link = self.buffer[(profile, nick)].getPostLink(post)
-                    posts.append((title, link, ''))
+                if self.buffer[(profile, nick)].getPosts():
+                    for post in self.buffer[(profile, nick)].getPosts():
+                        title = self.buffer[(profile, nick)].getPostTitle(post)
+                        link = self.buffer[(profile, nick)].getPostLink(post)
+                        posts.append((title, link, ''))
                 self.posts[(profile, nick)] = posts
 
         self.log.debug("Posts posts %s" % (self.posts))
