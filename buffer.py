@@ -102,29 +102,30 @@ this is not a translation for the whole API).
     @botcmd
     def publish(self, mess, args):
         """A command to publish some update"""
-        pp = pprint.PrettyPrinter(indent=4)
+        resTxt = 'Published! '
+        updates = ''
+        for profile in self.socialNetworks:
+            nick = self.socialNetworks[profile]
+            if profile[0] in self.program: 
+                update = self.cache[(profile, nick)].selectAndExecute('publish',args)
+                if update:
+                    updates = updates + update + '\n'
+            if profile[0] in self.bufferapp: 
+                update = self.buffer[(profile, nick)].selectAndExecute('publish',args)
+                if update:
+                    updates = updates + update + '\n'
 
-        logging.info("Looking post in Buffer")
-        update = self.buffer.selectAndExecute('publish', args)
-        update2 = ""
-        theUpdate = self.cache.selectAndExecute("publish", args)
-        logging.info("Update ... %s" % str(theUpdate))
-        update2 = update2 + theUpdate
-        update3 = self.gmail[0].selectAndExecute("publish", args)
-        update4 = self.gmail[1].selectAndExecute("publish", args)
-        update5 = self.gmail[2].selectAndExecute("publish", args)
-        logging.debug("Looking post in Local cache bot %s", self.posts)
-        if update: 
-            yield "Published %s!" % update['text_formatted']
-        if update2: 
-            yield "Published %s!" % pp.pformat(update2)
-        if update3: 
-            yield "Published %s!" % pp.pformat(update3)
-        if update4: 
-            yield "Published %s!" % pp.pformat(update4)
-        if update5: 
-            yield "Published %s!" % pp.pformat(update5)
-        logging.debug("Post in Local cache %s", pp.pformat(self.posts))
+        if self.gmail:
+            for i, accG in enumerate(self.gmail):
+                profile  = accG.name
+                nick = accG.nick
+                update = accG.selectAndExecute('publish', args)
+                if update:
+                    updates = updates + update + '\n'
+
+        if updates: res = resTxt + updates + '\n'
+
+        yield(res)
         yield end()
 
     @botcmd
