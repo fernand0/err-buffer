@@ -286,6 +286,7 @@ this is not a translation for the whole API).
             logging.info("socialNetworks %s %s"% (profile, nick))
             if profile[0] in self.program: 
                 posts = []
+                self.cache[(profile, nick)].setPosts()
                 if self.cache[(profile, nick)].getPosts():
                     for post in self.cache[(profile, nick)].getPosts():
                         title = self.cache[(profile, nick)].getPostTitle(post)
