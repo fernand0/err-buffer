@@ -154,7 +154,7 @@ this is not a translation for the whole API).
         if updates: 
             #import pprint
             #pp = pprint.PrettyPrinter(indent=4)
-            yield "Post %s!" % updates #['text_formatted']+' '+update['media']['expanded_link']
+            yield "Post: %s" % updates #['text_formatted']+' '+update['media']['expanded_link']
             #yield "Post %s!" % pp.pformat(update)#['text_formatted']+' '+update['media']['expanded_link']
         logging.debug("Post in Local cache %s", self.posts)
         #logging.debug("Post in Local cache %s", pp.pformat(self.posts))
