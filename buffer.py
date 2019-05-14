@@ -161,9 +161,39 @@ this is not a translation for the whole API).
         yield end()
 
     @botcmd
+    def editl(self, mess, args):
+        """A command to edit the link of some update"""
+
+        resTxt = 'Edited link! '
+        updates = ''
+        for profile in self.socialNetworks:
+            nick = self.socialNetworks[profile]
+            if profile[0] in self.program: 
+                update = self.cache[(profile, nick)].selectAndExecute('editl',args)
+                if update:
+                    updates = updates + update + '\n'
+            if profile[0] in self.bufferapp: 
+                update = self.buffer[(profile, nick)].selectAndExecute('editl',args)
+                if update:
+                    updates = updates + update + '\n'
+
+        if self.gmail:
+            for i, accG in enumerate(self.gmail):
+                profile  = accG.name
+                nick = accG.nick
+                update = accG.selectAndExecute('editl', args)
+                if update:
+                    updates = updates + update + '\n'
+
+        if updates: res = resTxt + updates + '\n'
+
+        yield(res)
+        yield end()
+
+
+    @botcmd
     def edit(self, mess, args):
         """A command to edit some update"""
-        pp = pprint.PrettyPrinter(indent=4)
 
         resTxt = 'Edited! '
         updates = ''
@@ -202,7 +232,6 @@ this is not a translation for the whole API).
     @botcmd
     def delete(self, mess, args):
         """A command to delete some update"""
-        pp = pprint.PrettyPrinter(indent=4)
 
         resTxt = "Deleted! "
         updates = ''
@@ -277,7 +306,6 @@ this is not a translation for the whole API).
 
     @botcmd(split_args_with=None, template="buffer")
     def list(self, mess, args):
-        pp = pprint.PrettyPrinter(indent=4)
 
         self.log.debug("Posts posts %s" % (self.posts))
         self.posts = {}
