@@ -185,11 +185,19 @@ this is not a translation for the whole API).
                 if update:
                     updates = updates + update + '\n'
 
-        if updates: res = resTxt + updates + '\n'
+        if updates: 
+            res = resTxt + updates + '\n'
+            self.addEditsCache(args)
 
         yield(res)
         yield end()
 
+    def addEditsCache(self, args):
+        if 'argsArchive' not in self:
+            self['argsArchive'] = []
+        argsArchive = self['argsArchive']
+        argsArchive.append(args)
+        self['argsArchive'] = argsArchive
 
     @botcmd
     def edit(self, mess, args):
@@ -218,12 +226,7 @@ this is not a translation for the whole API).
 
         if updates: 
             res = resTxt + updates + '\n'
-            if 'argsArchive' not in self:
-                self['argsArchive'] = []
-            argsArchive = self['argsArchive']
-            argsArchive.append(args)
-            self['argsArchive'] = argsArchive
-
+            self.addEditsCache(args)
         yield(res)
         yield end()
 
