@@ -234,7 +234,7 @@ this is not a translation for the whole API).
     def showE(self, mess, args):
         if 'argsArchive' in self:
             for arg in self['argsArchive']:
-                yield(arg)
+                yield("- %s" % arg)
         else:
             yield('No cache')
         yield end()
