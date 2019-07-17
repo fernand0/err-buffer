@@ -233,7 +233,8 @@ this is not a translation for the whole API).
     @botcmd
     def showE(self, mess, args):
         if 'argsArchive' in self:
-            yield(self['argsArchive'])
+            for arg in self['argsArchive']:
+                yield(arg)
         else:
             yield('No cache')
         yield end()
