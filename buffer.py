@@ -241,10 +241,25 @@ this is not a translation for the whole API).
 
     @botcmd
     def move(self, mess, args):
-        pp = pprint.PrettyPrinter(indent=4)
-        yield(args)
-        moduleBuffer.movePost(self.api, self.log, pp, self.profiles, args[0], args[1])
-        yield(moduleCache.movePost(args))
+        """A command to move some update"""
+        
+        resTxt = "Moved! "
+        updates = ''
+        for profile in self.socialNetworks:
+            nick = self.socialNetworks[profile]
+            if profile[0] in self.program: 
+                update = self.cache[(profile, nick)].selectAndExecute('move',args)
+                if update:
+                    updates = updates + update + '\n'
+            if profile[0] in self.bufferapp: 
+                updates = updates + 'Not implemented' + '\n'
+                #update = self.buffer[(profile, nick)].selectAndExecute('move',args)
+                #if update:
+                #    updates = updates + update + '\n'
+
+        if updates: res = resTxt + updates + '\n'
+        yield(res)
+        
         yield end()
 
     @botcmd
