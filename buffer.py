@@ -56,6 +56,7 @@ this is not a translation for the whole API).
             if profile[0] in self.bufferapp: 
                 buff = moduleBuffer.moduleBuffer() 
                 buff.setClient(url, (profile, nick)) 
+                logging.info("apiii %s" % buff.client)
                 buff.setPosts()
                 self.buffer[(profile, nick)] = buff
 
@@ -104,16 +105,16 @@ this is not a translation for the whole API).
         """A command to publish some update"""
         resTxt = 'Published! '
         updates = ''
+        update = None
         for profile in self.socialNetworks:
             nick = self.socialNetworks[profile]
             if profile[0] in self.program: 
                 update = self.cache[(profile, nick)].selectAndExecute('publish',args)
-                if update:
-                    updates = updates + update + '\n'
             if profile[0] in self.bufferapp: 
                 update = self.buffer[(profile, nick)].selectAndExecute('publish',args)
-                if update:
-                    updates = updates + update + '\n'
+            if update: 
+                updates = updates + "- " + update + '\n'
+                update = None
 
         if self.gmail:
             for i, accG in enumerate(self.gmail):
@@ -121,7 +122,8 @@ this is not a translation for the whole API).
                 nick = accG.nick
                 update = accG.selectAndExecute('publish', args)
                 if update:
-                    updates = updates + update + '\n'
+                    updates = updates + "- " + update + '\n'
+                    update = None
 
         if updates: res = resTxt + updates + '\n'
 
@@ -245,18 +247,17 @@ this is not a translation for the whole API).
         
         resTxt = "Moved! "
         updates = ''
+        update = None
         for profile in self.socialNetworks:
             nick = self.socialNetworks[profile]
             if profile[0] in self.program: 
                 update = self.cache[(profile, nick)].selectAndExecute('move',args)
-                if update:
-                    updates = updates + update + '\n'
             if profile[0] in self.bufferapp: 
-                updates = updates + 'Not implemented' + '\n'
-                #update = self.buffer[(profile, nick)].selectAndExecute('move',args)
-                #if update:
-                #    updates = updates + update + '\n'
+                update = self.buffer[(profile, nick)].selectAndExecute('move',args)
 
+            if update:
+                updates = updates + update + '\n'
+                update = None
         if updates: res = resTxt + updates + '\n'
         yield(res)
         
