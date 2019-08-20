@@ -125,26 +125,26 @@ this is not a translation for the whole API).
                     updates = updates + "- " + update + '\n'
                     update = None
 
-        if updates: res = resTxt + updates + '\n'
+        if updates: res = resTxt + '\n' + updates + '\n'
 
-        yield(res)
+        yield res 
         yield end()
 
     @botcmd
     def show(self, mess, args):
         """A command to publish some update"""
-
+        resTxt = 'Post: '
         updates = ""
+        update = None
         for profile in self.socialNetworks:
             nick = self.socialNetworks[profile]
             if profile[0] in self.program: 
                 update = self.cache[(profile, nick)].selectAndExecute('show',args)
-                if update:
-                    updates = updates + update + '\n'
             if profile[0] in self.bufferapp: 
                 update = self.buffer[(profile, nick)].selectAndExecute('show',args)
-                if update:
-                    updates = updates + update + '\n'
+            if update:
+                updates = updates + '- ' + update + '\n'
+                update = None
 
         if self.gmail:
             for i, accG in enumerate(self.gmail):
@@ -152,12 +152,12 @@ this is not a translation for the whole API).
                 nick = accG.nick
                 update = accG.selectAndExecute('show', args)
                 if update:
-                    updates = updates + update + '\n'
+                    updates = updates + "- " + update + '\n'
+                    update = None
         if updates: 
-            #import pprint
-            #pp = pprint.PrettyPrinter(indent=4)
-            yield "Post: %s" % updates #['text_formatted']+' '+update['media']['expanded_link']
-            #yield "Post %s!" % pp.pformat(update)#['text_formatted']+' '+update['media']['expanded_link']
+            res = resTxt + '\n'+ updates + '\n'
+            
+        yield res 
         logging.debug("Post in Local cache %s", self.posts)
         #logging.debug("Post in Local cache %s", pp.pformat(self.posts))
         yield end()
@@ -207,16 +207,16 @@ this is not a translation for the whole API).
 
         resTxt = 'Edited! '
         updates = ''
+        update = None
         for profile in self.socialNetworks:
             nick = self.socialNetworks[profile]
             if profile[0] in self.program: 
                 update = self.cache[(profile, nick)].selectAndExecute('edit',args)
-                if update:
-                    updates = updates + update + '\n'
             if profile[0] in self.bufferapp: 
                 update = self.buffer[(profile, nick)].selectAndExecute('edit',args)
-                if update:
-                    updates = updates + update + '\n'
+            if update:
+                updates = updates + '- ' + update + '\n'
+                update = None
 
         if self.gmail:
             for i, accG in enumerate(self.gmail):
@@ -225,11 +225,13 @@ this is not a translation for the whole API).
                 update = accG.selectAndExecute('edit', args)
                 if update:
                     updates = updates + update + '\n'
+                    update = None
 
         if updates: 
-            res = resTxt + updates + '\n'
+            res = resTxt + '\n' + updates + '\n'
             self.addEditsCache(args)
-        yield(res)
+
+        yield res
         yield end()
 
     @botcmd
