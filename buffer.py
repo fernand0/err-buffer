@@ -39,42 +39,31 @@ this is not a translation for the whole API).
         self.socialNetworks = {'twitter':'fernand0', 
                 'facebook':'Enlaces de fernand0', 
                 'mastodon':'fernand0',
-                'linkedin': 'Fernando Tricas'}
+                'linkedin': 'Fernando Tricas',
+                'gmail0':'fernand0@elmundoesimperfecto.com',
+                'gmail1':'ftricas@elmundoesimperfecto.com',
+                'gmail2':'ftricas@gmail.com'}
 
         self.bufferapp ='l'
         self.program ='tfm'
-        self.cache = {}
-        self.buffer = {}
+        self.gmail = 'g'
+        self.clients = {}
         for profile in self.socialNetworks:
             nick = self.socialNetworks[profile]
             if profile[0] in self.program:
-                logging.info("Cache %s %s"% (profile, nick))
-                cache = moduleCache.moduleCache()
-                cache.setClient(url, (profile, nick))
-                cache.setPosts()
-                self.cache[(profile, nick)] = cache
+                client = moduleCache.moduleCache()
             if profile[0] in self.bufferapp: 
-                buff = moduleBuffer.moduleBuffer() 
-                buff.setClient(url, (profile, nick)) 
-                logging.info("apiii %s" % buff.client)
-                buff.setPosts()
-                self.buffer[(profile, nick)] = buff
+                client = moduleBuffer.moduleBuffer() 
+                url = None
+            if profile[0] in self.gmail:
+                client = moduleGmail.moduleGmail() 
+                url = ''
+            self.log.info("Profile %s %s" % (profile,nick))
+            client.setClient(url,(profile, nick)) 
+            client.setPosts()
+            self.clients[(profile, nick)] = client
 
-        self.gmail = []
-        gmailAcc = moduleGmail.moduleGmail()
-        gmailAcc.setClient('ACC0')
-        self.gmail.append(gmailAcc) 
-        gmailAcc = moduleGmail.moduleGmail()
-        gmailAcc.setClient('ACC1')
-        self.gmail.append(gmailAcc) 
-        gmailAcc = moduleGmail.moduleGmail()
-        gmailAcc.setClient('ACC2')
-        self.gmail.append(gmailAcc) 
-        #moduleGmail.API('ACC1', pp))
-        #self.gmail.append(moduleGmail.API('ACC2', pp))
-        self.log.info("Gmail %s " % self.gmail) 
         self.posts = {}
-        #self.log.debug("Cache %s " % self.cache['profiles']) 
         fileName = os.path.expanduser('~/.mySocial/config/')+ '.rssProgram'
         if os.path.isfile(fileName): 
             with open(fileName,'r') as f: 
@@ -106,22 +95,11 @@ this is not a translation for the whole API).
         update = None
         for profile in self.socialNetworks:
             nick = self.socialNetworks[profile]
-            if profile[0] in self.program: 
-                update = self.cache[(profile, nick)].selectAndExecute(command,args)
-            if profile[0] in self.bufferapp: 
-                update = self.buffer[(profile, nick)].selectAndExecute(command,args)
+            if (profile[0] in self.program) or (profile[0] in self.bufferapp) or (profile[0] in self.gmail): 
+                update = self.clients[(profile, nick)].selectAndExecute(command,args)
             if update: 
                 updates = updates + "- " + update + '\n'
                 update = None
-
-        if self.gmail:
-            for i, accG in enumerate(self.gmail):
-                profile  = accG.name
-                nick = accG.nick
-                update = accG.selectAndExecute(command, args)
-                if update:
-                    updates = updates + "- " + update + '\n'
-                    update = None
 
         if updates: res = resTxt + '\n' + updates + '\n'
 
@@ -243,43 +221,18 @@ this is not a translation for the whole API).
         for profile in self.socialNetworks:
             nick = self.socialNetworks[profile]
             logging.info("socialNetworks %s %s"% (profile, nick))
-            if profile[0] in self.program: 
+            if (profile[0] in self.program) or (profile[0] in self.bufferapp) or (profile[0] in self.gmail): 
                 posts = []
-                self.cache[(profile, nick)].setPosts()
-                if self.cache[(profile, nick)].getPosts():
-                    for post in self.cache[(profile, nick)].getPosts():
-                        title = self.cache[(profile, nick)].getPostTitle(post)
-                        link = self.cache[(profile, nick)].getPostLink(post)
-                        posts.append((title, link, ''))
-                self.posts[(profile, nick)] = posts
-            if profile[0] in self.bufferapp: 
-                posts = []
-                self.buffer[(profile, nick)].setPosts()
-                if self.buffer[(profile, nick)].getPosts():
-                    for post in self.buffer[(profile, nick)].getPosts():
-                        title = self.buffer[(profile, nick)].getPostTitle(post)
-                        link = self.buffer[(profile, nick)].getPostLink(post)
+                self.clients[(profile, nick)].setPosts()
+                if self.clients[(profile, nick)].getPosts():
+                    for post in self.clients[(profile, nick)].getPosts():
+                        title = self.clients[(profile, nick)].getPostTitle(post)
+                        link = self.clients[(profile, nick)].getPostLink(post)
                         posts.append((title, link, ''))
                 self.posts[(profile, nick)] = posts
 
         self.log.debug("Posts posts %s" % (self.posts))
 
-        if self.gmail:
-            for i, accG in enumerate(self.gmail):
-                posts = []
-                profile  = accG.name
-                nick = accG.nick
-                self.log.info("Testing Mail ")
-                accG.setPosts()
-                for post in accG.getPosts():
-                    logging.info("Gmail post %s" %post)
-                    title = accG.getHeader(post)
-                    link = ''
-                    posts.append((title, link, ''))
-                self.posts[(profile, nick)] = posts
-
-        self.log.debug("Posts posts %s" % (self.posts))
-        #self.log.debug("Cache Profiles %s End" % self.cache['profiles'])
         response = self.sendReply(mess, args, self.posts, ['sent','pending'])
         self.log.info("Reponse %s End" % response)
         yield(response)
