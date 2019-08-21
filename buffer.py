@@ -98,9 +98,10 @@ this is not a translation for the whole API).
         else: 
             return(profMov, j)
 
+
     def execute(self, command, args):
         """Execute a command """
-        resTxt = 'Executing:{}'.format(command)
+        resTxt = 'Executing: {}'.format(command)
         updates = ''
         update = None
         for profile in self.socialNetworks:
@@ -131,98 +132,30 @@ this is not a translation for the whole API).
     @botcmd
     def publish(self, mess, args):
         """A command to publish some update"""
-
         res = self.execute('publish', args)
-        #resTxt = 'Published! '
-        #updates = ''
-        #update = None
-        #for profile in self.socialNetworks:
-        #    nick = self.socialNetworks[profile]
-        #    if profile[0] in self.program: 
-        #        update = self.cache[(profile, nick)].selectAndExecute('publish',args)
-        #    if profile[0] in self.bufferapp: 
-        #        update = self.buffer[(profile, nick)].selectAndExecute('publish',args)
-        #    if update: 
-        #        updates = updates + "- " + update + '\n'
-        #        update = None
-
-        #if self.gmail:
-        #    for i, accG in enumerate(self.gmail):
-        #        profile  = accG.name
-        #        nick = accG.nick
-        #        update = accG.selectAndExecute('publish', args)
-        #        if update:
-        #            updates = updates + "- " + update + '\n'
-        #            update = None
-
-        #if updates: res = resTxt + '\n' + updates + '\n'
-
-
         yield res 
         yield end()
 
     @botcmd
     def show(self, mess, args):
         """A command to publish some update"""
-        resTxt = 'Post: '
-        updates = ""
-        update = None
-        for profile in self.socialNetworks:
-            nick = self.socialNetworks[profile]
-            if profile[0] in self.program: 
-                update = self.cache[(profile, nick)].selectAndExecute('show',args)
-            if profile[0] in self.bufferapp: 
-                update = self.buffer[(profile, nick)].selectAndExecute('show',args)
-            if update:
-                updates = updates + '- ' + update + '\n'
-                update = None
-
-        if self.gmail:
-            for i, accG in enumerate(self.gmail):
-                profile  = accG.name
-                nick = accG.nick
-                update = accG.selectAndExecute('show', args)
-                if update:
-                    updates = updates + "- " + update + '\n'
-                    update = None
-        if updates: 
-            res = resTxt + '\n'+ updates + '\n'
-            
+        res = self.execute('show', args)    
         yield res 
-        logging.debug("Post in Local cache %s", self.posts)
-        #logging.debug("Post in Local cache %s", pp.pformat(self.posts))
         yield end()
 
     @botcmd
     def editl(self, mess, args):
         """A command to edit the link of some update"""
+        res = self.execute('editl', args)    
+        yield res
+        yield end()
 
-        resTxt = 'Edited link! '
-        updates = ''
-        for profile in self.socialNetworks:
-            nick = self.socialNetworks[profile]
-            if profile[0] in self.program: 
-                update = self.cache[(profile, nick)].selectAndExecute('editl',args)
-                if update:
-                    updates = updates + update + '\n'
-            if profile[0] in self.bufferapp: 
-                update = self.buffer[(profile, nick)].selectAndExecute('editl',args)
-                if update:
-                    updates = updates + update + '\n'
-
-        if self.gmail:
-            for i, accG in enumerate(self.gmail):
-                profile  = accG.name
-                nick = accG.nick
-                update = accG.selectAndExecute('editl', args)
-                if update:
-                    updates = updates + update + '\n'
-
-        if updates: 
-            res = resTxt + updates + '\n'
-            self.addEditsCache(args)
-
-        yield(res)
+    @botcmd
+    def edit(self, mess, args):
+        """A command to edit some update"""
+        res = self.execute('edit', args)    
+        self.addEditsCache(args)
+        yield res
         yield end()
 
     def addEditsCache(self, args):
@@ -232,38 +165,6 @@ this is not a translation for the whole API).
         argsArchive.append(args)
         self['argsArchive'] = argsArchive
 
-    @botcmd
-    def edit(self, mess, args):
-        """A command to edit some update"""
-
-        resTxt = 'Edited! '
-        updates = ''
-        update = None
-        for profile in self.socialNetworks:
-            nick = self.socialNetworks[profile]
-            if profile[0] in self.program: 
-                update = self.cache[(profile, nick)].selectAndExecute('edit',args)
-            if profile[0] in self.bufferapp: 
-                update = self.buffer[(profile, nick)].selectAndExecute('edit',args)
-            if update:
-                updates = updates + '- ' + update + '\n'
-                update = None
-
-        if self.gmail:
-            for i, accG in enumerate(self.gmail):
-                profile  = accG.name
-                nick = accG.nick
-                update = accG.selectAndExecute('edit', args)
-                if update:
-                    updates = updates + update + '\n'
-                    update = None
-
-        if updates: 
-            res = resTxt + '\n' + updates + '\n'
-            self.addEditsCache(args)
-
-        yield res
-        yield end()
 
     @botcmd
     def showE(self, mess, args):
@@ -277,51 +178,14 @@ this is not a translation for the whole API).
     @botcmd
     def move(self, mess, args):
         """A command to move some update"""
-        
-        resTxt = "Moved! "
-        updates = ''
-        update = None
-        for profile in self.socialNetworks:
-            nick = self.socialNetworks[profile]
-            if profile[0] in self.program: 
-                update = self.cache[(profile, nick)].selectAndExecute('move',args)
-            if profile[0] in self.bufferapp: 
-                update = self.buffer[(profile, nick)].selectAndExecute('move',args)
-
-            if update:
-                updates = updates + update + '\n'
-                update = None
-        if updates: res = resTxt + updates + '\n'
-        yield(res)
-        
+        res = self.execute('move', args)    
+        yield res
         yield end()
 
     @botcmd
     def delete(self, mess, args):
         """A command to delete some update"""
-
-        resTxt = "Deleted! "
-        updates = ''
-        for profile in self.socialNetworks:
-            nick = self.socialNetworks[profile]
-            if profile[0] in self.program: 
-                update = self.cache[(profile, nick)].selectAndExecute('delete',args)
-                if update:
-                    updates = updates + update + '\n'
-            if profile[0] in self.bufferapp: 
-                update = self.buffer[(profile, nick)].selectAndExecute('delete',args)
-                if update:
-                    updates = updates + update + '\n'
-
-        if self.gmail:
-            for i, accG in enumerate(self.gmail):
-                profile  = accG.name
-                nick = accG.nick
-                update = accG.selectAndExecute('delete', args)
-                if update:
-                    updates = updates + update + '\n'
-
-        if updates: res = resTxt + updates + '\n'
+        res = self.execute('delete', args)    
         yield(res)
         yield end()
 
