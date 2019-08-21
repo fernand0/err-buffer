@@ -98,20 +98,17 @@ this is not a translation for the whole API).
         else: 
             return(profMov, j)
 
-    # Passing split_args_with=None will cause arguments to be split on any kind
-    # of whitespace, just like Python's split() does
-    @botcmd
-    def publish(self, mess, args):
-        """A command to publish some update"""
-        resTxt = 'Published! '
+    def execute(self, command, args):
+        """Execute a command """
+        resTxt = 'Executing:{}'.format(command)
         updates = ''
         update = None
         for profile in self.socialNetworks:
             nick = self.socialNetworks[profile]
             if profile[0] in self.program: 
-                update = self.cache[(profile, nick)].selectAndExecute('publish',args)
+                update = self.cache[(profile, nick)].selectAndExecute(command,args)
             if profile[0] in self.bufferapp: 
-                update = self.buffer[(profile, nick)].selectAndExecute('publish',args)
+                update = self.buffer[(profile, nick)].selectAndExecute(command,args)
             if update: 
                 updates = updates + "- " + update + '\n'
                 update = None
@@ -120,12 +117,46 @@ this is not a translation for the whole API).
             for i, accG in enumerate(self.gmail):
                 profile  = accG.name
                 nick = accG.nick
-                update = accG.selectAndExecute('publish', args)
+                update = accG.selectAndExecute(command, args)
                 if update:
                     updates = updates + "- " + update + '\n'
                     update = None
 
         if updates: res = resTxt + '\n' + updates + '\n'
+
+        return res 
+
+    # Passing split_args_with=None will cause arguments to be split on any kind
+    # of whitespace, just like Python's split() does
+    @botcmd
+    def publish(self, mess, args):
+        """A command to publish some update"""
+
+        res = self.execute('publish', args)
+        #resTxt = 'Published! '
+        #updates = ''
+        #update = None
+        #for profile in self.socialNetworks:
+        #    nick = self.socialNetworks[profile]
+        #    if profile[0] in self.program: 
+        #        update = self.cache[(profile, nick)].selectAndExecute('publish',args)
+        #    if profile[0] in self.bufferapp: 
+        #        update = self.buffer[(profile, nick)].selectAndExecute('publish',args)
+        #    if update: 
+        #        updates = updates + "- " + update + '\n'
+        #        update = None
+
+        #if self.gmail:
+        #    for i, accG in enumerate(self.gmail):
+        #        profile  = accG.name
+        #        nick = accG.nick
+        #        update = accG.selectAndExecute('publish', args)
+        #        if update:
+        #            updates = updates + "- " + update + '\n'
+        #            update = None
+
+        #if updates: res = resTxt + '\n' + updates + '\n'
+
 
         yield res 
         yield end()
