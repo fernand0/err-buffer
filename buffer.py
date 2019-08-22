@@ -95,8 +95,7 @@ this is not a translation for the whole API).
         update = None
         for profile in self.socialNetworks:
             nick = self.socialNetworks[profile]
-            if (profile[0] in self.program) or (profile[0] in self.bufferapp) or (profile[0] in self.gmail): 
-                update = self.clients[(profile, nick)].selectAndExecute(command,args)
+            update = self.clients[(profile, nick)].selectAndExecute(command,args)
             if update: 
                 updates = updates + "- " + update + '\n'
                 update = None
@@ -218,10 +217,26 @@ this is not a translation for the whole API).
 
         self.log.debug("Posts posts %s" % (self.posts))
         self.posts = {}
-        for profile in self.socialNetworks:
-            nick = self.socialNetworks[profile]
-            logging.info("socialNetworks %s %s"% (profile, nick))
-            if (profile[0] in self.program) or (profile[0] in self.bufferapp) or (profile[0] in self.gmail): 
+        if args:
+            url = args[0]
+            yield(url)
+            if 'slack' in url:
+                # Code ad hoc for Slack. We should try to generalize this...
+                import moduleSlack
+                client = moduleSlack.moduleSlack()
+                client.setSlackClient(os.path.expanduser('~/.mySocial/config/.rssSlack'))
+                posts = []
+                client.setPosts()
+                if client.getPosts():
+                    for post in client.getPosts():
+                        title = client.getPostTitle(post)
+                        link = client.getPostLink(post)
+                        posts.append((title, link, ''))
+                self.posts[('tmp', url)] = posts
+        else:
+            for profile in self.socialNetworks:
+                nick = self.socialNetworks[profile]
+                logging.info("socialNetworks %s %s"% (profile, nick))
                 posts = []
                 self.clients[(profile, nick)].setPosts()
                 if self.clients[(profile, nick)].getPosts():
