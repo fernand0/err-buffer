@@ -18,11 +18,39 @@ from configMod import *
 def end(msg=""):
     return("END"+msg)
 
+CONFIG_TEMPLATE = { 
+        'bufferapp' :'l',
+        'program' : 'tfm',
+        'gmail' : 'g',
+        'socialNetworks' : {'twitter':'fernand0', 
+            'facebook':'Enlaces de fernand0', 
+            'mastodon':'fernand0', 
+            'linkedin': 'Fernando Tricas', 
+            'gmail0':'fernand0@elmundoesimperfecto.com', 
+            'gmail1':'ftricas@elmundoesimperfecto.com', 
+            'gmail2':'ftricas@gmail.com' 
+            }
+}
+
+
 class Buffer(BotPlugin):
     """
     A plugin to manage our buffer account with the bot (at least some features,
 this is not a translation for the whole API).
     """
+    def get_configuration_template(self):
+        """ configuration entries """
+        config = CONFIG_TEMPLATE
+        return config
+
+    #def configure(self, configuration): 
+    #    if configuration is not None and configuration != {}: 
+    #        config = dict(chain(CONFIG_TEMPLATE.items(), 
+    #            configuration.items())) 
+    #    else: 
+    #        config = CONFIG_TEMPLATE 
+    #        
+    #    super(Buffer, self).configure(config)
 
     def activate(self):
         """
@@ -31,31 +59,25 @@ this is not a translation for the whole API).
         """
         super(Buffer, self).activate()
 
+
         confBlog = configparser.ConfigParser() 
         confBlog.read(CONFIGDIR + '/.rssBlogs')
 
         section = "Blog7"
-        url = confBlog.get(section, 'url')
-        self.socialNetworks = {'twitter':'fernand0', 
-                'facebook':'Enlaces de fernand0', 
-                'mastodon':'fernand0',
-                'linkedin': 'Fernando Tricas',
-                'gmail0':'fernand0@elmundoesimperfecto.com',
-                'gmail1':'ftricas@elmundoesimperfecto.com',
-                'gmail2':'ftricas@gmail.com'}
+        self.socialNetworks = {}
+        for socialNetwork in self.config['socialNetworks']:
+            self.socialNetworks[socialNetwork] = self.config['socialNetworks'][socialNetwork]
 
-        self.bufferapp ='l'
-        self.program ='tfm'
-        self.gmail = 'g'
         self.clients = {}
         for profile in self.socialNetworks:
             nick = self.socialNetworks[profile]
-            if profile[0] in self.program:
-                client = moduleCache.moduleCache()
-            if profile[0] in self.bufferapp: 
+            if profile[0] in self.config['program']:
+                client = moduleCache.moduleCache() 
+                url = confBlog.get(section, 'url')
+            if profile[0] in self.config['bufferapp']: 
                 client = moduleBuffer.moduleBuffer() 
-                url = None
-            if profile[0] in self.gmail:
+                url = confBlog.get(section, 'url')
+            if profile[0] in self.config['gmail']:
                 client = moduleGmail.moduleGmail() 
                 url = ''
             self.log.info("Profile %s %s" % (profile,nick))
@@ -72,7 +94,7 @@ this is not a translation for the whole API).
         self.twitter.setClient('fernand0')
 
     def selectPost(self, pp, post):
-        logging.info("Selecting %s" % pp.pformat(post))
+        self.log.debug("Selecting %s" % pp.pformat(post))
         i = 0
         profMov = ""    
 
@@ -90,14 +112,14 @@ this is not a translation for the whole API).
 
     def execute(self, command, args):
         """Execute a command """
-        resTxt = 'Executing: {}'.format(command)
+        resTxt = 'Executing: {}\n'.format(command)
         updates = ''
         update = None
         for profile in self.socialNetworks:
             nick = self.socialNetworks[profile]
             update = self.clients[(profile, nick)].selectAndExecute(command,args)
             if update: 
-                updates = updates + "- " + update + '\n'
+                updates = updates + "* " + update + '\n'
                 update = None
 
         if updates: res = resTxt + '\n' + updates + '\n'
@@ -168,17 +190,17 @@ this is not a translation for the whole API).
 
     def prepareReply(self, updates, types):
         compResponse = [] 
-        logging.info("Pposts %s" % updates)
-        logging.info("Keys %s" % updates.keys())
+        self.log.debug("Pposts %s" % updates)
+        self.log.debug("Keys %s" % updates.keys())
         for socialNetwork in updates.keys():
-            logging.info("Update social network %s " % str(socialNetwork))
-            logging.debug("Updates %s End" % updates[socialNetwork])
+            self.log.debug("Update social network %s " % str(socialNetwork))
+            self.log.debug("Updates %s End" % updates[socialNetwork])
             theUpdates = []
             for update in updates[socialNetwork]:
                 if update:
                     if len(update)>0:
-                        logging.info("Update %s " % str(update))
-                        logging.info("Update %s " % update[0])
+                        self.log.debug("Update %s " % str(update))
+                        self.log.debug("Update %s " % update[0])
                         if update[0]:
                             theUpdatetxt = update[0].replace('_','\_')
                         else:
@@ -236,7 +258,7 @@ this is not a translation for the whole API).
         else:
             for profile in self.socialNetworks:
                 nick = self.socialNetworks[profile]
-                logging.info("socialNetworks %s %s"% (profile, nick))
+                self.log.debug("socialNetworks %s %s"% (profile, nick))
                 posts = []
                 self.clients[(profile, nick)].setPosts()
                 if self.clients[(profile, nick)].getPosts():
@@ -249,7 +271,7 @@ this is not a translation for the whole API).
         self.log.debug("Posts posts %s" % (self.posts))
 
         response = self.sendReply(mess, args, self.posts, ['sent','pending'])
-        self.log.info("Reponse %s End" % response)
+        self.log.debug("Response %s End" % response)
         yield(response)
         yield end()
 
