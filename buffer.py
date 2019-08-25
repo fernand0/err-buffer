@@ -86,12 +86,12 @@ this is not a translation for the whole API).
             self.clients[(profile, nick)] = client
 
         self.posts = {}
-        fileName = os.path.expanduser('~/.mySocial/config/')+ '.rssProgram'
-        if os.path.isfile(fileName): 
-            with open(fileName,'r') as f: 
-                self.files = f.read().split()
-        self.twitter = moduleTwitter.moduleTwitter()
-        self.twitter.setClient('fernand0')
+        #fileName = CONFIGDIR + '/.rssProgram'
+        #if os.path.isfile(fileName): 
+        #    with open(fileName,'r') as f: 
+        #        self.files = f.read().split()
+        #self.twitter = moduleTwitter.moduleTwitter()
+        #self.twitter.setClient('fernand0')
 
     def selectPost(self, pp, post):
         self.log.debug("Selecting %s" % pp.pformat(post))
@@ -233,6 +233,35 @@ this is not a translation for the whole API).
             compResponse = compResponse + response
 
         return(compResponse)
+
+    @botcmd(split_args_with=None, template="buffer")
+    def delS(self, mess, args): 
+        yield "Adding %s" % args
+        for profile in self.socialNetworks:
+            nick = self.socialNetworks[profile]
+            if 'delSchedules' in dir(self.clients[(profile,nick)]): 
+                self.clients[(profile,nick)].delSchedules(args)
+                yield "%s: (%s) %s" % (profile, nick, self.clients[(profile,nick)].getHoursSchedules())
+
+
+    @botcmd(split_args_with=None, template="buffer")
+    def addS(self, mess, args): 
+        yield "Adding %s" % args
+        for profile in self.socialNetworks:
+            nick = self.socialNetworks[profile]
+            if 'addSchedules' in dir(self.clients[(profile,nick)]): 
+                self.clients[(profile,nick)].addSchedules(args)
+                yield "%s: (%s) %s" % (profile, nick, self.clients[(profile,nick)].getHoursSchedules())
+
+
+    @botcmd(split_args_with=None, template="buffer")
+    def listS(self, mess, args): 
+        for profile in self.socialNetworks:
+            nick = self.socialNetworks[profile]
+            if 'setSchedules' in dir(self.clients[(profile,nick)]): 
+                self.clients[(profile,nick)].setSchedules('rssToSocial')
+                yield "%s: (%s) %s" % (profile, nick, self.clients[(profile,nick)].getHoursSchedules())
+
 
     @botcmd(split_args_with=None, template="buffer")
     def list(self, mess, args):
