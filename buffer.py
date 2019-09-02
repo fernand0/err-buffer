@@ -80,7 +80,7 @@ this is not a translation for the whole API).
             if profile[0] in self.config['gmail']:
                 client = moduleGmail.moduleGmail() 
                 url = ''
-            self.log.info("Profile %s %s" % (profile,nick))
+                self.log.info("Profile %s %s" % (profile,nick))
             client.setClient(url,(profile, nick)) 
             client.setPosts()
             self.clients[(profile, nick)] = client
