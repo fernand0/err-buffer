@@ -86,12 +86,95 @@ this is not a translation for the whole API).
             self.clients[(profile, nick)] = client
 
         self.posts = {}
+        self.nconfig = []
         #fileName = CONFIGDIR + '/.rssProgram'
         #if os.path.isfile(fileName): 
         #    with open(fileName,'r') as f: 
         #        self.files = f.read().split()
         #self.twitter = moduleTwitter.moduleTwitter()
         #self.twitter.setClient('fernand0')
+
+    @botcmd
+    def listC(self, mess, args):
+        yield(self.checkConfigFiles(mess, args))
+
+    def checkConfigFiles(self, mess, args):
+        config = configparser.ConfigParser()
+        config.read(CONFIGDIR + '/.rssBlogs')
+
+        dataSources = {}
+        for section in config.sections():
+            url = config.get(section, 'url')
+            if ('rssFeed'.lower() in config.options(section)):
+                rssFeed = config.get(section, 'rssFeed')
+                if 'rssFeed' in dataSources:
+                    dataSources['rssFeed'].append(url+rssFeed)
+                else:
+                    dataSources['rssFeed'] = [url+rssFeed]
+            socialNetworks = ['twitter','facebook','mastodon','linkedin','medium','telegram']
+            for socialNetwork in socialNetworks: 
+                if (socialNetwork in config.options(section)): 
+                    theSocialNetwork = config.get(section, socialNetwork)
+                    if socialNetwork in dataSources: 
+                        if theSocialNetwork not in dataSources[socialNetwork]: 
+                            dataSources[socialNetwork].append(theSocialNetwork) 
+                    else: 
+                        dataSources[socialNetwork] = [theSocialNetwork]
+                if (socialNetwork != 'medium') and (socialNetwork != 'telegram') and (('program' in config.options(section)) and (socialNetwork[0] in config.get(section, 'program'))):
+                        programData = config.get(section,socialNetwork)+'@'+socialNetwork 
+                        if 'program' in dataSources: 
+                            if programData not in dataSources['program']: 
+                                dataSources['program'].append(programData) 
+                        else: 
+                                dataSources['program'] = [programData]
+                if (socialNetwork != 'medium') and (socialNetwork != 'telegram') and (('bufferapp' in config.options(section)) and (socialNetwork[0] in config.get(section, 'bufferapp'))):
+                        programData = config.get(section,socialNetwork)+'@'+socialNetwork 
+                        if 'bufferapp' in dataSources: 
+                            if programData not in dataSources['bufferapp']: 
+                                dataSources['bufferapp'].append(programData) 
+                        else: 
+                                dataSources['bufferapp'] = [programData]
+
+
+
+        config = configparser.ConfigParser()
+        config.read(CONFIGDIR + '/.oauthG.cfg')
+
+        for section in config.sections(): 
+            user = config.get(section, 'user')
+            server = config.get(section, 'server')
+            if 'gmail' in dataSources: 
+                dataSources['gmail'].append(user+'@'+server) 
+            else: 
+                dataSources['gmail'] = [user+'@'+server]
+
+        myKeys = []
+        self.available = {}
+        for key in dataSources:
+            if key[0] not in myKeys:
+                iniK = key[0]
+            else:
+                i = 1
+                while key[i] in myKeys:
+                    i = i + 1
+                iniK = key[i]
+            myKeys.append(iniK)
+            self.available[(iniK, key)] = []
+            for i, element in enumerate(dataSources[key]):
+                 self.available[(iniK, key)].append((element,'',''))
+        response = self.sendReply(mess, args, self.available, ['sent','pending'])
+        return(response)
+
+    @botcmd
+    def showC(self, mess, args):
+        yield self.nconfig
+
+    @botcmd
+    def addC(self, mess, args):
+        self.nconfig.append(args.split())
+        yield(self.nconfig)
+
+
 
     def selectPost(self, pp, post):
         self.log.debug("Selecting %s" % pp.pformat(post))
@@ -199,10 +282,10 @@ this is not a translation for the whole API).
             for update in updates[socialNetwork]:
                 if update:
                     if len(update)>0:
-                        self.log.debug("Update %s " % str(update))
-                        self.log.debug("Update %s " % update[0])
+                        self.log.info("Update %s " % str(update))
+                        #self.log.debug("Update %s " % update[0])
                         if update[0]:
-                            theUpdatetxt = update[0].replace('_','\_')
+                            theUpdatetxt = str(update[0]).replace('_','\_')
                         else:
                             # This should not happen
                             theUpdatetxt = ''
@@ -261,6 +344,52 @@ this is not a translation for the whole API).
             if 'setSchedules' in dir(self.clients[(profile,nick)]): 
                 self.clients[(profile,nick)].setSchedules('rssToSocial')
                 yield "%s: (%s) %s" % (profile, nick, self.clients[(profile,nick)].getHoursSchedules())
+
+    @botcmd(split_args_with=None, template="buffer")
+    def listt(self, mess, args):
+
+        self.log.debug("Posts posts %s" % (self.posts))
+        self.posts = {}
+        if not args:
+            args = '0'
+        else:
+            args = args[0]
+        for element in self.nconfig[int(args)]:
+            #yield element
+            for key in  self.available:
+                self.log.info("key %s" % str(key))
+                if element[0].lower() == key[0]: 
+                    #yield self.available[key][int(element[1])]
+                    #yield self.available[key][int(element[1])][0]
+                    #yield self.available[key][int(element[1])][0][1]
+                    #yield type(self.available[key][int(element[1])][0][1])
+                    profile = key[1]
+                    nick = self.available[key][int(element[1])][0]
+                    self.log.info("nick %s" % nick)
+                    #yield "prof %s" % profile
+                    #yield "nick %s" % nick
+                    self.log.debug("socialNetworks %s %s"% (profile, nick))
+                    posts = []
+                    self.log.info("clients %s" % str(self.clients))
+                    if key[0]=='g':
+                        profile = 'gmail'+element[1]
+                    elif nick.find('@') >= 0:
+                        nick, profile = nick.split('@')
+                    self.clients[(profile, nick)].setPosts()
+                    if self.clients[(profile, nick)].getPosts():
+                        for post in self.clients[(profile, nick)].getPosts():
+                            title = self.clients[(profile, nick)].getPostTitle(post)
+                            link = self.clients[(profile, nick)].getPostLink(post)
+                            posts.append((title, link, ''))
+                    self.posts[(profile, nick)] = posts
+                    continue
+
+        self.log.debug("Posts posts %s" % (self.posts))
+
+        response = self.sendReply(mess, args, self.posts, ['sent','pending'])
+        self.log.debug("Response %s End" % response)
+        yield(response)
+        yield end()
 
 
     @botcmd(split_args_with=None, template="buffer")
