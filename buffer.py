@@ -96,9 +96,9 @@ this is not a translation for the whole API).
 
     @botcmd
     def listC(self, mess, args):
-        yield(self.checkConfigFiles(mess, args))
+        yield(self.checkConfigFiles())
 
-    def checkConfigFiles(self, mess, args):
+    def checkConfigFiles(self):
         config = configparser.ConfigParser()
         config.read(CONFIGDIR + '/.rssBlogs')
 
@@ -111,6 +111,21 @@ this is not a translation for the whole API).
                     dataSources['rssFeed'].append(url+rssFeed)
                 else:
                     dataSources['rssFeed'] = [url+rssFeed]
+            elif (url.find('slack')>=0):
+                profile = 'slack'
+                if profile in dataSources:
+                    dataSources[profile].append(url)
+                else:
+                    dataSources[profile] = [url]
+                import moduleSlack
+                client = moduleSlack.moduleSlack()
+                client.setSlackClient(os.path.expanduser('~/.mySocial/config/.rssSlack'))
+                client.setPosts()
+                if profile not in self.socialNetworks:
+                    self.socialNetworks[profile] = url
+                self.log.info("socialNetworks add %s" % str(self.socialNetworks))
+                self.clients[(profile, url)] = client
+
             socialNetworks = ['twitter','facebook','mastodon','linkedin','medium','telegram']
             for socialNetwork in socialNetworks: 
                 if (socialNetwork in config.options(section)): 
@@ -162,7 +177,7 @@ this is not a translation for the whole API).
             self.available[(iniK, key)] = []
             for i, element in enumerate(dataSources[key]):
                  self.available[(iniK, key)].append((element,'',''))
-        response = self.sendReply(mess, args, self.available, ['sent','pending'])
+        response = self.sendReply('', '', self.available, ['sent','pending'])
         return(response)
 
     @botcmd
@@ -173,7 +188,6 @@ this is not a translation for the whole API).
     def addC(self, mess, args):
         self.nconfig.append(args.split())
         yield(self.nconfig)
-
 
 
     def selectPost(self, pp, post):
@@ -346,7 +360,7 @@ this is not a translation for the whole API).
                 yield "%s: (%s) %s" % (profile, nick, self.clients[(profile,nick)].getHoursSchedules())
 
     @botcmd(split_args_with=None, template="buffer")
-    def listt(self, mess, args):
+    def list(self, mess, args):
 
         self.log.debug("Posts posts %s" % (self.posts))
         self.posts = {}
@@ -359,15 +373,9 @@ this is not a translation for the whole API).
             for key in  self.available:
                 self.log.info("key %s" % str(key))
                 if element[0].lower() == key[0]: 
-                    #yield self.available[key][int(element[1])]
-                    #yield self.available[key][int(element[1])][0]
-                    #yield self.available[key][int(element[1])][0][1]
-                    #yield type(self.available[key][int(element[1])][0][1])
                     profile = key[1]
                     nick = self.available[key][int(element[1])][0]
                     self.log.info("nick %s" % nick)
-                    #yield "prof %s" % profile
-                    #yield "nick %s" % nick
                     self.log.debug("socialNetworks %s %s"% (profile, nick))
                     posts = []
                     self.log.info("clients %s" % str(self.clients))
@@ -393,7 +401,7 @@ this is not a translation for the whole API).
 
 
     @botcmd(split_args_with=None, template="buffer")
-    def list(self, mess, args):
+    def listt(self, mess, args):
 
         self.log.debug("Posts posts %s" % (self.posts))
         self.posts = {}
