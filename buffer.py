@@ -182,7 +182,20 @@ this is not a translation for the whole API).
 
     @botcmd
     def showC(self, mess, args):
-        yield self.nconfig
+        if self.nconfig: 
+            yield self.nconfig
+        else:
+            yield "None"
+
+    @botcmd
+    def delC(self, mess, args):
+
+        if args:
+            toDel = int(args[0])
+        if toDel < len(self.nconfig):
+            self.nconfig = self.nconfig[:toDel]+self.nconfig[toDel+1:]
+        yield(self.nconfig)
+
 
     @botcmd
     def addC(self, mess, args):
@@ -370,7 +383,10 @@ this is not a translation for the whole API).
             args = args[0]
         for element in self.nconfig[int(args)]:
             #yield element
-            for key in  self.available:
+            if not self.available:
+                self.checkConfigFiles()
+
+            for key in self.available:
                 self.log.info("key %s" % str(key))
                 if element[0].lower() == key[0]: 
                     profile = key[1]
