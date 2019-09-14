@@ -103,55 +103,23 @@ this is not a translation for the whole API).
         config.read(CONFIGDIR + '/.rssBlogs')
 
         dataSources = {}
+        delayed = ['program', 'bufferapp']
         for section in config.sections():
             url = config.get(section, 'url')
-            if ('rssFeed'.lower() in config.options(section)):
-                rssFeed = config.get(section, 'rssFeed')
-                if 'rssFeed' in dataSources:
-                    dataSources['rssFeed'].append(url+rssFeed)
+
+            for option in config.options(section):
+                value = config.get(section, option)
+                if option in dataSources:
+                    dataSources[option].append((url, value))
                 else:
-                    dataSources['rssFeed'] = [url+rssFeed]
-            elif (url.find('slack')>=0):
-                profile = 'slack'
-                if profile in dataSources:
-                    dataSources[profile].append(url)
-                else:
-                    dataSources[profile] = [url]
-                import moduleSlack
-                client = moduleSlack.moduleSlack()
-                client.setSlackClient(os.path.expanduser('~/.mySocial/config/.rssSlack'))
-                client.setPosts()
-                if profile not in self.socialNetworks:
-                    self.socialNetworks[profile] = url
-                self.log.info("socialNetworks add %s" % str(self.socialNetworks))
-                self.clients[(profile, url)] = client
-
-            socialNetworks = ['twitter','facebook','mastodon','linkedin','medium','telegram']
-            for socialNetwork in socialNetworks: 
-                if (socialNetwork in config.options(section)): 
-                    theSocialNetwork = config.get(section, socialNetwork)
-                    if socialNetwork in dataSources: 
-                        if theSocialNetwork not in dataSources[socialNetwork]: 
-                            dataSources[socialNetwork].append(theSocialNetwork) 
-                    else: 
-                        dataSources[socialNetwork] = [theSocialNetwork]
-                if (socialNetwork != 'medium') and (socialNetwork != 'telegram') and (('program' in config.options(section)) and (socialNetwork[0] in config.get(section, 'program'))):
-                        programData = config.get(section,socialNetwork)+'@'+socialNetwork 
-                        if 'program' in dataSources: 
-                            if programData not in dataSources['program']: 
-                                dataSources['program'].append(programData) 
-                        else: 
-                                dataSources['program'] = [programData]
-                if (socialNetwork != 'medium') and (socialNetwork != 'telegram') and (('bufferapp' in config.options(section)) and (socialNetwork[0] in config.get(section, 'bufferapp'))):
-                        programData = config.get(section,socialNetwork)+'@'+socialNetwork 
-                        if 'bufferapp' in dataSources: 
-                            if programData not in dataSources['bufferapp']: 
-                                dataSources['bufferapp'].append(programData) 
-                        else: 
-                                dataSources['bufferapp'] = [programData]
-
-
-
+                    dataSources[option] = [(url, value)] 
+                    
+            for prog in delayed:
+                if prog in config.options(section): 
+                    for key in dataSources[prog][0][1]: 
+                        for option in config.options(section):
+                            if option[0] == key:
+                                dataSources[prog].append(dataSources[option][-1])
         config = configparser.ConfigParser()
         config.read(CONFIGDIR + '/.oauthG.cfg')
 
@@ -163,6 +131,7 @@ this is not a translation for the whole API).
             else: 
                 dataSources['gmail'] = [user+'@'+server]
 
+
         myKeys = []
         self.available = {}
         for key in dataSources:
@@ -170,7 +139,7 @@ this is not a translation for the whole API).
                 iniK = key[0]
             else:
                 i = 1
-                while key[i] in myKeys:
+                while (i < len(key) - 1) and (key[i] in myKeys):
                     i = i + 1
                 iniK = key[i]
             myKeys.append(iniK)
