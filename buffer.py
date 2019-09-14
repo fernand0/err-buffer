@@ -119,7 +119,16 @@ this is not a translation for the whole API).
                     for key in dataSources[prog][0][1]: 
                         for option in config.options(section):
                             if option[0] == key:
-                                dataSources[prog].append(dataSources[option][-1])
+                                toAppend = dataSources[option][-1][1]+'@'+option
+                                dataSources[prog].append(toAppend)
+                    dataSources[prog] = dataSources[prog][1:]
+            if url.find('slack')>=0: 
+                option = 'slack'
+                if option in dataSources:
+                    dataSources[option].append((url, url))
+                else:
+                    dataSources[option] = [(url, url)] 
+
         config = configparser.ConfigParser()
         config.read(CONFIGDIR + '/.oauthG.cfg')
 
@@ -360,15 +369,30 @@ this is not a translation for the whole API).
                 if element[0].lower() == key[0]: 
                     profile = key[1]
                     nick = self.available[key][int(element[1])][0]
-                    self.log.info("nick %s" % nick)
+                    self.log.info("nick %s" % str(nick))
                     self.log.debug("socialNetworks %s %s"% (profile, nick))
                     posts = []
                     self.log.info("clients %s" % str(self.clients))
                     if key[0]=='g':
                         profile = 'gmail'+element[1]
+                    elif type(nick) == tuple:
+                        nick = nick[1]
                     elif nick.find('@') >= 0:
                         nick, profile = nick.split('@')
-                    self.clients[(profile, nick)].setPosts()
+                    try:
+                        self.clients[(profile, nick)].setPosts()
+                    except:
+                        import importlib
+                        moduleName = 'module'+profile.capitalize()
+                        mod = importlib.import_module(moduleName) 
+                        cls = getattr(mod, moduleName)
+                        api = cls()
+                        api.setClient()
+                        self.clients[(profile,nick)] = api
+                        self.clients[(profile,nick)].setPosts()
+
+                        #client = module...
+
                     if self.clients[(profile, nick)].getPosts():
                         for post in self.clients[(profile, nick)].getPosts():
                             title = self.clients[(profile, nick)].getPostTitle(post)
@@ -376,6 +400,7 @@ this is not a translation for the whole API).
                             posts.append((title, link, ''))
                     self.posts[(profile, nick)] = posts
                     continue
+
 
         self.log.debug("Posts posts %s" % (self.posts))
 
