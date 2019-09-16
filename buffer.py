@@ -109,6 +109,9 @@ this is not a translation for the whole API).
 
             for option in config.options(section):
                 value = config.get(section, option)
+                if option == 'rssfeed':
+                    option = 'rss'
+                    value = url+value
                 if option in dataSources:
                     dataSources[option].append((url, value))
                 else:
@@ -203,9 +206,8 @@ this is not a translation for the whole API).
         resTxt = 'Executing: {}\n'.format(command)
         updates = ''
         update = None
-        for profile in self.socialNetworks:
-            nick = self.socialNetworks[profile]
-            update = self.clients[(profile, nick)].selectAndExecute(command,args)
+        for profile in self.clients:
+            update = self.clients[profile].selectAndExecute(command,args)
             if update: 
                 updates = updates + "* " + update + '\n'
                 update = None
@@ -382,12 +384,13 @@ this is not a translation for the whole API).
                     try:
                         self.clients[(profile, nick)].setPosts()
                     except:
+                        yield nick,profile
                         import importlib
                         moduleName = 'module'+profile.capitalize()
                         mod = importlib.import_module(moduleName) 
                         cls = getattr(mod, moduleName)
                         api = cls()
-                        api.setClient()
+                        api.setClient(nick)
                         self.clients[(profile,nick)] = api
                         self.clients[(profile,nick)].setPosts()
 
