@@ -18,18 +18,7 @@ from configMod import *
 def end(msg=""):
     return("END"+msg)
 
-CONFIG_TEMPLATE = { 
-        'bufferapp' :'l',
-        'program' : 'tfm',
-        'gmail' : 'g',
-        'socialNetworks' : {'twitter':'fernand0', 
-            'facebook':'Enlaces de fernand0', 
-            'mastodon':'fernand0', 
-            'linkedin': 'Fernando Tricas', 
-            'gmail0':'fernand0@elmundoesimperfecto.com', 
-            'gmail1':'ftricas@elmundoesimperfecto.com', 
-            'gmail2':'ftricas@gmail.com' 
-            }
+CONFIG_TEMPLATE = {'bufferapp' :'l', 'program' : 'tfm', 'gmail' : 'g', 'socialNetworks' : {'twitter':'fernand0', 'facebook':'Enlaces de fernand0', 'mastodon':'fernand0', 'linkedin': 'Fernando Tricas', 'gmail0':'fernand0@elmundoesimperfecto.com', 'gmail1':'ftricas@elmundoesimperfecto.com', 'gmail2':'ftricas@gmail.com' }
 }
 
 
@@ -104,6 +93,7 @@ this is not a translation for the whole API).
 
         dataSources = {}
         delayed = ['program', 'bufferapp']
+        delayed2 = ['cache']
         for section in config.sections():
             url = config.get(section, 'url')
 
@@ -125,6 +115,16 @@ this is not a translation for the whole API).
                                 toAppend = dataSources[option][-1][1]+'@'+option
                                 dataSources[prog].append(toAppend)
                     dataSources[prog] = dataSources[prog][1:]
+
+            for prog in delayed2:
+                if prog in config.options(section): 
+                    for key in dataSources[prog][0][1]: 
+                        for option in config.options(section):
+                            if option[0] == key:
+                                toAppend = (url, (option, dataSources[option][-1][1]))
+                                dataSources[prog].append(toAppend)
+                    dataSources[prog] = dataSources[prog][1:]
+
             if url.find('slack')>=0: 
                 option = 'slack'
                 if option in dataSources:
@@ -142,7 +142,6 @@ this is not a translation for the whole API).
                 dataSources['gmail'].append(user+'@'+server) 
             else: 
                 dataSources['gmail'] = [user+'@'+server]
-
 
         myKeys = []
         self.available = {}
@@ -377,31 +376,36 @@ this is not a translation for the whole API).
                     self.log.info("clients %s" % str(self.clients))
                     if key[0]=='g':
                         profile = 'gmail'+element[1]
+                        name = nick
+                    elif key[0] == 'a':
+                        yield nick
+                        name = nick[1][1]+'@'+nick[1][0]
                     elif type(nick) == tuple:
                         nick = nick[1]
+                        name = nick
                     elif nick.find('@') >= 0:
                         nick, profile = nick.split('@')
+                        name = nick
                     try:
                         self.clients[(profile, nick)].setPosts()
                     except:
-                        yield nick,profile
                         import importlib
                         moduleName = 'module'+profile.capitalize()
                         mod = importlib.import_module(moduleName) 
                         cls = getattr(mod, moduleName)
                         api = cls()
                         api.setClient(nick)
-                        self.clients[(profile,nick)] = api
-                        self.clients[(profile,nick)].setPosts()
+                        self.clients[(profile,name)] = api
+                        self.clients[(profile,name)].setPosts()
 
                         #client = module...
 
-                    if self.clients[(profile, nick)].getPosts():
-                        for post in self.clients[(profile, nick)].getPosts():
-                            title = self.clients[(profile, nick)].getPostTitle(post)
-                            link = self.clients[(profile, nick)].getPostLink(post)
+                    if self.clients[(profile, name)].getPosts():
+                        for post in self.clients[(profile, name)].getPosts():
+                            title = self.clients[(profile, name)].getPostTitle(post)
+                            link = self.clients[(profile, name)].getPostLink(post)
                             posts.append((title, link, ''))
-                    self.posts[(profile, nick)] = posts
+                    self.posts[(profile, name)] = posts
                     continue
 
 
