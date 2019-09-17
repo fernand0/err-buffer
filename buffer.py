@@ -378,8 +378,10 @@ this is not a translation for the whole API).
                         profile = 'gmail'+element[1]
                         name = nick
                     elif key[0] == 'a':
-                        yield nick
                         name = nick[1][1]+'@'+nick[1][0]
+                    elif key[0] == 's':
+                        name = nick[0]
+                        nick = None
                     elif type(nick) == tuple:
                         nick = nick[1]
                         name = nick
