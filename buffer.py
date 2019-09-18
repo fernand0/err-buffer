@@ -60,19 +60,19 @@ this is not a translation for the whole API).
         self.clients = {}
         for profile in self.socialNetworks:
             nick = self.socialNetworks[profile]
-            if profile[0] in self.config['program']:
-                client = moduleCache.moduleCache() 
-                url = confBlog.get(section, 'url')
-            if profile[0] in self.config['bufferapp']: 
-                client = moduleBuffer.moduleBuffer() 
-                url = confBlog.get(section, 'url')
+            #if profile[0] in self.config['program']:
+            #    client = moduleCache.moduleCache() 
+            #    url = confBlog.get(section, 'url')
+            #if profile[0] in self.config['bufferapp']: 
+            #    client = moduleBuffer.moduleBuffer() 
+            #    url = confBlog.get(section, 'url')
             if profile[0] in self.config['gmail']:
                 client = moduleGmail.moduleGmail() 
                 url = ''
                 self.log.info("Profile %s %s" % (profile,nick))
-            client.setClient(url,(profile, nick)) 
-            client.setPosts()
-            self.clients[(profile, nick)] = client
+                client.setClient(url,(profile, nick)) 
+                client.setPosts()
+                self.clients[(profile, nick)] = client
 
         self.posts = {}
         self.nconfig = []
@@ -107,14 +107,15 @@ this is not a translation for the whole API).
                 else:
                     dataSources[option] = [(url, value)] 
                     
-            #for prog in delayed:
-            #    if prog in config.options(section): 
-            #        for key in dataSources[prog][0][1]: 
-            #            for option in config.options(section):
-            #                if option[0] == key:
-            #                    toAppend = dataSources[option][-1][1]+'@'+option
-            #                    dataSources[prog].append(toAppend)
-            #        dataSources[prog] = dataSources[prog][1:]
+            for prog in delayed:
+                if prog in config.options(section): 
+                    for key in dataSources[prog][0][1]: 
+                        for option in config.options(section):
+                            if option[0] == key:
+                                toAppend = dataSources[option][-1][1]+'@'+option
+                                dataSources[prog].append(toAppend)
+                    dataSources[prog] = dataSources[prog][1:]
+                    del dataSources[prog]
 
             for prog in delayed2:
                 if prog in config.options(section): 
@@ -382,9 +383,7 @@ this is not a translation for the whole API).
                     if key[0]=='g':
                         profile = 'gmail'+element[1]
                         name = nick
-                    elif key[0] == 'a':
-                        name = nick[1][1]+'@'+nick[1][0]
-                    elif key[0] == 'k':
+                    elif (key[0] == 'a') or (key[0] == 'b'):
                         name = nick[1][1]+'@'+nick[1][0]
                     elif key[0] == 's':
                         name = nick[0]
