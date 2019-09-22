@@ -211,7 +211,9 @@ this is not a translation for the whole API).
         resTxt = 'Executing: {}\n'.format(command)
         updates = ''
         update = None
+        res = None
         for profile in self.clients:
+            self.log.info("Profile: %s" % str(profile))
             update = self.clients[profile].selectAndExecute(command,args)
             if update: 
                 updates = updates + "* " + update + '\n'
