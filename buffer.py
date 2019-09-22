@@ -109,12 +109,12 @@ this is not a translation for the whole API).
                     
             for prog in delayed:
                 if prog in config.options(section): 
-                    for key in dataSources[prog][0][1]: 
-                        for option in config.options(section):
-                            if option[0] == key:
-                                toAppend = dataSources[option][-1][1]+'@'+option
-                                dataSources[prog].append(toAppend)
-                    dataSources[prog] = dataSources[prog][1:]
+                    #for key in dataSources[prog][0][1]: 
+                    #    for option in config.options(section):
+                    #        if option[0] == key:
+                    #            toAppend = dataSources[option][-1][1]+'@'+option
+                    #            dataSources[prog].append(toAppend)
+                    #dataSources[prog] = dataSources[prog][1:]
                     del dataSources[prog]
 
             for prog in delayed2:
@@ -127,6 +127,10 @@ this is not a translation for the whole API).
                     dataSources[prog] = dataSources[prog][1:]
 
             if url.find('slack')>=0: 
+                #.rssBlogs
+                # url: slack site
+                # channel: 
+                # destinations....
                 option = 'slack'
                 if option in dataSources:
                     dataSources[option].append((url, url))
@@ -160,9 +164,14 @@ this is not a translation for the whole API).
                     while iniK in myKeys:
                         iniK = chr(ord(iniK)+1)
             myKeys.append(iniK)
-            self.available[(iniK, key)] = []
+            pos = key.find(iniK)
+            if pos>=0:
+                nKey = key[:pos] + iniK.upper() + key[pos + 1:]
+            else:
+                nKey = iniK+key
+            self.available[(iniK, nKey)] = []
             for i, element in enumerate(dataSources[key]):
-                 self.available[(iniK, key)].append((element,'',''))
+                 self.available[(iniK, nKey)].append((element,'',''))
         response = self.sendReply('', '', self.available, ['sent','pending'])
         return(response)
 
@@ -334,30 +343,26 @@ this is not a translation for the whole API).
     @botcmd(split_args_with=None, template="buffer")
     def delS(self, mess, args): 
         yield "Adding %s" % args
-        for profile in self.socialNetworks:
-            nick = self.socialNetworks[profile]
-            if 'delSchedules' in dir(self.clients[(profile,nick)]): 
-                self.clients[(profile,nick)].delSchedules(args)
-                yield "%s: (%s) %s" % (profile, nick, self.clients[(profile,nick)].getHoursSchedules())
-
+        for profile in self.clients:
+            if 'delSchedules' in dir(self.clients[profile]): 
+                self.clients[profile].delSchedules(args)
+                yield "%s: (%s) %s" % (profile[0], profile[1], self.clients[profile].getHoursSchedules())
 
     @botcmd(split_args_with=None, template="buffer")
     def addS(self, mess, args): 
         yield "Adding %s" % args
-        for profile in self.socialNetworks:
-            nick = self.socialNetworks[profile]
-            if 'addSchedules' in dir(self.clients[(profile,nick)]): 
-                self.clients[(profile,nick)].addSchedules(args)
-                yield "%s: (%s) %s" % (profile, nick, self.clients[(profile,nick)].getHoursSchedules())
-
+        for profile in self.clients:
+            if 'addSchedules' in dir(self.clients[profile]): 
+                self.clients[profile].addSchedules(args)
+                yield "%s: (%s) %s" % (profile[0], profile[1], self.clients[profile].getHoursSchedules())
 
     @botcmd(split_args_with=None, template="buffer")
     def listS(self, mess, args): 
-        for profile in self.socialNetworks:
-            nick = self.socialNetworks[profile]
-            if 'setSchedules' in dir(self.clients[(profile,nick)]): 
-                self.clients[(profile,nick)].setSchedules('rssToSocial')
-                yield "%s: (%s) %s" % (profile, nick, self.clients[(profile,nick)].getHoursSchedules())
+        for profile in self.clients:
+            self.log.info("Profile: %s" % str(profile))
+            if 'setSchedules' in dir(self.clients[profile]): 
+                self.clients[profile].setSchedules('rssToSocial')
+                yield "%s: (%s) %s" % (profile[0], profile[1], self.clients[profile].getHoursSchedules())
 
     @botcmd(split_args_with=None, template="buffer")
     def list(self, mess, args):
