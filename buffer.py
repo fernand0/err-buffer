@@ -48,40 +48,9 @@ this is not a translation for the whole API).
         """
         super(Buffer, self).activate()
 
-
-        confBlog = configparser.ConfigParser() 
-        confBlog.read(CONFIGDIR + '/.rssBlogs')
-
-        section = "Blog7"
-        self.socialNetworks = {}
-        for socialNetwork in self.config['socialNetworks']:
-            self.socialNetworks[socialNetwork] = self.config['socialNetworks'][socialNetwork]
-
         self.clients = {}
-        for profile in self.socialNetworks:
-            nick = self.socialNetworks[profile]
-            #if profile[0] in self.config['program']:
-            #    client = moduleCache.moduleCache() 
-            #    url = confBlog.get(section, 'url')
-            #if profile[0] in self.config['bufferapp']: 
-            #    client = moduleBuffer.moduleBuffer() 
-            #    url = confBlog.get(section, 'url')
-            if profile[0] in self.config['gmail']:
-                client = moduleGmail.moduleGmail() 
-                url = ''
-                self.log.info("Profile %s %s" % (profile,nick))
-                client.setClient(url,(profile, nick)) 
-                client.setPosts()
-                self.clients[(profile, nick)] = client
-
         self.posts = {}
         self.nconfig = []
-        #fileName = CONFIGDIR + '/.rssProgram'
-        #if os.path.isfile(fileName): 
-        #    with open(fileName,'r') as f: 
-        #        self.files = f.read().split()
-        #self.twitter = moduleTwitter.moduleTwitter()
-        #self.twitter.setClient('fernand0')
 
     @botcmd
     def listC(self, mess, args):
@@ -374,6 +343,7 @@ this is not a translation for the whole API).
         else:
             args = args[0]
         for element in self.nconfig[int(args)]:
+            self.log.info("Element %s" % str(element))
             #yield element
             if not self.available:
                 self.checkConfigFiles()
@@ -382,14 +352,17 @@ this is not a translation for the whole API).
                 self.log.info("key %s" % str(key))
                 if element[0].lower() == key[0]: 
                     profile = key[1]
+                    self.log.info("available %s" % str(self.available[key]))
+                    self.log.info("element %s" % str(element))
                     nick = self.available[key][int(element[1])][0]
                     self.log.info("nick %s" % str(nick))
                     self.log.debug("socialNetworks %s %s"% (profile, nick))
                     posts = []
                     self.log.info("clients %s" % str(self.clients))
-                    if key[0]=='g':
-                        profile = 'gmail'+element[1]
+                    if (key[0]=='g'): # or (key[0] == '2'):
+                        profile = 'gmail' #+element[1]
                         name = nick
+                        nick = (profile+element[1], name)
                     elif (key[0] == 'a') or (key[0] == 'b'):
                         name = nick[1][1]+'@'+nick[1][0]
                     elif key[0] == 's':
@@ -409,6 +382,7 @@ this is not a translation for the whole API).
                         mod = importlib.import_module(moduleName) 
                         cls = getattr(mod, moduleName)
                         api = cls()
+                        self.log.info("nick %s", str(nick))
                         api.setClient(nick)
                         self.clients[(profile,name)] = api
                         self.clients[(profile,name)].setPosts()
@@ -432,46 +406,46 @@ this is not a translation for the whole API).
         yield end()
 
 
-    @botcmd(split_args_with=None, template="buffer")
-    def listt(self, mess, args):
+    #@botcmd(split_args_with=None, template="buffer")
+    #def listt(self, mess, args):
 
-        self.log.debug("Posts posts %s" % (self.posts))
-        self.posts = {}
-        if args:
-            url = args[0]
-            yield(url)
-            if 'slack' in url:
-                # Code ad hoc for Slack. We should try to generalize this...
-                import moduleSlack
-                client = moduleSlack.moduleSlack()
-                client.setSlackClient(os.path.expanduser('~/.mySocial/config/.rssSlack'))
-                posts = []
-                client.setPosts()
-                if client.getPosts():
-                    for post in client.getPosts():
-                        title = client.getPostTitle(post)
-                        link = client.getPostLink(post)
-                        posts.append((title, link, ''))
-                self.posts[('tmp', url)] = posts
-        else:
-            for profile in self.socialNetworks:
-                nick = self.socialNetworks[profile]
-                self.log.debug("socialNetworks %s %s"% (profile, nick))
-                posts = []
-                self.clients[(profile, nick)].setPosts()
-                if self.clients[(profile, nick)].getPosts():
-                    for post in self.clients[(profile, nick)].getPosts():
-                        title = self.clients[(profile, nick)].getPostTitle(post)
-                        link = self.clients[(profile, nick)].getPostLink(post)
-                        posts.append((title, link, ''))
-                self.posts[(profile, nick)] = posts
+    #    self.log.debug("Posts posts %s" % (self.posts))
+    #    self.posts = {}
+    #    if args:
+    #        url = args[0]
+    #        yield(url)
+    #        if 'slack' in url:
+    #            # Code ad hoc for Slack. We should try to generalize this...
+    #            import moduleSlack
+    #            client = moduleSlack.moduleSlack()
+    #            client.setSlackClient(os.path.expanduser('~/.mySocial/config/.rssSlack'))
+    #            posts = []
+    #            client.setPosts()
+    #            if client.getPosts():
+    #                for post in client.getPosts():
+    #                    title = client.getPostTitle(post)
+    #                    link = client.getPostLink(post)
+    #                    posts.append((title, link, ''))
+    #            self.posts[('tmp', url)] = posts
+    #    else:
+    #        for profile in self.socialNetworks:
+    #            nick = self.socialNetworks[profile]
+    #            self.log.debug("socialNetworks %s %s"% (profile, nick))
+    #            posts = []
+    #            self.clients[(profile, nick)].setPosts()
+    #            if self.clients[(profile, nick)].getPosts():
+    #                for post in self.clients[(profile, nick)].getPosts():
+    #                    title = self.clients[(profile, nick)].getPostTitle(post)
+    #                    link = self.clients[(profile, nick)].getPostLink(post)
+    #                    posts.append((title, link, ''))
+    #            self.posts[(profile, nick)] = posts
 
-        self.log.debug("Posts posts %s" % (self.posts))
+    #    self.log.debug("Posts posts %s" % (self.posts))
 
-        response = self.sendReply(mess, args, self.posts, ['sent','pending'])
-        self.log.debug("Response %s End" % response)
-        yield(response)
-        yield end()
+    #    response = self.sendReply(mess, args, self.posts, ['sent','pending'])
+    #    self.log.debug("Response %s End" % response)
+    #    yield(response)
+    #    yield end()
 
     @botcmd(split_args_with=None)
     def sent(self, mess, args):
