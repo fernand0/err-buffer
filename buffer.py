@@ -18,8 +18,6 @@ from configMod import *
 def end(msg=""):
     return("END"+msg)
 
-#CONFIG_TEMPLATE = {'bufferapp' :'l', 'program' : 'tfm', 'gmail' : 'g', 'socialNetworks' : {'twitter':'fernand0', 'facebook':'Enlaces de fernand0', 'mastodon':'fernand0', 'linkedin': 'Fernando Tricas', 'gmail0':'fernand0@elmundoesimperfecto.com', 'gmail1':'ftricas@elmundoesimperfecto.com', 'gmail2':'ftricas@gmail.com' }
-#}
 
 
 class Buffer(BotPlugin):
@@ -27,10 +25,6 @@ class Buffer(BotPlugin):
     A plugin to manage our buffer account with the bot (at least some features,
 this is not a translation for the whole API).
     """
-    #def get_configuration_template(self):
-    #    """ configuration entries """
-    #    config = CONFIG_TEMPLATE
-    #    return config
 
     def activate(self):
         """
@@ -41,7 +35,7 @@ this is not a translation for the whole API).
 
         self.clients = {}
         self.posts = {}
-        self.nconfig = []
+        self.config = []
 
     @botcmd
     def listC(self, mess, args):
@@ -137,8 +131,8 @@ this is not a translation for the whole API).
 
     @botcmd
     def showC(self, mess, args):
-        if self.nconfig: 
-            yield self.nconfig
+        if self.config: 
+            yield self.config
         else:
             yield "None"
 
@@ -147,15 +141,15 @@ this is not a translation for the whole API).
 
         if args:
             toDel = int(args[0])
-        if toDel < len(self.nconfig):
-            self.nconfig = self.nconfig[:toDel]+self.nconfig[toDel+1:]
-        yield(self.nconfig)
+        if toDel < len(self.config):
+            self.config = self.config[:toDel]+self.config[toDel+1:]
+        yield(self.config)
 
 
     @botcmd
     def addC(self, mess, args):
-        self.nconfig.append(args.split())
-        yield(self.nconfig)
+        self.config.append(args.split())
+        yield(self.config)
 
 
     def selectPost(self, pp, post):
@@ -333,7 +327,7 @@ this is not a translation for the whole API).
             args = '0'
         else:
             args = args[0]
-        for element in self.nconfig[int(args)]:
+        for element in self.config[int(args)]:
             self.log.info("Element %s" % str(element))
             #yield element
             if not self.available:
