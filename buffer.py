@@ -18,8 +18,8 @@ from configMod import *
 def end(msg=""):
     return("END"+msg)
 
-CONFIG_TEMPLATE = {'bufferapp' :'l', 'program' : 'tfm', 'gmail' : 'g', 'socialNetworks' : {'twitter':'fernand0', 'facebook':'Enlaces de fernand0', 'mastodon':'fernand0', 'linkedin': 'Fernando Tricas', 'gmail0':'fernand0@elmundoesimperfecto.com', 'gmail1':'ftricas@elmundoesimperfecto.com', 'gmail2':'ftricas@gmail.com' }
-}
+#CONFIG_TEMPLATE = {'bufferapp' :'l', 'program' : 'tfm', 'gmail' : 'g', 'socialNetworks' : {'twitter':'fernand0', 'facebook':'Enlaces de fernand0', 'mastodon':'fernand0', 'linkedin': 'Fernando Tricas', 'gmail0':'fernand0@elmundoesimperfecto.com', 'gmail1':'ftricas@elmundoesimperfecto.com', 'gmail2':'ftricas@gmail.com' }
+#}
 
 
 class Buffer(BotPlugin):
@@ -27,19 +27,10 @@ class Buffer(BotPlugin):
     A plugin to manage our buffer account with the bot (at least some features,
 this is not a translation for the whole API).
     """
-    def get_configuration_template(self):
-        """ configuration entries """
-        config = CONFIG_TEMPLATE
-        return config
-
-    #def configure(self, configuration): 
-    #    if configuration is not None and configuration != {}: 
-    #        config = dict(chain(CONFIG_TEMPLATE.items(), 
-    #            configuration.items())) 
-    #    else: 
-    #        config = CONFIG_TEMPLATE 
-    #        
-    #    super(Buffer, self).configure(config)
+    #def get_configuration_template(self):
+    #    """ configuration entries """
+    #    config = CONFIG_TEMPLATE
+    #    return config
 
     def activate(self):
         """
@@ -404,48 +395,6 @@ this is not a translation for the whole API).
         self.log.debug("Response %s End" % response)
         yield(response)
         yield end()
-
-
-    #@botcmd(split_args_with=None, template="buffer")
-    #def listt(self, mess, args):
-
-    #    self.log.debug("Posts posts %s" % (self.posts))
-    #    self.posts = {}
-    #    if args:
-    #        url = args[0]
-    #        yield(url)
-    #        if 'slack' in url:
-    #            # Code ad hoc for Slack. We should try to generalize this...
-    #            import moduleSlack
-    #            client = moduleSlack.moduleSlack()
-    #            client.setSlackClient(os.path.expanduser('~/.mySocial/config/.rssSlack'))
-    #            posts = []
-    #            client.setPosts()
-    #            if client.getPosts():
-    #                for post in client.getPosts():
-    #                    title = client.getPostTitle(post)
-    #                    link = client.getPostLink(post)
-    #                    posts.append((title, link, ''))
-    #            self.posts[('tmp', url)] = posts
-    #    else:
-    #        for profile in self.socialNetworks:
-    #            nick = self.socialNetworks[profile]
-    #            self.log.debug("socialNetworks %s %s"% (profile, nick))
-    #            posts = []
-    #            self.clients[(profile, nick)].setPosts()
-    #            if self.clients[(profile, nick)].getPosts():
-    #                for post in self.clients[(profile, nick)].getPosts():
-    #                    title = self.clients[(profile, nick)].getPostTitle(post)
-    #                    link = self.clients[(profile, nick)].getPostLink(post)
-    #                    posts.append((title, link, ''))
-    #            self.posts[(profile, nick)] = posts
-
-    #    self.log.debug("Posts posts %s" % (self.posts))
-
-    #    response = self.sendReply(mess, args, self.posts, ['sent','pending'])
-    #    self.log.debug("Response %s End" % response)
-    #    yield(response)
-    #    yield end()
 
     @botcmd(split_args_with=None)
     def sent(self, mess, args):
