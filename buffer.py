@@ -36,18 +36,21 @@ this is not a translation for the whole API).
         self.clients = {}
         self.posts = {}
         self.config = []
+        self.available = None
 
     @botcmd
     def listC(self, mess, args):
-        yield(self.checkConfigFiles())
+        if not self.available:
+            self.checkConfigFiles()
+        response = self.sendReply('', '', self.available, ['sent','pending'])
+        yield(response)
 
     def checkConfigFiles(self):
         config = configparser.ConfigParser()
         config.read(CONFIGDIR + '/.rssBlogs')
 
         dataSources = {}
-        delayed = ['program', 'bufferapp']
-        delayed2 = ['cache', 'buffer']
+        delayed = ['cache', 'buffer']
         for section in config.sections():
             url = config.get(section, 'url')
 
@@ -62,16 +65,6 @@ this is not a translation for the whole API).
                     dataSources[option] = [(url, value)] 
                     
             for prog in delayed:
-                if prog in config.options(section): 
-                    #for key in dataSources[prog][0][1]: 
-                    #    for option in config.options(section):
-                    #        if option[0] == key:
-                    #            toAppend = dataSources[option][-1][1]+'@'+option
-                    #            dataSources[prog].append(toAppend)
-                    #dataSources[prog] = dataSources[prog][1:]
-                    del dataSources[prog]
-
-            for prog in delayed2:
                 if prog in config.options(section): 
                     for key in dataSources[prog][0][1]: 
                         for option in config.options(section):
@@ -126,8 +119,6 @@ this is not a translation for the whole API).
             self.available[(iniK, nKey)] = []
             for i, element in enumerate(dataSources[key]):
                  self.available[(iniK, nKey)].append((element,'',''))
-        response = self.sendReply('', '', self.available, ['sent','pending'])
-        return(response)
 
     @botcmd
     def showC(self, mess, args):
