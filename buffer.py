@@ -268,9 +268,10 @@ this is not a translation for the whole API).
                 socialTime = ""
     
             tt = 'pending'
+            self.log.info("socialNetwork ... %s" % str(socialNetwork))
             if theUpdates: 
                 compResponse.append((tt, 
-                    socialNetwork[0].capitalize()+' ('+socialNetwork[1]+')', theUpdates))
+                    socialNetwork[1].capitalize()+' ('+socialNetwork[0] + ' ' + socialNetwork[2]+')', theUpdates))
     
         return(compResponse)
 
@@ -330,7 +331,9 @@ this is not a translation for the whole API).
                     profile = key[1]
                     self.log.info("available %s" % str(self.available[key]))
                     self.log.info("element %s" % str(element))
-                    nick = self.available[key][int(element[1])][0]
+                    pos = int(element[1])
+                    self.log.info("pos %d" % pos)
+                    nick = self.available[key][pos][0]
                     self.log.info("nick %s" % str(nick))
                     self.log.debug("socialNetworks %s %s"% (profile, nick))
                     posts = []
@@ -351,7 +354,7 @@ this is not a translation for the whole API).
                         nick, profile = nick.split('@')
                         name = nick
                     try:
-                        self.clients[(profile, nick)].setPosts()
+                        self.clients[(element, profile, nick)].setPosts()
                     except:
                         import importlib
                         moduleName = 'module'+profile.capitalize()
@@ -360,17 +363,17 @@ this is not a translation for the whole API).
                         api = cls()
                         self.log.info("nick %s", str(nick))
                         api.setClient(nick)
-                        self.clients[(profile,name)] = api
-                        self.clients[(profile,name)].setPosts()
+                        self.clients[(element, profile,name)] = api
+                        self.clients[(element, profile,name)].setPosts()
 
                         #client = module...
 
-                    if self.clients[(profile, name)].getPosts():
-                        for post in self.clients[(profile, name)].getPosts():
-                            title = self.clients[(profile, name)].getPostTitle(post)
-                            link = self.clients[(profile, name)].getPostLink(post)
+                    if self.clients[(element, profile, name)].getPosts():
+                        for post in self.clients[(element, profile, name)].getPosts():
+                            title = self.clients[(element, profile, name)].getPostTitle(post)
+                            link = self.clients[(element, profile, name)].getPostLink(post)
                             posts.append((title, link, ''))
-                    self.posts[(profile, name)] = posts
+                    self.posts[(element, profile, name)] = posts
                     continue
 
 
