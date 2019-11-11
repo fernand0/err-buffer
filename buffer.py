@@ -42,6 +42,7 @@ this is not a translation for the whole API).
     def listC(self, mess, args):
         if not self.available:
             self.checkConfigFiles()
+        self.log.info("Available: %s" % str(self.available))
         response = self.sendReply('', '', self.available, ['sent','pending'])
         yield(response)
 
@@ -92,8 +93,10 @@ this is not a translation for the whole API).
             server = config.get(section, 'server')
             if 'gmail' in dataSources: 
                 dataSources['gmail'].append(user+'@'+server) 
+                dataSources['gmail1'].append(('', (user, server))) 
             else: 
                 dataSources['gmail'] = [user+'@'+server]
+                dataSources['gmail1']= [('', (user, server))] 
 
         myKeys = []
         self.available = {}
@@ -119,6 +122,7 @@ this is not a translation for the whole API).
             self.available[(iniK, nKey)] = []
             for i, element in enumerate(dataSources[key]):
                  self.available[(iniK, nKey)].append((element,'',''))
+        self.log.info("dataSources %s" % str(dataSources))
 
     @botcmd
     def showC(self, mess, args):
@@ -270,8 +274,12 @@ this is not a translation for the whole API).
             tt = 'pending'
             self.log.info("socialNetwork ... %s" % str(socialNetwork))
             if theUpdates: 
-                compResponse.append((tt, 
-                    socialNetwork[1].capitalize()+' ('+socialNetwork[0] + ' ' + socialNetwork[2]+')', theUpdates))
+                if len(socialNetwork)>2:
+                    compResponse.append((tt, 
+                        socialNetwork[1].capitalize()+' (' + socialNetwork[0] + ' ' + socialNetwork[2]+')', theUpdates))
+                else:
+                    compResponse.append((tt, 
+                        socialNetwork[0].capitalize()+' (' + socialNetwork[1]+')', theUpdates))
     
         return(compResponse)
 
@@ -319,6 +327,7 @@ this is not a translation for the whole API).
             args = '0'
         else:
             args = args[0]
+
         for element in self.config[int(args)]:
             self.log.info("Element %s" % str(element))
             #yield element
@@ -328,14 +337,12 @@ this is not a translation for the whole API).
             for key in self.available:
                 self.log.info("key %s" % str(key))
                 if element[0].lower() == key[0]: 
+                    self.log.info("Element: %s" % element)
                     profile = key[1]
-                    self.log.info("available %s" % str(self.available[key]))
-                    self.log.info("element %s" % str(element))
+                    self.log.info("Profile: %s" % profile)
                     pos = int(element[1])
-                    self.log.info("pos %d" % pos)
                     nick = self.available[key][pos][0]
-                    self.log.info("nick %s" % str(nick))
-                    self.log.debug("socialNetworks %s %s"% (profile, nick))
+                    self.log.info("Nick: %s" % str(nick))
                     posts = []
                     self.log.info("clients %s" % str(self.clients))
                     if (key[0]=='g'): # or (key[0] == '2'):
@@ -356,12 +363,14 @@ this is not a translation for the whole API).
                     try:
                         self.clients[(element, profile, nick)].setPosts()
                     except:
+                        self.log.info("element %s", str(element))
+                        self.log.info("profile %s", str(profile))
+                        self.log.info("nick %s", str(nick))
                         import importlib
                         moduleName = 'module'+profile.capitalize()
                         mod = importlib.import_module(moduleName) 
                         cls = getattr(mod, moduleName)
                         api = cls()
-                        self.log.info("nick %s", str(nick))
                         api.setClient(nick)
                         self.clients[(element, profile,name)] = api
                         self.clients[(element, profile,name)].setPosts()
