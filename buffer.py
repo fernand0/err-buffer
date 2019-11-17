@@ -93,10 +93,8 @@ this is not a translation for the whole API).
             server = config.get(section, 'server')
             if 'gmail' in dataSources: 
                 dataSources['gmail'].append(user+'@'+server) 
-                dataSources['gmail1'].append(('', (user, server))) 
             else: 
                 dataSources['gmail'] = [user+'@'+server]
-                dataSources['gmail1']= [('', (user, server))] 
 
         myKeys = []
         self.available = {}
@@ -172,10 +170,12 @@ this is not a translation for the whole API).
         res = None
         for profile in self.clients:
             self.log.info("Profile: %s" % str(profile))
-            update = self.clients[profile].selectAndExecute(command,args)
-            if update: 
-                updates = updates + "* " + update + '\n'
-                update = None
+            if args[:len(profile[0])] == profile[0] or (args[0] == '*' and False):
+                # We need to do something for '*' commands
+                update = self.clients[profile].selectAndExecute(command,args)
+                if update: 
+                    updates = updates + "* " + update + '\n'
+                    update = None
 
         if updates: res = resTxt + '\n' + updates + '\n'
 
