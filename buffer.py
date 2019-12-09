@@ -40,9 +40,11 @@ this is not a translation for the whole API).
 
     @botcmd
     def listC(self, mess, args):
+        """ List available services
+        """
         if not self.available:
             self.checkConfigFiles()
-        self.log.info("Available: %s" % str(self.available))
+        self.log.debug("Available: %s" % str(self.available))
         response = self.sendReply('', '', self.available, ['sent','pending'])
         yield(response)
 
@@ -120,30 +122,63 @@ this is not a translation for the whole API).
             self.available[(iniK, nKey)] = []
             for i, element in enumerate(dataSources[key]):
                  self.available[(iniK, nKey)].append((element,'',''))
-        self.log.info("dataSources %s" % str(dataSources))
+        self.log.debug("dataSources %s" % str(dataSources))
 
     @botcmd
     def showC(self, mess, args):
+        """ Show selected services in the quick list
+        """
         if self.config: 
             yield self.config
         else:
             yield "None"
 
+    def addMore(self):
+        response = "There are {0} lists. You can add more with command addC.".format(len(self.config))
+        return (response)
+
     @botcmd
     def delC(self, mess, args):
+        """ Delete a list of services from the quick list
+        """
 
-        if args:
-            toDel = int(args[0])
-        if toDel < len(self.config):
-            self.config = self.config[:toDel]+self.config[toDel+1:]
-        yield(self.config)
+        pos = 0
+        if args: 
+            if args[0].isdigit(): 
+                pos = int(args[0])
 
+        if pos < len(self.config):
+            self.config = self.config[:pos]+self.config[pos+1:]
+            response = self.config
+        else:
+            response = self.addMore()
+
+        yield(response)
+        yield(end())
 
     @botcmd
     def addC(self, mess, args):
-        self.config.append(args.split())
-        yield(self.config)
+        """ Add list of services to the quick list
+        """
 
+        if not self.available:
+            self.checkConfigFiles()
+
+        myList = []
+
+        for arg in args.split():
+            for key in self.available:
+                if arg[0].capitalize() == key[0].capitalize(): 
+                    if arg[1:].isdigit():
+                        pos = int(arg[1:] )
+                        if pos < len(self.available[key]): 
+                            # Silently discard not valid args 
+                            myList.append(arg)
+
+        if myList: 
+            self.config.append(myList)
+
+        yield(self.config)
 
     def selectPost(self, pp, post):
         self.log.debug("Selecting %s" % pp.pformat(post))
@@ -169,7 +204,7 @@ this is not a translation for the whole API).
         update = None
         res = None
         for profile in self.clients:
-            self.log.info("Profile: %s" % str(profile))
+            self.log.debug("Profile: %s" % str(profile))
             if args[:len(profile[0])] == profile[0] or (args[0] == '*' and False):
                 # We need to do something for '*' commands
                 update = self.clients[profile].selectAndExecute(command,args)
@@ -192,7 +227,7 @@ this is not a translation for the whole API).
 
     @botcmd
     def show(self, mess, args):
-        """A command to publish some update"""
+        """A command to show the content of some update"""
         res = self.execute('show', args)    
         yield res 
         yield end()
@@ -219,9 +254,10 @@ this is not a translation for the whole API).
         argsArchive.append(args)
         self['argsArchive'] = argsArchive
 
-
     @botcmd
     def showE(self, mess, args):
+        """ Show the last edit commands
+        """
         if 'argsArchive' in self:
             for arg in self['argsArchive'][-5:]:
                 yield("- %s" % arg)
@@ -254,8 +290,7 @@ this is not a translation for the whole API).
             for update in updates[socialNetwork]:
                 if update:
                     if len(update)>0:
-                        self.log.info("Update %s " % str(update))
-                        #self.log.debug("Update %s " % update[0])
+                        self.log.debug("Update %s " % str(update))
                         if update[0]:
                             theUpdatetxt = str(update[0]).replace('_','\_')
                         else:
@@ -296,6 +331,9 @@ this is not a translation for the whole API).
 
     @botcmd(split_args_with=None, template="buffer")
     def delS(self, mess, args): 
+        """ A command to delete some schedule
+        """
+
         yield "Adding %s" % args
         for profile in self.clients:
             if 'delSchedules' in dir(self.clients[profile]): 
@@ -304,6 +342,8 @@ this is not a translation for the whole API).
 
     @botcmd(split_args_with=None, template="buffer")
     def addS(self, mess, args): 
+        """ A command to add a publishing time in the schedule
+        """
         yield "Adding %s" % args
         for profile in self.clients:
             if 'addSchedules' in dir(self.clients[profile]): 
@@ -312,95 +352,103 @@ this is not a translation for the whole API).
 
     @botcmd(split_args_with=None, template="buffer")
     def listS(self, mess, args): 
+        """ A command to show scheduled times
+        """
         for profile in self.clients:
-            self.log.info("Profile: %s" % str(profile))
+            self.log.debug("Profile: %s" % str(profile))
             if 'setSchedules' in dir(self.clients[profile]): 
                 self.clients[profile].setSchedules('rssToSocial')
                 yield "%s: (%s) %s" % (profile[0], profile[1], self.clients[profile].getHoursSchedules())
+        yield(end())
 
     @botcmd(split_args_with=None, template="buffer")
     def list(self, mess, args):
+        """ A command to show available posts in a list of available sites
+        """
 
         self.log.debug("Posts posts %s" % (self.posts))
         self.posts = {}
-        if not args:
-            args = '0'
+
+        pos = 0
+        if args: 
+            if args[0].isdigit(): 
+                pos = int(args[0])
+
+        if pos < len(self.config):
+            for element in self.config[pos]:
+                self.log.debug("Element %s" % str(element))
+                #yield element
+                if not self.available:
+                    self.checkConfigFiles()
+
+                for key in self.available:
+                    self.log.debug("key %s" % str(key))
+                    if element[0].lower() == key[0]: 
+                        self.log.debug("Element: %s" % element)
+                        profile = key[1]
+                        self.log.debug("Profile: %s" % profile)
+                        pos = int(element[1])
+                        nick = self.available[key][pos][0]
+                        self.log.debug("Nick: %s" % str(nick))
+                        posts = []
+                        self.log.debug("clients %s" % str(self.clients))
+                        if (key[0]=='g'): # or (key[0] == '2'):
+                            profile = 'gmail' #+element[1]
+                            name = nick
+                            nick = (profile+element[1], name)
+                        elif (key[0] == 'a') or (key[0] == 'b'):
+                            name = nick[1][1]+'@'+nick[1][0]
+                        elif key[0] == 's':
+                            name = nick[0]
+                            nick = None
+                        elif type(nick) == tuple:
+                            nick = nick[1]
+                            name = nick
+                        elif nick.find('@') >= 0:
+                            nick, profile = nick.split('@')
+                            name = nick
+                        try:
+                            self.clients[(element, profile, nick)].setPosts()
+                        except:
+                            self.log.debug("element %s", str(element))
+                            self.log.debug("profile %s", str(profile))
+                            self.log.debug("nick %s", str(nick))
+                            import importlib
+                            moduleName = 'module'+profile.capitalize()
+                            mod = importlib.import_module(moduleName) 
+                            cls = getattr(mod, moduleName)
+                            api = cls()
+                            api.setClient(nick)
+                            self.clients[(element, profile,name)] = api
+                            self.clients[(element, profile,name)].setPosts()
+
+                            #client = module...
+
+                        if self.clients[(element, profile, name)].getPosts():
+                            for post in self.clients[(element, profile, name)].getPosts():
+                                title = self.clients[(element, profile, name)].getPostTitle(post)
+                                link = self.clients[(element, profile, name)].getPostLink(post)
+                                posts.append((title, link, ''))
+                        self.posts[(element, profile, name)] = posts
+                        continue
+            self.log.debug("Posts posts %s" % (self.posts))
+            response = self.sendReply(mess, args, self.posts, ['sent','pending'])
+            self.log.debug("Response %s End" % response)
         else:
-            args = args[0]
-
-        for element in self.config[int(args)]:
-            self.log.info("Element %s" % str(element))
-            #yield element
-            if not self.available:
-                self.checkConfigFiles()
-
-            for key in self.available:
-                self.log.info("key %s" % str(key))
-                if element[0].lower() == key[0]: 
-                    self.log.info("Element: %s" % element)
-                    profile = key[1]
-                    self.log.info("Profile: %s" % profile)
-                    pos = int(element[1])
-                    nick = self.available[key][pos][0]
-                    self.log.info("Nick: %s" % str(nick))
-                    posts = []
-                    self.log.info("clients %s" % str(self.clients))
-                    if (key[0]=='g'): # or (key[0] == '2'):
-                        profile = 'gmail' #+element[1]
-                        name = nick
-                        nick = (profile+element[1], name)
-                    elif (key[0] == 'a') or (key[0] == 'b'):
-                        name = nick[1][1]+'@'+nick[1][0]
-                    elif key[0] == 's':
-                        name = nick[0]
-                        nick = None
-                    elif type(nick) == tuple:
-                        nick = nick[1]
-                        name = nick
-                    elif nick.find('@') >= 0:
-                        nick, profile = nick.split('@')
-                        name = nick
-                    try:
-                        self.clients[(element, profile, nick)].setPosts()
-                    except:
-                        self.log.info("element %s", str(element))
-                        self.log.info("profile %s", str(profile))
-                        self.log.info("nick %s", str(nick))
-                        import importlib
-                        moduleName = 'module'+profile.capitalize()
-                        mod = importlib.import_module(moduleName) 
-                        cls = getattr(mod, moduleName)
-                        api = cls()
-                        api.setClient(nick)
-                        self.clients[(element, profile,name)] = api
-                        self.clients[(element, profile,name)].setPosts()
-
-                        #client = module...
-
-                    if self.clients[(element, profile, name)].getPosts():
-                        for post in self.clients[(element, profile, name)].getPosts():
-                            title = self.clients[(element, profile, name)].getPostTitle(post)
-                            link = self.clients[(element, profile, name)].getPostLink(post)
-                            posts.append((title, link, ''))
-                    self.posts[(element, profile, name)] = posts
-                    continue
+            response = self.addMore()
 
 
-        self.log.debug("Posts posts %s" % (self.posts))
-
-        response = self.sendReply(mess, args, self.posts, ['sent','pending'])
-        self.log.debug("Response %s End" % response)
         yield(response)
         yield end()
 
-    @botcmd(split_args_with=None)
-    def sent(self, mess, args):
-        pp = pprint.PrettyPrinter(indent=4)
-        posts = moduleBuffer.listPosts(self.api, pp, "")
-        response = self.sendReply(mess, args, posts, ['pending', 'sent'])
-        self.log.debug(response)
-        yield(response)
-        yield end()
+    #@botcmd(split_args_with=None)
+    #def sent(self, mess, args):
+    #    pp = pprint.PrettyPrinter(indent=4)
+    #    posts = moduleBuffer.listPosts(self.api, pp, "")
+    #    response = self.sendReply(mess, args, posts, ['pending', 'sent'])
+    #    self.log.debug(response)
+    #    yield(response)
+    #    yield end()
 
     @botcmd(split_args_with=None)
     def copy(self, mess, args):
