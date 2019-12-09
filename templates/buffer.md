@@ -7,3 +7,4 @@
 {% for text, link, stats in updates %} {{ text | truncate(40, True)}} {{ stats }}
 {% endfor %}
 {% else %} *{{nameSocialNetwork}}* {% endif %} {% endif %}
+

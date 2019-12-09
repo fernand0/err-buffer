@@ -287,12 +287,16 @@ this is not a translation for the whole API).
             self.log.debug("Update social network %s " % str(socialNetwork))
             self.log.debug("Updates %s End" % updates[socialNetwork])
             theUpdates = []
+            maxLen = 0
             for update in updates[socialNetwork]:
                 if update:
                     if len(update)>0:
                         self.log.debug("Update %s " % str(update))
                         if update[0]:
                             theUpdatetxt = str(update[0]).replace('_','\_')
+                            lenUpdate = len(theUpdatetxt[:40]) 
+                            if lenUpdate > maxLen: 
+                                maxLen = lenUpdate
                         else:
                             # This should not happen
                             theUpdatetxt = ''
@@ -310,8 +314,24 @@ this is not a translation for the whole API).
             self.log.info("socialNetwork ... %s" % str(socialNetwork))
             if theUpdates: 
                 if len(socialNetwork)>2:
-                    compResponse.append((tt, 
-                        socialNetwork[1].capitalize()+' (' + socialNetwork[0] + ' ' + socialNetwork[2]+')', theUpdates))
+                    socialNetworktxt = socialNetwork[1].capitalize()+' (' + socialNetwork[0] + ' ' + socialNetwork[2]+')'
+                    if len(socialNetworktxt)+3 > maxLen:
+                        maxLen = len(socialNetworktxt)+3
+                    if (1 + len(theUpdates))*maxLen > 1024:
+                        numEle = 1024 / maxLen
+                        import math
+                        iniPos = 0
+                        maxPos = math.trunc(numEle)
+                        while iniPos <= len(theUpdates): 
+                            compResponse.append((tt, socialNetworktxt, theUpdates[iniPos:maxPos]))
+                            iniPos = maxPos
+                            maxPos = maxPos + math.trunc(numEle)
+                    else:
+                        compResponse.append((tt, socialNetworktxt, theUpdates))
+
+
+
+                    #compResponse.append((tt, socialNetworktxt, theUpdates))
                 else:
                     compResponse.append((tt, 
                         socialNetwork[0].capitalize()+' (' + socialNetwork[1]+')', theUpdates))
@@ -325,9 +345,7 @@ this is not a translation for the whole API).
             response = tenv().get_template('buffer.md').render({'type': rep[0],
                         'nameSocialNetwork': rep[1], 
                         'updates': rep[2]})
-            compResponse = compResponse + response
-
-        return(compResponse)
+            yield(response)
 
     @botcmd(split_args_with=None, template="buffer")
     def delS(self, mess, args): 
@@ -438,7 +456,8 @@ this is not a translation for the whole API).
             response = self.addMore()
 
 
-        yield(response)
+        for resp in response: 
+            yield(resp)
         yield end()
 
     #@botcmd(split_args_with=None)
