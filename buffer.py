@@ -46,7 +46,8 @@ this is not a translation for the whole API).
             self.checkConfigFiles()
         self.log.debug("Available: %s" % str(self.available))
         response = self.sendReply('', '', self.available, ['sent','pending'])
-        yield(response)
+        for rep in response:
+            yield(rep)
 
     def checkConfigFiles(self):
         config = configparser.ConfigParser()
@@ -388,72 +389,94 @@ this is not a translation for the whole API).
         self.posts = {}
 
         pos = 0
-        if args: 
-            if args[0].isdigit(): 
-                pos = int(args[0])
+        self.log.info("args %s" % str(args))
 
-        if pos < len(self.config):
-            for element in self.config[pos]:
-                self.log.debug("Element %s" % str(element))
-                #yield element
+        if args: 
+            arg1 = args[0]
+            if arg1.isdigit(): 
+                pos = int(arg1) 
+                if pos < len(self.config):
+                    myList = self.config[pos]
+            else: 
+                myList = []
                 if not self.available:
                     self.checkConfigFiles()
 
-                for key in self.available:
-                    self.log.debug("key %s" % str(key))
-                    if element[0].lower() == key[0]: 
-                        self.log.debug("Element: %s" % element)
-                        profile = key[1]
-                        self.log.debug("Profile: %s" % profile)
-                        pos = int(element[1])
-                        nick = self.available[key][pos][0]
-                        self.log.debug("Nick: %s" % str(nick))
-                        posts = []
-                        self.log.debug("clients %s" % str(self.clients))
-                        if (key[0]=='g'): # or (key[0] == '2'):
-                            profile = 'gmail' #+element[1]
-                            name = nick
-                            nick = (profile+element[1], name)
-                        elif (key[0] == 'a') or (key[0] == 'b'):
-                            name = nick[1][1]+'@'+nick[1][0]
-                        elif key[0] == 's':
-                            name = nick[0]
-                            nick = None
-                        elif type(nick) == tuple:
-                            nick = nick[1]
-                            name = nick
-                        elif nick.find('@') >= 0:
-                            nick, profile = nick.split('@')
-                            name = nick
-                        try:
-                            self.clients[(element, profile, nick)].setPosts()
-                        except:
-                            self.log.debug("element %s", str(element))
-                            self.log.debug("profile %s", str(profile))
-                            self.log.debug("nick %s", str(nick))
-                            import importlib
-                            moduleName = 'module'+profile.capitalize()
-                            mod = importlib.import_module(moduleName) 
-                            cls = getattr(mod, moduleName)
-                            api = cls()
-                            api.setClient(nick)
-                            self.clients[(element, profile,name)] = api
-                            self.clients[(element, profile,name)].setPosts()
+                for key in self.available: 
+                    if arg1[0].capitalize() == key[0].capitalize(): 
+                        if arg1[1:].isdigit(): 
+                            pos = int(arg1[1:] ) 
+                            if pos < len(self.available[key]): 
+                                myList.append(arg1)
+        else:
+            pos = 0
+            self.log.info("config %s" % str(self.config))
+            if pos < len(self.config):
+                myList = self.config[pos] 
+            else: 
+                response = [ self.addMore() ]
+                myList = []
+        self.log.info("myList %s" % str(myList))
 
-                            #client = module...
+        for element in myList:
+            self.log.debug("Element %s" % str(element))
+            #yield element
+            if not self.available:
+                self.checkConfigFiles()
 
-                        if self.clients[(element, profile, name)].getPosts():
-                            for post in self.clients[(element, profile, name)].getPosts():
-                                title = self.clients[(element, profile, name)].getPostTitle(post)
-                                link = self.clients[(element, profile, name)].getPostLink(post)
-                                posts.append((title, link, ''))
-                        self.posts[(element, profile, name)] = posts
-                        continue
+            for key in self.available:
+                self.log.debug("key %s" % str(key))
+                if element[0].lower() == key[0]: 
+                    self.log.debug("Element: %s" % element)
+                    profile = key[1]
+                    self.log.debug("Profile: %s" % profile)
+                    pos = int(element[1])
+                    nick = self.available[key][pos][0]
+                    self.log.debug("Nick: %s" % str(nick))
+                    posts = []
+                    self.log.debug("clients %s" % str(self.clients))
+                    if (key[0]=='g'): # or (key[0] == '2'):
+                        profile = 'gmail' #+element[1]
+                        name = nick
+                        nick = (profile+element[1], name)
+                    elif (key[0] == 'a') or (key[0] == 'b'):
+                        name = nick[1][1]+'@'+nick[1][0]
+                    elif key[0] == 's':
+                        name = nick[0]
+                        nick = None
+                    elif type(nick) == tuple:
+                        nick = nick[1]
+                        name = nick
+                    elif nick.find('@') >= 0:
+                        nick, profile = nick.split('@')
+                        name = nick
+                    try:
+                        self.clients[(element, profile, nick)].setPosts()
+                    except:
+                        self.log.debug("element %s", str(element))
+                        self.log.debug("profile %s", str(profile))
+                        self.log.debug("nick %s", str(nick))
+                        import importlib
+                        moduleName = 'module'+profile.capitalize()
+                        mod = importlib.import_module(moduleName) 
+                        cls = getattr(mod, moduleName)
+                        api = cls()
+                        api.setClient(nick)
+                        self.clients[(element, profile,name)] = api
+                        self.clients[(element, profile,name)].setPosts()
+
+                        #client = module...
+
+                    if self.clients[(element, profile, name)].getPosts():
+                        for post in self.clients[(element, profile, name)].getPosts():
+                            title = self.clients[(element, profile, name)].getPostTitle(post)
+                            link = self.clients[(element, profile, name)].getPostLink(post)
+                            posts.append((title, link, ''))
+                    self.posts[(element, profile, name)] = posts
+                    continue
             self.log.debug("Posts posts %s" % (self.posts))
             response = self.sendReply(mess, args, self.posts, ['sent','pending'])
             self.log.debug("Response %s End" % response)
-        else:
-            response = self.addMore()
 
 
         for resp in response: 
