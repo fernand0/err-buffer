@@ -22,8 +22,7 @@ def end(msg=""):
 
 class Buffer(BotPlugin):
     """
-    A plugin to manage our buffer account with the bot (at least some features,
-this is not a translation for the whole API).
+    A plugin to manage our buffer account with the bot (at least some features, this is not a translation for the whole API).
     """
 
     def activate(self):
@@ -391,6 +390,8 @@ this is not a translation for the whole API).
         pos = 0
         self.log.info("args %s" % str(args))
 
+        myList = []
+        response = None
         if args: 
             arg1 = args[0]
             if arg1.isdigit(): 
@@ -398,7 +399,6 @@ this is not a translation for the whole API).
                 if pos < len(self.config):
                     myList = self.config[pos]
             else: 
-                myList = []
                 if not self.available:
                     self.checkConfigFiles()
 
@@ -479,8 +479,11 @@ this is not a translation for the whole API).
             self.log.debug("Response %s End" % response)
 
 
-        for resp in response: 
-            yield(resp)
+        if response: 
+            for resp in response: 
+                yield(resp) 
+        else:
+            yield(self.addMore())
         yield end()
 
     #@botcmd(split_args_with=None)
