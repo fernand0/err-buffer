@@ -468,10 +468,10 @@ class Buffer(BotPlugin):
                         #client = module...
 
                     if self.clients[(element, profile, name)].getPosts():
-                        for post in self.clients[(element, profile, name)].getPosts():
+                        for (i, post) in enumerate(self.clients[(element, profile, name)].getPosts()):
                             title = self.clients[(element, profile, name)].getPostTitle(post)
                             link = self.clients[(element, profile, name)].getPostLink(post)
-                            posts.append((title, link, ''))
+                            posts.append((title, link, '{:2})'.format(i)))
                     self.posts[(element, profile, name)] = posts
                     continue
             self.log.debug("Posts posts %s" % (self.posts))
