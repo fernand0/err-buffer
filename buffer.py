@@ -36,6 +36,7 @@ class Buffer(BotPlugin):
         self.posts = {}
         self.config = []
         self.available = None
+        self.schedules = None
 
     @botcmd
     def listC(self, mess, args):
@@ -322,16 +323,15 @@ class Buffer(BotPlugin):
                         import math
                         iniPos = 0
                         maxPos = math.trunc(numEle)
+                        if self.schedules:
+                            maxPos = self.schedules
+                            numEle = self.schedules
                         while iniPos <= len(theUpdates): 
                             compResponse.append((tt, socialNetworktxt, theUpdates[iniPos:maxPos]))
                             iniPos = maxPos
                             maxPos = maxPos + math.trunc(numEle)
                     else:
                         compResponse.append((tt, socialNetworktxt, theUpdates))
-
-
-
-                    #compResponse.append((tt, socialNetworktxt, theUpdates))
                 else:
                     compResponse.append((tt, 
                         socialNetwork[0].capitalize()+' (' + socialNetwork[1]+')', theUpdates))
@@ -376,7 +376,15 @@ class Buffer(BotPlugin):
             self.log.debug("Profile: %s" % str(profile))
             if 'setSchedules' in dir(self.clients[profile]): 
                 self.clients[profile].setSchedules('rssToSocial')
-                yield "%s: (%s) %s" % (profile[0], profile[1], self.clients[profile].getHoursSchedules())
+                schedules = self.clients[profile].getHoursSchedules()
+                if isinstance(schedules, str):
+                    numS = len(schedules.split(','))
+                else:
+                    numS = len(schedules)
+                    
+                if numS:
+                    self.schedules = numS
+                yield "%s: (%s) %s Number: %s" % (profile[0], profile[1], schedules, numS)
         yield(end())
 
     @botcmd(split_args_with=None, template="buffer")
@@ -485,15 +493,6 @@ class Buffer(BotPlugin):
         else:
             yield(self.addMore())
         yield end()
-
-    #@botcmd(split_args_with=None)
-    #def sent(self, mess, args):
-    #    pp = pprint.PrettyPrinter(indent=4)
-    #    posts = moduleBuffer.listPosts(self.api, pp, "")
-    #    response = self.sendReply(mess, args, posts, ['pending', 'sent'])
-    #    self.log.debug(response)
-    #    yield(response)
-    #    yield end()
 
     @botcmd(split_args_with=None)
     def copy(self, mess, args):
