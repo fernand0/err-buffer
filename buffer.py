@@ -453,18 +453,23 @@ class Buffer(BotPlugin):
                     self.log.info("Nick: %s" % str(nick))
                     posts = []
                     self.log.debug("clients %s" % str(self.clients))
+                    param = nick
                     if (key[0]=='g'): # or (key[0] == '2'):
                         profile = 'gmail' #+element[1]
                         name = url
                         nick = name
+                        param = name
                     elif (key[0] == 'a') or (key[0] == 'b'):
                         name = nick[1]+'@'+nick[0]
                         self.log.info("Name: %s" % str(name))
+                        param = (url, nick)
                     elif key[0] == 's':
                         name = nick[0]
                         nick = None
+                        param = None
                     elif key[0] == 'r':
                         url = nick
+                        param = nick
                     elif type(nick) == tuple:
                         nick = nick[1]
                         name = nick
@@ -485,7 +490,7 @@ class Buffer(BotPlugin):
                         mod = importlib.import_module(moduleName) 
                         cls = getattr(mod, moduleName)
                         api = cls()
-                        api.setClient(url, nick)
+                        api.setClient(param)
                         self.clients[(element, profile,name)] = api
                         self.clients[(element, profile,name)].setPosts()
                         self.log.info("Posts %s"% str(self.clients[(element, profile,name)].getPosts()))
