@@ -122,7 +122,10 @@ class Buffer(BotPlugin):
                 nKey = iniK+key
             self.available[(iniK, nKey)] = []
             for i, element in enumerate(dataSources[key]):
-                 self.available[(iniK, nKey)].append((element,'',''))
+                if isinstance(element, str): 
+                    self.available[(iniK, nKey)].append((element, '',str(i)))
+                else: 
+                    self.available[(iniK, nKey)].append((element[0],element[1],str(i)))
         self.log.debug("dataSources %s" % str(dataSources))
 
     @botcmd
@@ -292,10 +295,13 @@ class Buffer(BotPlugin):
             for update in updates[socialNetwork]:
                 if update:
                     if len(update)>0:
-                        self.log.debug("Update %s " % str(update))
+                        self.log.info("Update %s " % str(update))
                         if update[0]:
-                            theUpdatetxt = str(update[0]).replace('_','\_')
-                            lenUpdate = len(theUpdatetxt[:40]) 
+                            if update[1] and (update[0] != update[1]): 
+                                theUpdatetxt = '{} {}'.format(update[0],str(update[1])).replace('_','\_')
+                            else: 
+                                theUpdatetxt = str(update[0]).replace('_','\_')
+                            lenUpdate = len(theUpdatetxt[:60]) 
                             if lenUpdate > maxLen: 
                                 maxLen = lenUpdate
                         else:
@@ -427,7 +433,7 @@ class Buffer(BotPlugin):
         self.log.info("myList %s" % str(myList))
 
         for element in myList:
-            self.log.debug("Element %s" % str(element))
+            self.log.info("Element %s" % str(element))
             #yield element
             if not self.available:
                 self.checkConfigFiles()
@@ -439,39 +445,50 @@ class Buffer(BotPlugin):
                     profile = key[1]
                     self.log.debug("Profile: %s" % profile)
                     pos = int(element[1])
-                    nick = self.available[key][pos][0]
-                    self.log.debug("Nick: %s" % str(nick))
+                    self.log.info("Element: %s" % str(self.available[key][pos]))
+                    url = self.available[key][pos][0]
+                    nick = self.available[key][pos][1]
+                    name = nick
+                    self.log.info("Url: %s" % str(url))
+                    self.log.info("Nick: %s" % str(nick))
                     posts = []
                     self.log.debug("clients %s" % str(self.clients))
                     if (key[0]=='g'): # or (key[0] == '2'):
                         profile = 'gmail' #+element[1]
-                        name = nick
-                        nick = (profile+element[1], name)
+                        name = url
+                        nick = name
                     elif (key[0] == 'a') or (key[0] == 'b'):
-                        name = nick[1][1]+'@'+nick[1][0]
+                        name = nick[1]+'@'+nick[0]
+                        self.log.info("Name: %s" % str(name))
                     elif key[0] == 's':
                         name = nick[0]
                         nick = None
+                    elif key[0] == 'r':
+                        url = nick
                     elif type(nick) == tuple:
                         nick = nick[1]
                         name = nick
                     elif nick.find('@') >= 0:
                         nick, profile = nick.split('@')
                         name = nick
+                    self.log.info("Clients %s" % str(self.clients))
+                    self.log.info("Url: %s" % str(nick))
+                    self.log.info("Nick: %s" % str(nick))
                     try:
-                        self.clients[(element, profile, nick)].setPosts()
+                        self.clients[(element, profile, name)].setPosts()
                     except:
-                        self.log.debug("element %s", str(element))
-                        self.log.debug("profile %s", str(profile))
-                        self.log.debug("nick %s", str(nick))
+                        self.log.info("element %s", str(element))
+                        self.log.info("profile %s", str(profile))
+                        self.log.info("nick %s", str(nick))
                         import importlib
                         moduleName = 'module'+profile.capitalize()
                         mod = importlib.import_module(moduleName) 
                         cls = getattr(mod, moduleName)
                         api = cls()
-                        api.setClient(nick)
+                        api.setClient(url, nick)
                         self.clients[(element, profile,name)] = api
                         self.clients[(element, profile,name)].setPosts()
+                        self.log.info("Posts %s"% str(self.clients[(element, profile,name)].getPosts()))
 
                         #client = module...
 
@@ -479,7 +496,7 @@ class Buffer(BotPlugin):
                         for (i, post) in enumerate(self.clients[(element, profile, name)].getPosts()):
                             title = self.clients[(element, profile, name)].getPostTitle(post)
                             link = self.clients[(element, profile, name)].getPostLink(post)
-                            posts.append((title, link, '{:2})'.format(i)))
+                            posts.append((title, link, '{:2}'.format(i)))
                     self.posts[(element, profile, name)] = posts
                     continue
             self.log.debug("Posts posts %s" % (self.posts))
