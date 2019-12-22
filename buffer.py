@@ -60,9 +60,6 @@ class Buffer(BotPlugin):
 
             for option in config.options(section):
                 value = config.get(section, option)
-                if option == 'rssfeed':
-                    option = 'rss'
-                    value = url+value
                 if option in dataSources:
                     dataSources[option].append((url, value))
                 else:
@@ -73,7 +70,8 @@ class Buffer(BotPlugin):
                     for key in dataSources[prog][0][1]: 
                         for option in config.options(section):
                             if option[0] == key:
-                                toAppend = (url, (option, dataSources[option][-1][1]))
+                                toAppend = (url, 
+                                        (option, dataSources[option][-1][1]))
                                 dataSources[prog].append(toAppend)
                     dataSources[prog] = dataSources[prog][1:]
 
@@ -468,8 +466,10 @@ class Buffer(BotPlugin):
                         nick = None
                         param = None
                     elif key[0] == 'r':
-                        url = nick
-                        param = nick
+                        if nick.find('http')>=0:
+                            param = nick
+                        else:
+                            param = url + nick
                     elif type(nick) == tuple:
                         nick = nick[1]
                         name = nick
@@ -502,9 +502,10 @@ class Buffer(BotPlugin):
                             title = self.clients[(element, profile, name)].getPostTitle(post)
                             link = self.clients[(element, profile, name)].getPostLink(post)
                             posts.append((title, link, '{:2}'.format(i)))
+                            self.log.info("I: %s %s %d"%(title,link,i))
                     self.posts[(element, profile, name)] = posts
                     continue
-            self.log.debug("Posts posts %s" % (self.posts))
+            self.log.info("Posts posts %s" % (self.posts))
             response = self.sendReply(mess, args, self.posts, ['sent','pending'])
             self.log.debug("Response %s End" % response)
 
