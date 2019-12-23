@@ -209,6 +209,7 @@ class Buffer(BotPlugin):
 
         self.log.info("args %s" % str(args))
 
+        pos = -1
         myList = []
         response = []
         if not self.available:
