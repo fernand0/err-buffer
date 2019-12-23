@@ -99,7 +99,9 @@ class Buffer(BotPlugin):
 
         myKeys = []
         self.available = {}
+        myList = []
         for key in dataSources:
+
             if key[0] not in myKeys:
                 iniK = key[0]
             else:
@@ -119,11 +121,16 @@ class Buffer(BotPlugin):
             else:
                 nKey = iniK+key
             self.available[(iniK, nKey)] = []
+            component = '{}: {}'.format(nKey, len(dataSources[key]))
+            myList.append(component)
+            self.log.debug("Component %s", component)
             for i, element in enumerate(dataSources[key]):
                 if isinstance(element, str): 
                     self.available[(iniK, nKey)].append((element, '',str(i)))
                 else: 
                     self.available[(iniK, nKey)].append((element[0],element[1],str(i)))
+        if myList:
+            self.config.append((myList,'',''))
         self.log.debug("dataSources %s" % str(dataSources))
 
     @botcmd
@@ -399,7 +406,7 @@ class Buffer(BotPlugin):
         self.log.debug("Posts posts %s" % (self.posts))
         self.posts = {}
 
-        pos = 0
+        pos = 1
         self.log.info("args %s" % str(args))
 
         myList = []
@@ -421,7 +428,7 @@ class Buffer(BotPlugin):
                             if pos < len(self.available[key]): 
                                 myList.append(arg1)
         else:
-            pos = 0
+            pos = 1
             self.log.info("config %s" % str(self.config))
             if pos < len(self.config):
                 myList = self.config[pos] 
@@ -430,84 +437,85 @@ class Buffer(BotPlugin):
                 myList = []
         self.log.info("myList %s" % str(myList))
 
-        for element in myList:
-            self.log.info("Element %s" % str(element))
-            #yield element
-            if not self.available:
-                self.checkConfigFiles()
+        if not self.available: 
+            self.checkConfigFiles()
 
-            for key in self.available:
-                self.log.debug("key %s" % str(key))
-                if element[0].lower() == key[0]: 
-                    self.log.debug("Element: %s" % element)
-                    profile = key[1]
-                    self.log.debug("Profile: %s" % profile)
-                    pos = int(element[1])
-                    self.log.info("Element: %s" % str(self.available[key][pos]))
-                    url = self.available[key][pos][0]
-                    nick = self.available[key][pos][1]
-                    name = nick
-                    self.log.info("Url: %s" % str(url))
-                    self.log.info("Nick: %s" % str(nick))
-                    posts = []
-                    self.log.debug("clients %s" % str(self.clients))
-                    param = nick
-                    if (key[0]=='g'): # or (key[0] == '2'):
-                        profile = 'gmail' #+element[1]
-                        name = url
-                        nick = name
-                        param = name
-                    elif (key[0] == 'a') or (key[0] == 'b'):
-                        name = nick[1]+'@'+nick[0]
-                        self.log.info("Name: %s" % str(name))
-                        param = (url, nick)
-                    elif key[0] == 's':
-                        name = nick[0]
-                        nick = None
-                        param = None
-                    elif key[0] == 'r':
-                        if nick.find('http')>=0:
-                            param = nick
-                        else:
-                            param = url + nick
-                    elif type(nick) == tuple:
-                        nick = nick[1]
+        if pos == 0:
+            response = self.sendReply('', '', self.available, ['sent','pending'])
+        else:
+            for element in myList:
+                self.log.info("Element %s" % str(element))
+                #yield element
+
+                for key in self.available:
+                    self.log.debug("key %s" % str(key))
+                    if element[0].lower() == key[0]: 
+                        self.log.debug("Element: %s" % element)
+                        profile = key[1]
+                        self.log.debug("Profile: %s" % profile)
+                        pos = int(element[1])
+                        self.log.info("Element: %s" % str(self.available[key][pos]))
+                        url = self.available[key][pos][0]
+                        nick = self.available[key][pos][1]
                         name = nick
-                    elif nick.find('@') >= 0:
-                        nick, profile = nick.split('@')
-                        name = nick
-                    self.log.info("Clients %s" % str(self.clients))
-                    self.log.info("Url: %s" % str(nick))
-                    self.log.info("Nick: %s" % str(nick))
-                    try:
-                        self.clients[(element, profile, name)].setPosts()
-                    except:
-                        self.log.info("element %s", str(element))
-                        self.log.info("profile %s", str(profile))
-                        self.log.info("nick %s", str(nick))
-                        import importlib
-                        moduleName = 'module'+profile.capitalize()
-                        mod = importlib.import_module(moduleName) 
-                        cls = getattr(mod, moduleName)
-                        api = cls()
-                        api.setClient(param)
-                        self.clients[(element, profile,name)] = api
-                        self.clients[(element, profile,name)].setPosts()
-                        self.log.info("Posts %s"% str(self.clients[(element, profile,name)].getPosts()))
+                        self.log.info("Url: %s" % str(url))
+                        self.log.info("Nick: %s" % str(nick))
+                        posts = []
+                        self.log.debug("clients %s" % str(self.clients))
+                        param = nick
+                        if (key[0]=='g'): # or (key[0] == '2'):
+                            profile = 'gmail' #+element[1]
+                            name = url
+                            nick = name
+                            param = name
+                        elif (key[0] == 'a') or (key[0] == 'b'):
+                            name = nick[1]+'@'+nick[0]
+                            self.log.info("Name: %s" % str(name))
+                            param = (url, nick)
+                        elif key[0] == 's':
+                            name = nick[0]
+                            nick = None
+                            param = None
+                        elif key[0] == 'r':
+                            if nick.find('http')>=0:
+                                param = nick
+                            else:
+                                param = url + nick
+                        elif type(nick) == tuple:
+                            nick = nick[1]
+                            name = nick
+                        elif nick.find('@') >= 0:
+                            nick, profile = nick.split('@')
+                            name = nick
+                        self.log.info("Clients %s" % str(self.clients))
+                        self.log.info("Url: %s" % str(nick))
+                        self.log.info("Nick: %s" % str(nick))
+                        try:
+                            self.clients[(element, profile, name)].setPosts()
+                        except:
+                            import importlib
+                            moduleName = 'module'+profile.capitalize()
+                            mod = importlib.import_module(moduleName) 
+                            cls = getattr(mod, moduleName)
+                            api = cls()
+                            api.setClient(param)
+                            self.clients[(element, profile,name)] = api
+                            self.clients[(element, profile,name)].setPosts()
+                            self.log.info("Posts %s"% str(self.clients[(element, profile,name)].getPosts()))
 
-                        #client = module...
+                            #client = module...
 
-                    if self.clients[(element, profile, name)].getPosts():
-                        for (i, post) in enumerate(self.clients[(element, profile, name)].getPosts()):
-                            title = self.clients[(element, profile, name)].getPostTitle(post)
-                            link = self.clients[(element, profile, name)].getPostLink(post)
-                            posts.append((title, link, '{:2}'.format(i)))
-                            self.log.info("I: %s %s %d"%(title,link,i))
-                    self.posts[(element, profile, name)] = posts
-                    continue
-            self.log.info("Posts posts %s" % (self.posts))
-            response = self.sendReply(mess, args, self.posts, ['sent','pending'])
-            self.log.debug("Response %s End" % response)
+                        if self.clients[(element, profile, name)].getPosts():
+                            for (i, post) in enumerate(self.clients[(element, profile, name)].getPosts()):
+                                title = self.clients[(element, profile, name)].getPostTitle(post)
+                                link = self.clients[(element, profile, name)].getPostLink(post)
+                                posts.append((title, link, '{:2}'.format(i)))
+                                self.log.info("I: %s %s %d"%(title,link,i))
+                        self.posts[(element, profile, name)] = posts
+                        continue
+                self.log.info("Posts posts %s" % (self.posts))
+                response = self.sendReply(mess, args, self.posts, ['sent','pending'])
+                self.log.debug("Response %s End" % response)
 
 
         if response: 
