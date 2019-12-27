@@ -338,16 +338,20 @@ class Buffer(BotPlugin):
     def execute(self, command, args):
         """Execute a command """
         resTxt = 'Executing: {}\n'.format(command)
+        self.log.info(resTxt)
         updates = ''
         update = None
         res = None
         for profile in self.clients:
-            self.log.debug("Profile: %s" % str(profile))
-            if args[:len(profile[0])] == profile[0] or (args[0] == '*' and False):
+            self.log.debug("Executing in profile: %s" % str(profile))
+            if args[:len(profile[0])] == profile[0] \
+                  or (args[0] == '*') \
+                  or (('*' in args) and (args[:1] == profile[0][:1])):
                 # We need to do something for '*' commands
                 update = self.clients[profile].selectAndExecute(command,args)
                 if update: 
-                    updates = updates + "* " + update + '\n'
+                    updates = '{}* {} ({})\n'.format(updates, update, 
+                            profile[0])
                     update = None
 
         if updates: res = resTxt + '\n' + updates + '\n'
