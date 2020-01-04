@@ -122,8 +122,36 @@ class Buffer(BotPlugin):
         self.log.debug("dataSources %s" % str(dataSources))
 
     def addMore(self):
-        response = "There are {0} lists. You can add more with command addC.".format(len(self.config))
+        response = "There are {0} lists. You can add more with command list add".format(len(self.config))
         return (response)
+
+    @botcmd(split_args_with=None, template="buffer")
+    def list_read(self, mess, args):
+        myList = []
+        if not args:
+            yield "Which list?"
+        else:
+            arg1 = args[0]
+            for key in self.available: 
+                if arg1[0].capitalize() == key[0].capitalize(): 
+                    if arg1[1:].isdigit(): 
+                        pos = int(arg1[1:] ) 
+                        if pos < len(self.available[key]): 
+                            myList.append(arg1)
+        yield myList        
+        
+        if pos >= 0:
+            for element in myList:
+                self.log.info("Element %s" % str(element))
+
+                for key in self.available:
+                    self.log.debug("key %s" % str(key))
+                    self.log.info("element %s" % str(element[0]))
+                    if element[0].lower() == key[0]: 
+                        null
+        yield end()
+
+
 
     @botcmd
     def list_all(self, mess, args):
@@ -135,7 +163,7 @@ class Buffer(BotPlugin):
         response = self.sendReply('', '', self.available, ['sent','pending'])
         for rep in response:
             yield(rep)
-        yield(end)
+        return(end)
 
     @botcmd
     def list_show(self, msg, args):
@@ -199,13 +227,44 @@ class Buffer(BotPlugin):
         yield response
         yield end()
 
+    def getSocialNetwork(self, key, pos):
+        profile = key[1]
+        url = self.available[key][pos][0]
+        nick = self.available[key][pos][1]
+        name = nick
+        param = nick
+        if (key[0]=='g'): # or (key[0] == '2'):
+            profile = 'gmail' #+element[1]
+            name = url
+            nick = name
+            param = name
+        elif (key[0] == 'a') or (key[0] == 'b'):
+            name = nick[1]+'@'+nick[0]
+            self.log.info("Name: %s" % str(name))
+            param = (url, nick)
+        elif key[0] == 's':
+            name = nick[0]
+            nick = None
+            param = None
+        elif key[0] == 'r':
+            if nick.find('http')>=0:
+                param = nick
+            else:
+                param = url + nick
+        elif type(nick) == tuple:
+            nick = nick[1]
+            name = nick
+        elif nick.find('@') >= 0:
+            nick, profile = nick.split('@')
+            name = nick
+        return (name, nick, profile, param)
+ 
     @botcmd(split_args_with=None, template="buffer")
     def list(self, mess, args):
         """ A command to show available posts in a list of available sites
         """
 
         self.log.debug("Posts posts %s" % (self.posts))
-        self.posts = {}
 
         self.log.info("args %s" % str(args))
 
@@ -236,49 +295,41 @@ class Buffer(BotPlugin):
         if pos >= 0:
             for element in myList:
                 self.log.info("Element %s" % str(element))
-                #yield element
 
                 for key in self.available:
                     self.log.debug("key %s" % str(key))
                     self.log.info("element %s" % str(element[0]))
                     if element[0].lower() == key[0]: 
-                        self.log.debug("Element: %s" % element)
-                        profile = key[1]
-                        self.log.debug("Profile: %s" % profile)
                         pos = int(element[1])
-                        self.log.info("Element: %s" % str(self.available[key][pos]))
-                        url = self.available[key][pos][0]
-                        nick = self.available[key][pos][1]
-                        name = nick
-                        self.log.info("Url: %s" % str(url))
-                        self.log.info("Nick: %s" % str(nick))
                         posts = []
                         self.log.debug("clients %s" % str(self.clients))
-                        param = nick
-                        if (key[0]=='g'): # or (key[0] == '2'):
-                            profile = 'gmail' #+element[1]
-                            name = url
-                            nick = name
-                            param = name
-                        elif (key[0] == 'a') or (key[0] == 'b'):
-                            name = nick[1]+'@'+nick[0]
-                            self.log.info("Name: %s" % str(name))
-                            param = (url, nick)
-                        elif key[0] == 's':
-                            name = nick[0]
-                            nick = None
-                            param = None
-                        elif key[0] == 'r':
-                            if nick.find('http')>=0:
-                                param = nick
-                            else:
-                                param = url + nick
-                        elif type(nick) == tuple:
-                            nick = nick[1]
-                            name = nick
-                        elif nick.find('@') >= 0:
-                            nick, profile = nick.split('@')
-                            name = nick
+                        name, nick, profile, param = self.getSocialNetwork(key, pos)
+                        #yield("Testing %s %s %s %s"%(str(one), str(two), str(three), str(four)))
+                        #if (key[0]=='g'): # or (key[0] == '2'):
+                        #    profile = 'gmail' #+element[1]
+                        #    name = url
+                        #    nick = name
+                        #    param = name
+                        #elif (key[0] == 'a') or (key[0] == 'b'):
+                        #    name = nick[1]+'@'+nick[0]
+                        #    self.log.info("Name: %s" % str(name))
+                        #    param = (url, nick)
+                        #elif key[0] == 's':
+                        #    name = nick[0]
+                        #    nick = None
+                        #    param = None
+                        #elif key[0] == 'r':
+                        #    if nick.find('http')>=0:
+                        #        param = nick
+                        #    else:
+                        #        param = url + nick
+                        #elif type(nick) == tuple:
+                        #    nick = nick[1]
+                        #    name = nick
+                        #elif nick.find('@') >= 0:
+                        #    nick, profile = nick.split('@')
+                        #    name = nick 
+                        yield ("Name %s Nick %s Profile %s Param %s"%(str(name), str(nick), str(profile), str(param)))
                         self.log.info("Clients %s" % str(self.clients))
                         self.log.info("Url: %s" % str(nick))
                         self.log.info("Nick: %s" % str(nick))
@@ -375,6 +426,17 @@ class Buffer(BotPlugin):
         yield end()
 
     @botcmd
+    def edit_show(self, mess, args):
+        """ Show the last edit commands
+        """
+        if 'argsArchive' in self:
+            for arg in self['argsArchive'][-5:]:
+                yield("- %s" % arg)
+        else:
+            yield('No cache')
+        yield end()
+
+    @botcmd
     def edit_link(self, mess, args):
         """A command to edit the link of some update"""
         res = self.execute('editl', args)    
@@ -396,16 +458,6 @@ class Buffer(BotPlugin):
         argsArchive.append(args)
         self['argsArchive'] = argsArchive
 
-    @botcmd
-    def edit_show(self, mess, args):
-        """ Show the last edit commands
-        """
-        if 'argsArchive' in self:
-            for arg in self['argsArchive'][-5:]:
-                yield("- %s" % arg)
-        else:
-            yield('No cache')
-        yield end()
 
     @botcmd
     def move(self, mess, args):
@@ -425,8 +477,9 @@ class Buffer(BotPlugin):
         compResponse = [] 
         self.log.debug("Pposts %s" % updates)
         self.log.debug("Keys %s" % updates.keys())
+        tt = 'pending'
         for socialNetwork in updates.keys():
-            self.log.debug("Update social network %s " % str(socialNetwork))
+            self.log.info("Update social network %s " % str(socialNetwork))
             self.log.debug("Updates %s End" % updates[socialNetwork])
             theUpdates = []
             maxLen = 0
@@ -439,6 +492,9 @@ class Buffer(BotPlugin):
                                 theUpdatetxt = '{} {}'.format(update[0],str(update[1])).replace('_','\_')
                             else: 
                                 theUpdatetxt = str(update[0]).replace('_','\_')
+                            if theUpdatetxt.find('>')>=0:
+                                tt = 'longer'
+
                             lenUpdate = len(theUpdatetxt[:60]) 
                             if lenUpdate > maxLen: 
                                 maxLen = lenUpdate
@@ -455,7 +511,6 @@ class Buffer(BotPlugin):
             else:
                 socialTime = ""
     
-            tt = 'pending'
             self.log.info("socialNetwork ... %s" % str(socialNetwork))
             if theUpdates: 
                 if len(socialNetwork)>2:
