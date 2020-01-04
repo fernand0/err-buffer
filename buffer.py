@@ -280,6 +280,7 @@ class Buffer(BotPlugin):
         pos = -1
         myList = []
         response = []
+        self.posts = {}
         if not self.available:
             self.checkConfigFiles()
 
