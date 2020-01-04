@@ -311,7 +311,7 @@ class Buffer(BotPlugin):
                     if element[0].lower() == key[0]: 
                         self.log.debug("clients %s" % str(self.clients))
                         name, nick, profile, param = self.getSocialNetwork(key,element)
-                        yield ("Name %s Nick %s Profile %s Param %s"%(str(name), str(nick), str(profile), str(param)))
+                        self.log.debug("Name %s Nick %s Profile %s Param %s"%(str(name), str(nick), str(profile), str(param)))
                         self.log.info("Clients %s" % str(self.clients))
                         self.log.info("Url: %s" % str(nick))
                         self.log.info("Nick: %s" % str(nick))
