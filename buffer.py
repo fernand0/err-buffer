@@ -145,10 +145,18 @@ class Buffer(BotPlugin):
                 self.log.info("Element %s" % str(element))
 
                 for key in self.available:
-                    self.log.debug("key %s" % str(key))
+                    self.log.info("key %s" % str(key))
                     self.log.info("element %s" % str(element[0]))
                     if element[0].lower() == key[0]: 
-                        null
+                        name, nick, profile, param = self.getSocialNetwork(key,element)
+                        if (element, profile,name) in self.clients:
+                            link = self.clients[(element, profile, name)].getPosts()[-1][1]
+                            yield("name %s nick %s profile %s param %s"%(str(name), str(nick), str(profile), str(param)))
+                            yield("link %s"%link)
+                            if profile.upper() == 'Forum'.upper():
+                                # Not sure it makes sense for other types of
+                                # content
+                                yield updateLastLink(param, link)
         yield end()
 
 
@@ -227,7 +235,8 @@ class Buffer(BotPlugin):
         yield response
         yield end()
 
-    def getSocialNetwork(self, key, pos):
+    def getSocialNetwork(self, key, element):
+        pos = int(element[1])
         profile = key[1]
         url = self.available[key][pos][0]
         nick = self.available[key][pos][1]
@@ -297,38 +306,11 @@ class Buffer(BotPlugin):
                 self.log.info("Element %s" % str(element))
 
                 for key in self.available:
-                    self.log.debug("key %s" % str(key))
+                    self.log.info("key %s" % str(key))
                     self.log.info("element %s" % str(element[0]))
                     if element[0].lower() == key[0]: 
-                        pos = int(element[1])
-                        posts = []
                         self.log.debug("clients %s" % str(self.clients))
-                        name, nick, profile, param = self.getSocialNetwork(key, pos)
-                        #yield("Testing %s %s %s %s"%(str(one), str(two), str(three), str(four)))
-                        #if (key[0]=='g'): # or (key[0] == '2'):
-                        #    profile = 'gmail' #+element[1]
-                        #    name = url
-                        #    nick = name
-                        #    param = name
-                        #elif (key[0] == 'a') or (key[0] == 'b'):
-                        #    name = nick[1]+'@'+nick[0]
-                        #    self.log.info("Name: %s" % str(name))
-                        #    param = (url, nick)
-                        #elif key[0] == 's':
-                        #    name = nick[0]
-                        #    nick = None
-                        #    param = None
-                        #elif key[0] == 'r':
-                        #    if nick.find('http')>=0:
-                        #        param = nick
-                        #    else:
-                        #        param = url + nick
-                        #elif type(nick) == tuple:
-                        #    nick = nick[1]
-                        #    name = nick
-                        #elif nick.find('@') >= 0:
-                        #    nick, profile = nick.split('@')
-                        #    name = nick 
+                        name, nick, profile, param = self.getSocialNetwork(key,element)
                         yield ("Name %s Nick %s Profile %s Param %s"%(str(name), str(nick), str(profile), str(param)))
                         self.log.info("Clients %s" % str(self.clients))
                         self.log.info("Url: %s" % str(nick))
@@ -349,6 +331,7 @@ class Buffer(BotPlugin):
                             #client = module...
 
                         if self.clients[(element, profile, name)].getPosts():
+                            posts = []
                             for (i, post) in enumerate(self.clients[(element, profile, name)].getPosts()):
                                 title = self.clients[(element, profile, name)].getPostTitle(post)
                                 link = self.clients[(element, profile, name)].getPostLink(post)
