@@ -73,17 +73,6 @@ class Buffer(BotPlugin):
                 else:
                     dataSources[option] = [(url, url)] 
 
-        config = configparser.ConfigParser()
-        config.read(CONFIGDIR + '/.oauthG.cfg')
-
-        for section in config.sections(): 
-            user = config.get(section, 'user')
-            server = config.get(section, 'server')
-            if 'gmail' in dataSources: 
-                dataSources['gmail'].append(user+'@'+server) 
-            else: 
-                dataSources['gmail'] = [user+'@'+server]
-
         myKeys = []
         self.available = {}
         myList = []
