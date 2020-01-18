@@ -35,6 +35,9 @@ class Buffer(BotPlugin):
         self.config = []
         self.available = None
         self.schedules = None
+        self.lastList = None
+        self.lastEdit = None
+        self.lastLink = None
 
     def checkConfigFiles(self):
         config = configparser.ConfigParser()
@@ -42,6 +45,7 @@ class Buffer(BotPlugin):
 
         dataSources = {}
         delayed = ['cache', 'buffer']
+        options = ['twitter', 'facebook', 'mastodon', 'linkedin']
         for section in config.sections():
             url = config.get(section, 'url')
 
@@ -54,13 +58,14 @@ class Buffer(BotPlugin):
                     
             for prog in delayed:
                 if prog in config.options(section): 
-                    for key in dataSources[prog][0][1]: 
+                    values = dataSources[prog][-1][1]
+                    dataSources[prog] = dataSources[prog][:-1]
+                    for key in values: 
                         for option in config.options(section):
-                            if option[0] == key:
+                            if (option[0] == key) and (option in options):
                                 toAppend = (url, 
                                         (option, dataSources[option][-1][1]))
                                 dataSources[prog].append(toAppend)
-                    dataSources[prog] = dataSources[prog][1:]
 
             if url.find('slack')>=0: 
                 #.rssBlogs
@@ -115,10 +120,25 @@ class Buffer(BotPlugin):
         return (response)
 
     @botcmd(split_args_with=None, template="buffer")
+    def list_last(self, mess, args): 
+        if self.lastList:
+            yield "Last list: {}".format(str(self.lastList))
+        else:
+            yield "No lists"
+        yield end()
+
+    @botcmd(split_args_with=None, template="buffer")
     def list_read(self, mess, args):
+        # Maybe define a flow?
         myList = []
         if not args:
-            yield "Which list?"
+            if self.lastList:
+                myList = self.lastList
+                pos = 0
+                yield "I'll mark as read in {}".format(str(myList))
+            else:
+                yield "Which list?"
+                pos = -1
         else:
             arg1 = args[0]
             for key in self.available: 
@@ -290,6 +310,7 @@ class Buffer(BotPlugin):
                             myList.append(arg1)
 
         self.log.info("myList %s" % str(myList))
+        self.lastList = myList
 
         if pos >= 0:
             for element in myList:
@@ -419,8 +440,12 @@ class Buffer(BotPlugin):
     @botcmd
     def edit(self, mess, args):
         """A command to edit some update"""
+        if ' ' not in args:
+            if self.lastEdit:
+                args = "{} {}".format(args,self.lastEdit)
         res = self.execute('edit', args)    
         self.addEditsCache(args)
+        self.lastEdit = args.split(" ",1)[1:][0]
         yield res
         yield end()
 
