@@ -433,7 +433,11 @@ class Buffer(BotPlugin):
     @botcmd
     def edit_link(self, mess, args):
         """A command to edit the link of some update"""
+        if ' ' not in args:
+            if self.lastLink:
+                args = "{} {}".format(args,self.lastLink)
         res = self.execute('editl', args)    
+        self.lastLink = args.split(" ",1)[1:][0]
         yield res
         yield end()
 
