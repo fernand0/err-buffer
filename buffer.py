@@ -135,7 +135,7 @@ class Buffer(BotPlugin):
             if self.lastList:
                 myList = self.lastList
                 pos = 0
-                yield "I'll mark as read in {}".format(str(myList))
+                #yield "I'll mark as read in {}".format(str(myList))
             else:
                 yield "Which list?"
                 pos = -1
@@ -147,7 +147,6 @@ class Buffer(BotPlugin):
                         pos = int(arg1[1:] ) 
                         if pos < len(self.available[key]): 
                             myList.append(arg1)
-        yield myList        
         
         if pos >= 0:
             for element in myList:
@@ -160,12 +159,13 @@ class Buffer(BotPlugin):
                         name, nick, profile, param = self.getSocialNetwork(key,element)
                         if (element, profile,name) in self.clients:
                             link = self.clients[(element, profile, name)].getPosts()[-1][1]
-                            yield("name %s nick %s profile %s param %s"%(str(name), str(nick), str(profile), str(param)))
-                            yield("link %s"%link)
+                            #yield("name %s nick %s profile %s param %s"%(str(name), str(nick), str(profile), str(param)))
+                            #yield("link %s"%link)
                             if profile.upper() == 'Forum'.upper():
                                 # Not sure it makes sense for other types of
                                 # content
-                                yield updateLastLink(param, link)
+                                updateLastLink(param, link)
+                            yield("Marked read {}".format(element))
         yield end()
 
 
@@ -362,24 +362,6 @@ class Buffer(BotPlugin):
             yield(self.addMore())
         yield end()
 
-
-    #def selectPost(self, pp, post):
-    #    self.log.debug("Selecting %s" % pp.pformat(post))
-    #    i = 0
-    #    profMov = ""    
-
-    #    while post[i].isalpha():
-    #        profMov = profMov + post[i]
-    #        i = i + 1
-    #
-    #    j = int(post[-1])
-    #    if post[-2].isdigit():
-    #        # Qualifier when there are several accounts 
-    #        return(profMov, j, post[-2])
-    #    else: 
-    #        return(profMov, j)
-
-
     def execute(self, command, args):
         """Execute a command """
         resTxt = 'Executing: {}\n'.format(command)
@@ -490,10 +472,10 @@ class Buffer(BotPlugin):
                     if len(update)>0:
                         self.log.info("Update %s " % str(update))
                         if update[0]:
-                            if update[1] and (update[0] != update[1]): 
-                                theUpdatetxt = '{} {}'.format(update[0],str(update[1])).replace('_','\_')
-                            else: 
-                                theUpdatetxt = str(update[0]).replace('_','\_')
+                            #if update[1] and (update[0] != update[1]): 
+                            #    theUpdatetxt = '{} {}'.format(update[0],str(update[1])).replace('_','\_')
+                            #else: 
+                            theUpdatetxt = str(update[0]).replace('_','\_')
                             if theUpdatetxt.find('>')>=0:
                                 tt = 'longer'
 

@@ -1,7 +1,7 @@
 {% if type == 'pending' %} 
 {% if updates %} 
 *{{nameSocialNetwork}}* ({{socialTime}}) 
-{% for text, link, pos in updates %} {{ pos}} {{ text | truncate(50, True)}}
+{% for text, link, pos in updates %} {{ pos}}) {{ text | truncate(50, True)}}
 {% endfor %} {% else %} *{{nameSocialNetwork}}* {% endif %} {% else %} 
 {% if type == 'longer' %}
 {% if updates %} 
