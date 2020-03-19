@@ -385,6 +385,13 @@ class Buffer(BotPlugin):
 
         return res 
 
+    @botcmd
+    def insert(self, mess, args):
+        """A command to publish some update"""
+        res = self.execute('insert', args)
+        yield res 
+        yield end()
+
     # Passing split_args_with=None will cause arguments to be split on any kind
     # of whitespace, just like Python's split() does
     @botcmd
