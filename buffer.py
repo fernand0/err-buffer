@@ -75,7 +75,6 @@ class Buffer(BotPlugin):
                 'imgur','rss','forum', 'slack', 'gmail']
         types = ['posts','drafts']
 
-        contentProviders = {'cache':[],'buffer':[], 'content': []}
 
         myKeys = {}
         myIniKeys = []
@@ -111,7 +110,6 @@ class Buffer(BotPlugin):
                         if (iniK,nKey) not in self.available: 
                             self.available[(iniK, nKey)] = [] 
                         self.available[(iniK, nKey)].append((toAppend, '')) 
-                        contentProviders[option].append(toAppend)
                 if option in content:
                     key = option 
                     nick = config.get(section, option)
@@ -122,7 +120,6 @@ class Buffer(BotPlugin):
                         self.available[(iniK, nKey)] = [] 
                     self.available[(iniK, nKey)].append((toAppend, '')) 
 
-                    contentProviders['content'].append(toAppend)  
             if url.find('slack')>=0:
                 key = 'slack'
                 toAppend = (url, ('slack', url, posts))
@@ -130,8 +127,6 @@ class Buffer(BotPlugin):
                 if (iniK,nKey) not in self.available: 
                     self.available[(iniK, nKey)] = [] 
                 self.available[(iniK, nKey)].append((toAppend, '')) 
-                contentProviders['content'].append(toAppend)  
-        self.log.debug("contentProviders %s"%str(contentProviders))
         self.log.debug("available %s"%str(self.available))
 
         myList = []
@@ -141,8 +136,8 @@ class Buffer(BotPlugin):
             
 
         if myList:
-            #self.config.append((myList,'',''))
             self.availableList = myList
+        self.log.debug("available list %s"%str(self.availableList))
 
 
     def addMore(self):
@@ -150,6 +145,7 @@ class Buffer(BotPlugin):
         return (response)
 
     @botcmd(split_args_with=None, template="buffer")
+
     def list_last(self, mess, args): 
         if self.lastList:
             yield "Last list: {}".format(str(self.lastList))
