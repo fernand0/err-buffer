@@ -39,81 +39,353 @@ class Buffer(BotPlugin):
         self.lastEdit = None
         self.lastLink = None
 
+    def getIniKey(self, key, myKeys, myIniKeys):
+       if key not in myKeys:
+           if key[0] not in myIniKeys: 
+                   iniK = key[0] 
+           else: 
+              i = 1
+              while (i < len(key) ) and (key[i] in myIniKeys):
+                  i = i + 1
+              if i < len(key): 
+                  iniK = key[i]
+              else:
+                  iniK = 'j'
+                  while iniK in myIniKeys:
+                      iniK = chr(ord(iniK)+1)
+           myKeys[key] = iniK
+       else:
+           iniK = myKeys[key]
+       myIniKeys.append(iniK)
+       pos = key.find(iniK)
+       if pos>=0:
+           nKey = key[:pos] + iniK.upper() + key[pos + 1:]
+       else:
+           nKey = iniK+key
+       nKey = key+'-{}'.format(iniK)
+
+       return iniK, nKey
+
     def checkConfigFiles(self):
         config = configparser.ConfigParser()
         config.read(CONFIGDIR + '/.rssBlogs')
 
-        dataSources = {}
         delayed = ['cache', 'buffer']
-        options = ['twitter', 'facebook', 'mastodon', 'linkedin']
-        for section in config.sections():
-            url = config.get(section, 'url')
+        content = ['twitter', 'facebook', 'mastodon', 'linkedin',
+                'imgur','rss','forum', 'slack', 'gmail']
+        types = ['posts','drafts']
 
-            for option in config.options(section):
-                value = config.get(section, option)
-                if option in dataSources:
-                    dataSources[option].append((url, value))
-                else:
-                    dataSources[option] = [(url, value)] 
-                    
-            for prog in delayed:
-                if prog in config.options(section): 
-                    values = dataSources[prog][-1][1]
-                    dataSources[prog] = dataSources[prog][:-1]
-                    for key in values: 
-                        for option in config.options(section):
-                            if (option[0] == key) and (option in options):
-                                toAppend = (url, 
-                                        (option, dataSources[option][-1][1]))
-                                dataSources[prog].append(toAppend)
+        contentProviders = {'cache':[],'buffer':[], 'content': []}
 
-            if url.find('slack')>=0: 
-                #.rssBlogs
-                # url: slack site
-                # channel: 
-                # destinations....
-                option = 'slack'
-                if option in dataSources:
-                    dataSources[option].append((url, url))
-                else:
-                    dataSources[option] = [(url, url)] 
-
-        myKeys = []
+        myKeys = {}
+        myIniKeys = []
+        
         self.available = {}
-        myList = []
-        for key in dataSources:
 
-            if key[0] not in myKeys:
-                iniK = key[0]
-            else:
-                i = 1
-                while (i < len(key) ) and (key[i] in myKeys):
-                    i = i + 1
-                if i < len(key): 
-                    iniK = key[i]
-                else:
-                    iniK = 'j'
-                    while iniK in myKeys:
-                        iniK = chr(ord(iniK)+1)
-            myKeys.append(iniK)
-            pos = key.find(iniK)
-            if pos>=0:
-                nKey = key[:pos] + iniK.upper() + key[pos + 1:]
-            else:
-                nKey = iniK+key
-            self.available[(iniK, nKey)] = []
-            component = '{}: {}'.format(nKey, len(dataSources[key]))
-            myList.append(component)
-            self.log.debug("Component %s", component)
-            for i, element in enumerate(dataSources[key]):
-                if isinstance(element, str): 
-                    self.available[(iniK, nKey)].append((element, '',str(i)))
-                else: 
-                    self.available[(iniK, nKey)].append((element[0],element[1],str(i)))
+        for section in config.sections():
+            url = config.get(section,'url')
+            if 'posts' in config.options(section): 
+                posts = config.get(section, 'posts') 
+            else: 
+                posts = 'posts' 
+            for option in config.options(section):
+                if option in delayed:
+                    key = option 
+                    iniK = key[0] 
+                    myDelayed = config.get(section, option)
+                    delayedList = []
+                    if isinstance(myDelayed, str) and len(myDelayed)<5: 
+                        for dd in content:
+                            if ((dd[0] in myDelayed) 
+                                    and (dd in config.options(section))): 
+                                delayedList.append(dd)
+                    elif isinstance(myDelayed, str): 
+                            delayedList.append(myDelayed)
+
+                    for dd in delayedList: 
+                        nick = config.get(section, dd) 
+                        toAppend = (config.get(section, 'url'), 
+                                (dd,nick, posts))
+
+                        iniK, nKey = self.getIniKey(key, myKeys, myIniKeys) 
+                        if (iniK,nKey) not in self.available: 
+                            self.available[(iniK, nKey)] = [] 
+                        self.available[(iniK, nKey)].append((toAppend, '')) 
+                        contentProviders[option].append(toAppend)
+                if option in content:
+                    key = option 
+                    nick = config.get(section, option)
+                    toAppend = (config.get(section, 'url'), 
+                            (option, nick, posts))
+                    iniK, nKey = self.getIniKey(key, myKeys, myIniKeys) 
+                    if (iniK,nKey) not in self.available: 
+                        self.available[(iniK, nKey)] = [] 
+                    self.available[(iniK, nKey)].append((toAppend, '')) 
+
+                    contentProviders['content'].append(toAppend)  
+            if url.find('slack')>=0:
+                key = 'slack'
+                toAppend = (url, ('slack', url, posts))
+                iniK, nKey = self.getIniKey(key, myKeys, myIniKeys) 
+                if (iniK,nKey) not in self.available: 
+                    self.available[(iniK, nKey)] = [] 
+                self.available[(iniK, nKey)].append((toAppend, '')) 
+                contentProviders['content'].append(toAppend)  
+        self.log.debug("contentProviders %s"%str(contentProviders))
+        # contentProviders
+        # {'cache': [(url, (socialNetwork, nick , posts)), ...], 
+        #'buffer': [(url, (socialNetwork, nick, posts)), ...], 
+        #'content': [(url, (type of content, nick, 'posts')), ...]}
+
+        #myKeys = {}
+        #myIniKeys = []
+        #
+        #self.available = {}
+        #for t in contentProviders:
+        #    #print("key",t)
+        #    for element in contentProviders[t]:
+        #        #print("elem",element)
+        #        if t in delayed:
+        #            key = t
+        #            iniK = key[0] 
+        #        else:
+        #            key = element[1][0] 
+        #        if key not in myKeys:
+        #            if key[0] not in myIniKeys: 
+        #                    iniK = key[0] 
+        #            else: 
+        #               i = 1
+        #               while (i < len(key) ) and (key[i] in myIniKeys):
+        #                   i = i + 1
+        #               if i < len(key): 
+        #                   iniK = key[i]
+        #               else:
+        #                   iniK = 'j'
+        #                   while iniK in myIniKeys:
+        #                       iniK = chr(ord(iniK)+1)
+        #            myKeys[key] = iniK
+        #        else:
+        #            iniK = myKeys[key]
+        #        myIniKeys.append(iniK)
+        #        pos = key.find(iniK)
+        #        if pos>=0:
+        #            nKey = key[:pos] + iniK.upper() + key[pos + 1:]
+        #        else:
+        #            nKey = iniK+key
+        #        nKey = key+'-{}'.format(iniK)
+        #        if (iniK,nKey) not in self.available: 
+        #            self.available[(iniK, nKey)] = []
+        #        self.available[(iniK, nKey)].append((element, '')) 
+
+        self.log.debug("available %s"%str(self.available))
+
+        myList = []
+        for elem in self.available:
+            component = '{}: {}'.format(elem[1], len(self.available[elem]))
+            myList.append(component) 
+            
+
         if myList:
             #self.config.append((myList,'',''))
             self.availableList = myList
-        self.log.debug("dataSources %s" % str(dataSources))
+
+    def checkConfigFiles2(self):
+        config = configparser.ConfigParser()
+        config.read(CONFIGDIR + '/.rssBlogs')
+
+        delayed = ['cache', 'buffer']
+        content = ['twitter', 'facebook', 'mastodon', 'linkedin',
+                'imgur','rss','forum', 'slack', 'gmail']
+        types = ['posts','drafts']
+
+        contentProviders = {'cache':[],'buffer':[], 'content': []}
+
+        for section in config.sections():
+            url = config.get(section,'url')
+            if 'posts' in config.options(section): 
+                posts = config.get(section, 'posts') 
+            else: 
+                posts = 'posts' 
+            for option in config.options(section):
+                if option in delayed:
+                    myDelayed = config.get(section, option)
+                    delayedList = []
+                    if isinstance(myDelayed, str) and len(myDelayed)<5: 
+                        for dd in content:
+                            if ((dd[0] in myDelayed) 
+                                    and (dd in config.options(section))): 
+                                delayedList.append(dd)
+                    elif isinstance(myDelayed, str): 
+                            delayedList.append(myDelayed)
+
+                    for dd in delayedList: 
+                        nick = config.get(section, dd) 
+                        toAppend = (config.get(section, 'url'), 
+                                (dd,nick, posts))
+                        contentProviders[option].append(toAppend)
+                if option in content:
+                    nick = config.get(section, option)
+                    toAppend = (config.get(section, 'url'), 
+                            (option, nick, posts))
+                    contentProviders['content'].append(toAppend)  
+            if url.find('slack')>=0:
+                toAppend = (url, ('slack', url, posts))
+                contentProviders['content'].append(toAppend)  
+        self.log.debug("contentProviders %s"%str(contentProviders))
+        # contentProviders
+        # {'cache': [(url, (socialNetwork, nick , posts)), ...], 
+        #'buffer': [(url, (socialNetwork, nick, posts)), ...], 
+        #'content': [(url, (type of content, nick, 'posts')), ...]}
+
+        myKeys = {}
+        myIniKeys = []
+        
+        self.available = {}
+        for t in contentProviders:
+            #print("key",t)
+            for element in contentProviders[t]:
+                #print("elem",element)
+                if t in delayed:
+                    key = t
+                    iniK = key[0] 
+                else:
+                    key = element[1][0] 
+
+                #if key not in myKeys:
+                #    if key[0] not in myIniKeys: 
+                #            iniK = key[0] 
+                #    else: 
+                #       i = 1
+                #       while (i < len(key) ) and (key[i] in myIniKeys):
+                #           i = i + 1
+                #       if i < len(key): 
+                #           iniK = key[i]
+                #       else:
+                #           iniK = 'j'
+                #           while iniK in myIniKeys:
+                #               iniK = chr(ord(iniK)+1)
+                #    myKeys[key] = iniK
+                #else:
+                #    iniK = myKeys[key]
+                #myIniKeys.append(iniK)
+                #pos = key.find(iniK)
+                #if pos>=0:
+                #    nKey = key[:pos] + iniK.upper() + key[pos + 1:]
+                #else:
+                #    nKey = iniK+key
+                #nKey = key+'-{}'.format(iniK)
+
+                iniK, nKey = self.getIniKey(key, myKeys, myIniKeys)
+                if (iniK,nKey) not in self.available: 
+                    self.available[(iniK, nKey)] = []
+                self.available[(iniK, nKey)].append((element, '')) 
+
+        self.log.debug("available %s"%str(self.available))
+
+        myList = []
+        for elem in self.available:
+            component = '{}: {}'.format(elem[1], len(self.available[elem]))
+            myList.append(component) 
+            
+
+        if myList:
+            #self.config.append((myList,'',''))
+            self.availableList = myList
+
+
+    #def checkConfigFiles2(self):
+    #    config = configparser.ConfigParser()
+    #    config.read(CONFIGDIR + '/.rssBlogs')
+
+    #    dataSources = {}
+    #    delayed = ['cache', 'buffer']
+    #    options = ['twitter', 'facebook', 'mastodon', 'linkedin','imgur']
+    #    types = ['posts','drafts']
+    #    for section in config.sections():
+    #        url = config.get(section, 'url')
+
+
+    #        for option in config.options(section):
+    #            value = config.get(section, option)
+    #            if option in dataSources:
+    #                dataSources[option].append((url, value))
+    #            else:
+    #                dataSources[option] = [(url, value)] 
+    #                
+    #        for prog in delayed:
+    #            if prog in config.options(section): 
+    #                values = dataSources[prog][-1][1]
+    #                dataSources[prog] = dataSources[prog][:-1]
+    #                for key in values: 
+    #                    for option in config.options(section):
+    #                        if (option[0] == key) and (option in options):
+    #                            toAppend = (url, 
+    #                                    (option, dataSources[option][-1][1]))
+    #                            dataSources[prog].append(toAppend)
+
+    #        for prog in types:
+    #            if prog in config.options(section): 
+    #                values = dataSources[prog][-1][1]
+    #                dataSources[prog] = dataSources[prog][:-1]
+    #                for key in values: 
+    #                    for option in config.options(section):
+    #                        if (option[0] == key) and (option in options):
+    #                            toAppend = (url, 
+    #                                    (option, dataSources[option][-1][1]))
+    #                            dataSources[prog].append(toAppend)
+ 
+    #        if url.find('slack')>=0: 
+    #            #.rssBlogs
+    #            # url: slack site
+    #            # channel: 
+    #            # destinations....
+    #            option = 'slack'
+    #            if option in dataSources:
+    #                dataSources[option].append((url, url))
+    #            else:
+    #                dataSources[option] = [(url, url)] 
+    #        elif url.find('imgur')>=0: 
+    #            option = 'imgur'
+    #            if option in dataSources:
+    #                dataSources[option].append((url, url))
+    #            else:
+    #                dataSources[option] = [(url, url)] 
+
+    #    myKeys = []
+    #    self.available = {}
+    #    myList = []
+    #    for key in dataSources:
+
+    #        if key[0] not in myKeys:
+    #            iniK = key[0]
+    #        else:
+    #            i = 1
+    #            while (i < len(key) ) and (key[i] in myKeys):
+    #                i = i + 1
+    #            if i < len(key): 
+    #                iniK = key[i]
+    #            else:
+    #                iniK = 'j'
+    #                while iniK in myKeys:
+    #                    iniK = chr(ord(iniK)+1)
+    #        myKeys.append(iniK)
+    #        pos = key.find(iniK)
+    #        if pos>=0:
+    #            nKey = key[:pos] + iniK.upper() + key[pos + 1:]
+    #        else:
+    #            nKey = iniK+key
+    #        nKey = key+'-{}'.format(iniK)
+    #        self.available[(iniK, nKey)] = []
+    #        component = '{}: {}'.format(nKey, len(dataSources[key]))
+    #        myList.append(component)
+    #        for i, element in enumerate(dataSources[key]):
+    #            if isinstance(element, str): 
+    #                self.available[(iniK, nKey)].append((element, '',str(i)))
+    #            else: 
+    #                self.available[(iniK, nKey)].append((element[0],element[1],str(i)))
+    #    if myList:
+    #        #self.config.append((myList,'',''))
+    #        self.availableList = myList
 
     def addMore(self):
         response = "There are {0} lists. You can add more with command list add".format(len(self.config))
@@ -141,22 +413,26 @@ class Buffer(BotPlugin):
                 pos = -1
         else:
             arg1 = args[0]
+            yield (arg1)
             for key in self.available: 
                 if arg1[0].capitalize() == key[0].capitalize(): 
                     if arg1[1:].isdigit(): 
                         pos = int(arg1[1:] ) 
                         if pos < len(self.available[key]): 
                             myList.append(arg1)
+
         
         if pos >= 0:
             for element in myList:
                 self.log.info("Element %s" % str(element))
 
                 for key in self.available:
-                    self.log.info("key %s" % str(key))
-                    self.log.info("element %s" % str(element[0]))
                     if element[0].lower() == key[0]: 
                         name, nick, profile, param = self.getSocialNetwork(key,element)
+                        self.log.debug("Result: {} {} {}".format(element, 
+                            profile, name))
+                        self.log.debug("clients : {}".format(str(self.clients)))
+                        profile = profile.split('-')[0]
                         if (element, profile,name) in self.clients:
                             link = self.clients[(element, profile, name)].getPosts()[-1][1]
                             #yield("name %s nick %s profile %s param %s"%(str(name), str(nick), str(profile), str(param)))
@@ -164,6 +440,9 @@ class Buffer(BotPlugin):
                             if profile.upper() == 'Forum'.upper():
                                 # Not sure it makes sense for other types of
                                 # content
+                                self.log.debug("Param %s"%str(param))
+                                if isinstance(param, tuple):
+                                    param = param[0]
                                 updateLastLink(param, link)
                             yield("Marked read {}".format(element))
         yield end()
@@ -247,8 +526,15 @@ class Buffer(BotPlugin):
     def getSocialNetwork(self, key, element):
         pos = int(element[1])
         profile = key[1]
-        url = self.available[key][pos][0]
-        nick = self.available[key][pos][1]
+        self.log.debug("Pos %d",pos)
+        self.log.debug("Prof %s",str(profile))
+        self.log.debug("Key %s",str(key))
+        self.log.debug("Avail %s",str(self.available[key]))
+        self.log.debug("Avail %s",str(self.available[key][pos]))
+        url = self.available[key][pos][0][0]
+        nick = ((self.available[key][pos][0][0], 
+                self.available[key][pos][0][1]))
+        self.log.info("Nick %s",str(nick))
         name = nick
         param = nick
         if (key[0]=='g'): # or (key[0] == '2'):
@@ -256,19 +542,20 @@ class Buffer(BotPlugin):
             name = url
             nick = name
             param = name
-        elif (key[0] == 'a') or (key[0] == 'b'):
-            name = nick[1]+'@'+nick[0]
-            self.log.info("Name: %s" % str(name))
-            param = (url, nick)
+        #elif (key[0] == 'a') or (key[0] == 'b'):
+        #    name = nick[1]+'@'+nick[0]
+        #    self.log.info("Name: %s" % str(name))
+        #    param = (url, nick)
         elif key[0] == 's':
             name = nick[0]
             nick = None
             param = None
-        elif key[0] == 'r':
-            if nick.find('http')>=0:
-                param = nick
-            else:
-                param = url + nick
+        #elif key[0] == 'r':
+        #    if isinstance(nick, str):
+        #        if nick.find('http')>=0:
+        #            param = nick
+        #        else:
+        #            param = url + nick
         elif type(nick) == tuple:
             nick = nick[1]
             name = nick
@@ -276,15 +563,14 @@ class Buffer(BotPlugin):
             nick, profile = nick.split('@')
             name = nick
         return (name, nick, profile, param)
- 
+
     @botcmd(split_args_with=None, template="buffer")
     def list(self, mess, args):
         """ A command to show available posts in a list of available sites
         """
 
         self.log.debug("Posts posts %s" % (self.posts))
-
-        self.log.info("args %s" % str(args))
+        self.log.debug("args %s" % str(args))
 
         pos = -1
         myList = []
@@ -309,47 +595,71 @@ class Buffer(BotPlugin):
                         if pos < len(self.available[key]): 
                             myList.append(arg1)
 
-        self.log.info("myList %s" % str(myList))
+        self.log.debug("myList %s" % str(myList))
         self.lastList = myList
 
         if pos >= 0:
             for element in myList:
-                self.log.info("Element %s" % str(element))
+                self.log.debug("Edebug %s" % str(element))
 
                 for key in self.available:
-                    self.log.info("key %s" % str(key))
-                    self.log.info("element %s" % str(element[0]))
+                    self.log.debug("key %s" % str(key))
+                    self.log.debug("element %s" % str(element[0]))
+                    self.log.debug("available %s" % str(self.available[key]))
                     if element[0].lower() == key[0]: 
                         self.log.debug("clients %s" % str(self.clients))
+                        self.log.debug("SocialNetworks %s"%(str(self.getSocialNetwork(key,element))))
                         name, nick, profile, param = self.getSocialNetwork(key,element)
-                        self.log.info("Name %s Nick %s Profile %s Param %s"%(str(name), str(nick), str(profile), str(param)))
-                        self.log.info("Clients %s" % str(self.clients))
-                        self.log.info("Url: %s" % str(nick))
-                        self.log.info("Nick: %s" % str(nick))
+                        self.log.debug("Name %s Nick %s Profile %s Param %s"%(str(name), str(nick), str(profile), str(param)))
+                        self.log.debug("Clients %s" % str(self.clients))
+                        self.log.debug("Url: %s" % str(nick))
+                        self.log.debug("Nick: %s" % str(nick))
                         try:
                             self.clients[(element, profile, name)].setPosts()
                         except:
                             import importlib
+                            if profile.find('-')>=0:
+                                profile = profile.split('-')[0]
                             moduleName = 'module'+profile.capitalize()
+
                             mod = importlib.import_module(moduleName) 
                             cls = getattr(mod, moduleName)
                             api = cls()
+                            self.log.debug("Param: %s" % str(param))
                             api.setClient(param)
                             self.clients[(element, profile,name)] = api
                             self.clients[(element, profile,name)].setPosts()
-                            self.log.info("Posts %s"% str(self.clients[(element, profile,name)].getPosts()))
+                            self.log.debug("Posts %s"% str(self.clients[(element, profile,name)].getPosts()))
+                            self.log.debug("Posts ->%s"% str(self.clients[(element, profile,name)].getPostsType()))
 
                             #client = module...
 
-                        posts = []
-                        if self.clients[(element, profile, name)].getPosts():
-                            for (i, post) in enumerate(self.clients[(element, profile, name)].getPosts()):
+                        postsTmp = [] 
+                        posts = [] 
+
+                        if hasattr(self.clients[(element, profile, name)], 'getPostsType'): 
+                            self.log.debug("Types %s"%(self.clients[(element, profile, name)].getPostsType()))
+
+
+                            if self.clients[(element, profile, name)].getPostsType() == 'drafts': 
+                                postsTmp = self.clients[(element, profile, name)].getDrafts() 
+                            else: 
+                                postsTmp = self.clients[(element, profile, name)].getPosts()
+                        else:
+                                postsTmp = self.clients[(element, profile, name)].getPosts
+                        if postsTmp:
+                            for (i, post) in enumerate(postsTmp):
+                                date = self.clients[(element, profile, name)].getPostDate(post)
+
                                 title = self.clients[(element, profile, name)].getPostTitle(post)
+                                if date:
+                                    title = '{} ({}='.format(title,date)
+
                                 link = self.clients[(element, profile, name)].getPostLink(post)
                                 posts.append((title, link, '{:2}'.format(i)))
                                 self.log.info("I: %s %s %d"%(title,link,i))
+
                         self.posts[(element, profile, name)] = posts
-                        continue
                 self.log.info("Posts posts %s" % (self.posts))
                 response = self.sendReply(mess, args, self.posts, ['sent','pending'])
                 self.log.debug("Response %s End" % response)
@@ -505,7 +815,7 @@ class Buffer(BotPlugin):
             self.log.info("socialNetwork ... %s" % str(socialNetwork))
             if theUpdates: 
                 if len(socialNetwork)>2:
-                    socialNetworktxt = socialNetwork[1].capitalize()+' (' + socialNetwork[0] + ' ' + socialNetwork[2]+')'
+                    socialNetworktxt = socialNetwork[2][1].capitalize()+' (' + socialNetwork[2][0] + ' ' + socialNetwork[0]+')'
                     if len(socialNetworktxt)+3 > maxLen:
                         maxLen = len(socialNetworktxt)+3
                     if (1 + len(theUpdates))*maxLen > 1024:
