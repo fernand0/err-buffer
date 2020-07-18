@@ -132,51 +132,6 @@ class Buffer(BotPlugin):
                 self.available[(iniK, nKey)].append((toAppend, '')) 
                 contentProviders['content'].append(toAppend)  
         self.log.debug("contentProviders %s"%str(contentProviders))
-        # contentProviders
-        # {'cache': [(url, (socialNetwork, nick , posts)), ...], 
-        #'buffer': [(url, (socialNetwork, nick, posts)), ...], 
-        #'content': [(url, (type of content, nick, 'posts')), ...]}
-
-        #myKeys = {}
-        #myIniKeys = []
-        #
-        #self.available = {}
-        #for t in contentProviders:
-        #    #print("key",t)
-        #    for element in contentProviders[t]:
-        #        #print("elem",element)
-        #        if t in delayed:
-        #            key = t
-        #            iniK = key[0] 
-        #        else:
-        #            key = element[1][0] 
-        #        if key not in myKeys:
-        #            if key[0] not in myIniKeys: 
-        #                    iniK = key[0] 
-        #            else: 
-        #               i = 1
-        #               while (i < len(key) ) and (key[i] in myIniKeys):
-        #                   i = i + 1
-        #               if i < len(key): 
-        #                   iniK = key[i]
-        #               else:
-        #                   iniK = 'j'
-        #                   while iniK in myIniKeys:
-        #                       iniK = chr(ord(iniK)+1)
-        #            myKeys[key] = iniK
-        #        else:
-        #            iniK = myKeys[key]
-        #        myIniKeys.append(iniK)
-        #        pos = key.find(iniK)
-        #        if pos>=0:
-        #            nKey = key[:pos] + iniK.upper() + key[pos + 1:]
-        #        else:
-        #            nKey = iniK+key
-        #        nKey = key+'-{}'.format(iniK)
-        #        if (iniK,nKey) not in self.available: 
-        #            self.available[(iniK, nKey)] = []
-        #        self.available[(iniK, nKey)].append((element, '')) 
-
         self.log.debug("available %s"%str(self.available))
 
         myList = []
