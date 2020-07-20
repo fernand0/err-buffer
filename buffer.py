@@ -2,16 +2,10 @@ from errbot import BotPlugin, botcmd, webhook, backends
 from errbot.templating import tenv
 import moduleBuffer
 import moduleCache
-import moduleGmail
-import moduleTwitter
 import configparser
 import logging
 import os
 import pprint
-from buffpy.models.update import Update
-from buffpy.managers.profiles import Profiles
-from buffpy.managers.updates import Updates
-from buffpy.api import API
 
 from configMod import *
 
@@ -74,7 +68,6 @@ class Buffer(BotPlugin):
         content = ['twitter', 'facebook', 'mastodon', 'linkedin',
                 'imgur','rss','forum', 'slack', 'gmail']
         types = ['posts','drafts']
-
 
         myKeys = {}
         myIniKeys = []
