@@ -32,6 +32,7 @@ class Buffer(BotPlugin):
         self.lastList = None
         self.lastEdit = None
         self.lastLink = None
+        self.argsArchive = []
 
     def getIniKey(self, key, myKeys, myIniKeys):
        if key not in myKeys:
@@ -407,6 +408,8 @@ class Buffer(BotPlugin):
         """Execute a command """
         resTxt = 'Executing: {}\n'.format(command)
         self.log.info(resTxt)
+        resTxt = 'Args: {}\n'.format(str(args))
+        self.log.info(resTxt)
         updates = ''
         update = None
         res = None
@@ -453,11 +456,8 @@ class Buffer(BotPlugin):
     def edit_show(self, mess, args):
         """ Show the last edit commands
         """
-        if 'argsArchive' in self:
-            for arg in self['argsArchive'][-5:]:
-                yield("- %s" % arg)
-        else:
-            yield('No cache')
+        for arg in self.argsArchive[-5:]:
+            yield("- %s" % arg)
         yield end()
 
     @botcmd
@@ -484,12 +484,8 @@ class Buffer(BotPlugin):
         yield end()
 
     def addEditsCache(self, args):
-        if 'argsArchive' not in self:
-            self['argsArchive'] = []
-        argsArchive = self['argsArchive']
-        argsArchive.append(args)
-        self['argsArchive'] = argsArchive
-
+        argsArchive = self.argsArchive
+        self.argsArchive.append(args)
 
     @botcmd
     def move(self, mess, args):
