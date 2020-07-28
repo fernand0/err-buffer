@@ -5,6 +5,8 @@ import moduleCache
 import configparser
 import logging
 import os
+import pickle
+import time
 import pprint
 
 from configMod import *
@@ -138,6 +140,62 @@ class Buffer(BotPlugin):
         response = "There are {0} lists. You can add more with command list add".format(len(self.config))
         return (response)
 
+    @botcmd(split_args_with=None, template="buffer")
+    def list_next(self, mess, args): 
+        myList = os.listdir(DATADIR)
+        text = []
+        for element in myList:
+            if (element.find('last')>0) and (element.find('Next')>0):
+                continue
+            if (element.find('Next')>0):# or (element.find('last')>0):
+                #yield element
+                if element.find('_')>0: 
+                    res = element.split('_') 
+                    url = res[0] 
+                    dest = res[1] 
+                    nick = '_'.join(res[1:]) 
+                    nick = nick.split('.')[0]
+                else:
+                    url = element
+                    dest = None
+                    nick = None
+                orig = url.split('.')[0]
+                #name, nick, profile, param = self.getSocialNetwork(element)
+                #url = param[0]
+                #orig = urllib.parse.urlparse(url).netloc.split('.')[0]
+                #dest = name[0] #"{} ({})".format(name[0],name[1])
+                t1 = None
+                if True:
+                    #with open(fileNamePath(url, name)+'.timeNext','rb') as f: 
+                    if element.find('Next')>0:
+                        with open('{}/{}'.format(DATADIR,element),'rb') as f: 
+                            t1, t2 = pickle.load(f)
+                        if time.time() < t1 + t2:
+                            msg = "[W]:"
+                        else:
+                            msg = "[P]: "
+                        theTime = time.strftime("%H:%M:%S",time.localtime(t1+t2))
+                    else:
+                        if dest and nick:
+                            link, t1 = checkLastLink(url, (dest,nick))
+                        else:
+                            link, t1 = checkLastLink(url)
+                        theTime = time.strftime("%H:%M:%S",time.localtime(t1))
+                        msg = "[L]: "
+                        t2 = 0
+                else:
+                    msg = "No Time"
+                    theTime = ""
+                if t1: 
+                    text.append("{5}|{4} {2} ... {0} -> {1} ({3})".format(orig, 
+                        dest, theTime, nick, msg,t1+t2))
+        text = sorted(text)
+        textP = []
+        for line in text:
+            textP.append(line.split('|')[1][:60])
+        yield('\n'.join(textP))
+        yield(end())
+        
     @botcmd(split_args_with=None, template="buffer")
     def list_last(self, mess, args): 
         if self.lastList:
