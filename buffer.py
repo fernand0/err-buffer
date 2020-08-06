@@ -173,7 +173,7 @@ class Buffer(BotPlugin):
                         if time.time() < t1 + t2:
                             msg = "[W]:"
                         else:
-                            msg = "[P]: "
+                            msg = "[F]: "
                         theTime = time.strftime("%H:%M:%S",time.localtime(t1+t2))
                     else:
                         if dest and nick:
@@ -187,7 +187,9 @@ class Buffer(BotPlugin):
                     msg = "No Time"
                     theTime = ""
                 if t1: 
-                    text.append("{5}|{4} {2} ... {0} -> {1} ({3})".format(orig, 
+                    if nick.find('_')>0:
+                        nick = nick.split('_')[1]
+                    text.append("{5}|{4}{2} {0} -> {1} {3}".format(orig, 
                         dest, theTime, nick, msg,t1+t2))
         text = sorted(text)
         textP = []
