@@ -69,7 +69,7 @@ class Buffer(BotPlugin):
 
         delayed = ['cache', 'buffer']
         content = ['twitter', 'facebook', 'mastodon', 'linkedin',
-                'imgur','rss','forum', 'slack', 'gmail']
+                'imgur','rss','forum', 'slack', 'gmail','imdb']
         types = ['posts','drafts']
 
         myKeys = {}
@@ -423,7 +423,7 @@ class Buffer(BotPlugin):
                     self.clients[(element, profile, name)] = api
                     self.clients[(element, profile, name)].setPosts()
                     self.log.debug("Posts %s"% str(self.clients[(element, profile,name)].getPosts()))
-                    if (len(param[1]) == 3): 
+                    if param and (len(param[1]) == 3): 
                         self.log.debug("Setting posts type {}".format(param[1][2]))
                         self.clients[(element, profile, name)].setPostsType(param[1][2])
                     self.log.debug("Posts ->%s"% str(self.clients[(element, profile,name)].getPostsType()))
@@ -445,13 +445,14 @@ class Buffer(BotPlugin):
                         postsTmp = self.clients[(element, profile, name)].getPosts
                 if postsTmp:
                     for (i, post) in enumerate(postsTmp):
-                        date = self.clients[(element, profile, name)].getPostDate(post)
 
                         title = self.clients[(element, profile, name)].getPostTitle(post)
-                        if date:
-                            title = '{} ({}='.format(title,date)
-
-                        link = self.clients[(element, profile, name)].getPostLink(post)
+                        if (hasattr(self.clients[(element, profile, name)], 
+                            'getPostLine')):
+                            title = self.clients[(element, profile, name)].getPostLine(post)
+                            link = ''
+                        else: 
+                            link = self.clients[(element, profile, name)].getPostLink(post)
                         posts.append((title, link, '{:2}'.format(i)))
                         self.log.info("I: %s %s %d"%(title,link,i))
 
