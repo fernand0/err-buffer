@@ -445,13 +445,12 @@ class Buffer(BotPlugin):
                         postsTmp = self.clients[(element, profile, name)].getPosts
                 if postsTmp:
                     for (i, post) in enumerate(postsTmp):
-
-                        title = self.clients[(element, profile, name)].getPostTitle(post)
                         if (hasattr(self.clients[(element, profile, name)], 
                             'getPostLine')):
                             title = self.clients[(element, profile, name)].getPostLine(post)
                             link = ''
                         else: 
+                            title = self.clients[(element, profile, name)].getPostTitle(post)
                             link = self.clients[(element, profile, name)].getPostLink(post)
                         posts.append((title, link, '{:2}'.format(i)))
                         self.log.info("I: %s %s %d"%(title,link,i))
