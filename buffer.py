@@ -83,6 +83,7 @@ class Buffer(BotPlugin):
             else: 
                 posts = 'posts' 
             for option in config.options(section):
+                self.log.info("Option {}".format(option))
                 if option in delayed:
                     key = option 
                     iniK = key[0] 
@@ -342,16 +343,16 @@ class Buffer(BotPlugin):
         self.log.info("Nick %s",str(nick))
         name = nick
         param = nick
-        if (key[0]=='g'): # or (key[0] == '2'):
-            profile = 'gmail' #+element[1]
-            name = url
-            nick = name
-            param = name
+        #if (key[0]=='g'): # or (key[0] == '2'):
+        #    profile = 'gmail' #+element[1]
+        #    name = url
+        #    nick = name
+        #    param = name
         #elif (key[0] == 'a') or (key[0] == 'b'):
         #    name = nick[1]+'@'+nick[0]
         #    self.log.info("Name: %s" % str(name))
         #    param = (url, nick)
-        elif key[0] == 's':
+        if key[0] == 's':
             name = nick[0]
             nick = None
             param = None
@@ -478,7 +479,7 @@ class Buffer(BotPlugin):
         res = None
         for profile in self.clients:
             self.log.debug("Executing in profile: %s" % str(profile))
-            if args[:len(profile[0])] == profile[0] \
+            if args[:len(profile[0])].upper() == profile[0].upper() \
                   or (args[0] == '*') \
                   or (('*' in args) and (args[:1] == profile[0][:1])):
                 # We need to do something for '*' commands
