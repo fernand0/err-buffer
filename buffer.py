@@ -478,11 +478,13 @@ class Buffer(BotPlugin):
         update = None
         res = None
         for profile in self.clients:
-            self.log.debug("Executing in profile: %s" % str(profile))
-            if args[:len(profile[0])].upper() == profile[0].upper() \
-                  or (args[0] == '*') \
-                  or (('*' in args) and (args[:1] == profile[0][:1])):
+            self.log.debug("Executing in profile: {} with args {}".format(profile,str(args)))
+            theProfile = profile[0]
+            if ((theProfile.upper() == args[:len(theProfile)].upper()) 
+                  or (args[0] == '*')
+                  or (('*' in args) and (args[:1] == profile[0][:1]))):
                 # We need to do something for '*' commands
+                self.log.info("I'll publish in {}".format(profile))
                 update = self.clients[profile].selectAndExecute(command,args)
                 if update: 
                     updates = '{}* {} ({})\n'.format(updates, update, 
