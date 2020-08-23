@@ -586,7 +586,10 @@ class Buffer(BotPlugin):
                             #    theUpdatetxt = '{} {}'.format(update[0],str(update[1])).replace('_','\_')
                             #else: 
                             theUpdatetxt = str(update[0]).replace('_','\_')
-                            if theUpdatetxt.find('>')>=0:
+                            if theUpdatetxt.find('> ')>=0:
+                                # We do not need to show the mark. Maybe we
+                                # should consider a better approach.
+                                theUpdatetxt = theUpdatetxt[1:]
                                 tt = 'longer'
 
                             lenUpdate = len(theUpdatetxt[:60]) 
