@@ -1,15 +1,19 @@
-from errbot import BotPlugin, botcmd, webhook, backends
-from errbot.templating import tenv
-import moduleBuffer
-import moduleCache
 import configparser
 import logging
 import os
 import pickle
-import time
 import pprint
+import time
+import sys
+
+from errbot import BotPlugin, botcmd, webhook, backends
+from errbot.templating import tenv
+
+# Needs to set $PYTHONPATH to the dir where this modules are located
 
 from configMod import *
+import moduleBuffer
+import moduleCache
 
 def end(msg=""):
     return("END"+msg)
