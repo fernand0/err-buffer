@@ -227,8 +227,16 @@ class Buffer(BotPlugin):
         """
         if not self.available:
             self.checkConfigFiles()
-        self.log.debug("Available: %s" % str(self.available))
-        response = self.sendReply('', '', self.available, ['sent','pending'])
+        self.log.info("Available: %s" % str(self.available))
+        myList = {}
+        theKey = ('All', 'All', ('All','All','All'))
+        myList[theKey] = []
+        for key in self.available:
+            for i, elem in enumerate(self.available[key]['data']):
+                myList[theKey].append((elem[0], key, '{}-{}'.format(key,i)))
+        self.log.info("myList: %s" % str(myList))
+
+        response = self.sendReply('', '', myList, ['sent','pending'])
         for rep in response:
             yield(rep)
         return(end)
