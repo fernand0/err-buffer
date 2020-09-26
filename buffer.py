@@ -242,6 +242,7 @@ class Buffer(BotPlugin):
         return(end)
 
     def appendMyList(self, arg, myList): 
+        self.log.debug("Args... {}".format(str(arg)))
         for key in self.available: 
             if arg[0].capitalize() == key.capitalize(): 
                 if arg[1:].isdigit(): 
@@ -403,10 +404,15 @@ class Buffer(BotPlugin):
         else:
             pos = 0
                 
-        if (pos >= 0) and (pos < len(self.config)): 
-            myList = self.config[pos]
+        if (len(self.config) == 0) and (not args):
+            yield("There are not lists defined")
+            yield("Add some elements with list add")
+            return
+        elif (pos >= 0) and (pos < len(self.config)): 
+            if len(self.config)>0:
+                myList = self.config[pos]
         else: 
-            self.appendMyList(args[0], myList)
+            self.appendMyList(args[0].upper(), myList)
             pos = 0
 
         self.log.debug("myList %s" % str(myList))
@@ -489,6 +495,7 @@ class Buffer(BotPlugin):
         updates = ''
         update = None
         res = None
+        self.log.debug("Clients {}".format(self.clients))
         for profile in self.clients:
             self.log.debug("Executing in profile: {} with args {}".format(profile,str(args)))
             theProfile = profile[0]
@@ -496,7 +503,7 @@ class Buffer(BotPlugin):
                   or (args[0] == '*')
                   or (('*' in args) and (args[:1] == profile[0][:1]))):
                 # We need to do something for '*' commands
-                self.log.info("I'll publish in {}".format(profile))
+                self.log.info("I'll {} in {}".format(str(command), profile))
                 update = self.clients[profile].selectAndExecute(command,args)
                 if update: 
                     updates = '{}* {} ({})\n'.format(updates, update, 
