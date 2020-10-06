@@ -345,11 +345,11 @@ class Buffer(BotPlugin):
         key = element[0].lower()
         pos = int(element[1:])
         profile = self.available[key]['name']
-        self.log.debug("Pos %d",pos)
+        #self.log.debug("Pos %d",pos)
         self.log.debug("Prof %s",str(profile))
-        self.log.debug("Key %s",str(key))
-        self.log.debug("Avail %s",str(self.available[key]))
-        self.log.debug("Avail %s",str(self.available[key]['data'][pos]))
+        #self.log.debug("Key %s",str(key))
+        #self.log.debug("Avail %s",str(self.available[key]))
+        self.log.debug("Selected %s",str(self.available[key]['data'][pos]))
         url = self.available[key]['data'][pos][0][0]
         nick = ((self.available[key]['data'][pos][0][0], 
                 self.available[key]['data'][pos][0][1]))
@@ -420,7 +420,7 @@ class Buffer(BotPlugin):
 
         if pos >= 0:
             for element in myList:
-                self.log.debug("Edebug %s" % str(element))
+                self.log.debug("Element %s" % str(element))
                 name, nick, profile, param = self.getSocialNetwork(element)
                 self.log.debug("Name %s Nick %s Profile %s Param %s"%(str(name), str(nick), str(profile), str(param)))
                 self.log.debug("Clients %s" % str(self.clients))
