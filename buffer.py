@@ -280,17 +280,19 @@ class Buffer(BotPlugin):
                 self.log.debug("clients : {}".format(str(self.clients)))
                 profile = profile.split('-')[0]
                 if (element, profile,name) in self.clients:
-                    link = self.clients[(element, profile, name)].getPosts()[-1][1]
-                    #yield("name %s nick %s profile %s param %s"%(str(name), str(nick), str(profile), str(param)))
-                    #yield("link %s"%link)
-                    if profile.upper() == 'Forum'.upper():
-                        # Not sure it makes sense for other types of
-                        # content
-                        self.log.debug("Param %s"%str(param))
-                        if isinstance(param, tuple):
-                            param = param[0]
-                        updateLastLink(param, link)
-                    yield("Marked read {}".format(element))
+                    thePosts = self.clients[(element, profile, name)].getPosts()
+                    if thePosts: 
+                        link = self.clients[(element, profile, name)].getPosts()[-1][1]
+                        #yield("name %s nick %s profile %s param %s"%(str(name), str(nick), str(profile), str(param)))
+                        #yield("link %s"%link)
+                        if profile.upper() == 'Forum'.upper():
+                            # Not sure it makes sense for other types of
+                            # content
+                            self.log.debug("Param %s"%str(param))
+                            if isinstance(param, tuple):
+                                param = param[0]
+                            updateLastLink(param, link)
+                        yield("Marked read {}".format(element))
         yield end()
 
 
