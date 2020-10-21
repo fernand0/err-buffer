@@ -444,6 +444,7 @@ class Buffer(BotPlugin):
                     self.clients[(element, profile, name)] = api
                     self.clients[(element, profile, name)].setPosts()
                     self.log.debug("Posts %s"% str(self.clients[(element, profile,name)].getPosts()))
+                    self.log.debug("Param {}".format(str(param)))
                     if param and (len(param[1]) == 3): 
                         self.log.debug("Setting posts type {}".format(param[1][2]))
                         self.clients[(element, profile, name)].setPostsType(param[1][2])
