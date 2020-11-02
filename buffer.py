@@ -442,12 +442,17 @@ class Buffer(BotPlugin):
                     self.log.debug("Param: %s" % str(param))
                     api.setClient(param)
                     self.clients[(element, profile, name)] = api
+                    if param and (len(param[1]) == 3): 
+                        typePosts = param[1][2]
+                        self.log.debug("Setting posts type {}".format(
+                            typePosts))
+                        self.clients[(element, profile, name)].setPostsType(
+                                typePosts)                    
                     self.clients[(element, profile, name)].setPosts()
                     self.log.debug("Posts %s"% str(self.clients[(element, profile,name)].getPosts()))
+                    self.log.debug("Drafts %s"% str(self.clients[(element, profile,name)].getDrafts()))
                     self.log.debug("Param {}".format(str(param)))
-                    if param and (len(param[1]) == 3): 
-                        self.log.debug("Setting posts type {}".format(param[1][2]))
-                        self.clients[(element, profile, name)].setPostsType(param[1][2])
+
                     self.log.debug("Posts ->%s"% str(self.clients[(element, profile,name)].getPostsType()))
 
                     #client = module...
