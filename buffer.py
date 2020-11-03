@@ -194,7 +194,7 @@ class Buffer(BotPlugin):
                 if t1: 
                     if nick.find('_')>0:
                         nick = nick.split('_')[1]
-                    text.append("{5}|{4}{2} {0} -> {1} {3}".format(orig, 
+                    text.append("{5}|{4}{2} {0} -> {1} {3}\n".format(orig, 
                         dest, theTime, nick, msg,t1+t2))
         text = sorted(text)
         textP = []
