@@ -165,10 +165,7 @@ class Buffer(BotPlugin):
                     dest = None
                     nick = None
                 orig = url.split('.')[0]
-                #name, nick, profile, param = self.getSocialNetwork(element)
-                #url = param[0]
-                #orig = urllib.parse.urlparse(url).netloc.split('.')[0]
-                #dest = name[0] #"{} ({})".format(name[0],name[1])
+                orig = url
                 t1 = None
                 if True:
                     #with open(fileNamePath(url, name)+'.timeNext','rb') as f: 
@@ -176,7 +173,7 @@ class Buffer(BotPlugin):
                         with open('{}/{}'.format(DATADIR,element),'rb') as f: 
                             t1, t2 = pickle.load(f)
                         if time.time() < t1 + t2:
-                            msg = "[W]:"
+                            msg = "[W]: "
                         else:
                             msg = "[F]: "
                         theTime = time.strftime("%H:%M:%S",time.localtime(t1+t2))
@@ -194,12 +191,17 @@ class Buffer(BotPlugin):
                 if t1: 
                     if nick.find('_')>0:
                         nick = nick.split('_')[1]
-                    text.append("{5}|{4}{2} {0} -> {1} {3}\n".format(orig, 
-                        dest, theTime, nick, msg,t1+t2))
+                    text.append("{5}|{4}{2} {0} -> {1} {3}".format(
+                        orig, dest.capitalize(), theTime, nick, msg, t1+t2))
         text = sorted(text)
         textP = []
         for line in text:
-            textP.append(line.split('|')[1][:60])
+            lineS = line.split('|')[1]
+            line1,line2 = lineS.split('->')
+            self.log.info("line 1 {}".format(line1))
+            textP.append(line1)
+            textP.append("         ->{}".format(line2))
+        self.log.info("textP {}".format(textP))
         yield('\n'.join(textP))
         yield(end())
         
