@@ -145,10 +145,29 @@ class Buffer(BotPlugin):
         response = "There are {0} lists. You can add more with command list add".format(len(self.config))
         return (response)
 
+    def formatList(self, text, status):
+        textR = []
+        if text: 
+            textR.append("=======")
+            textR.append("{}:".format(status.capitalize()))
+            textR.append("=======")
+            for line in text: 
+                lineS = line.split('|')[1]
+                line1,line2 = lineS.split('->')
+                self.log.debug("line 1 {}".format(line1))
+                textR.append(line1)
+                textR.append("      ⟶{}".format(line2))
+        else:
+            textR.append("None {}".format(status))
+
+        return textR
+ 
     @botcmd(split_args_with=None, template="buffer")
     def list_next(self, mess, args): 
         myList = os.listdir(DATADIR)
         text = []
+        textW = []
+        textF = []
         for element in myList:
             if (element.find('last')>0) and (element.find('Next')>0):
                 continue
@@ -191,16 +210,16 @@ class Buffer(BotPlugin):
                 if t1: 
                     if nick.find('_')>0:
                         nick = nick.split('_')[1]
-                    text.append("{5}|{4}{2} {0} -> {1} ({3})".format(
+                    if msg.find("[W]")>=0: 
+                        textW.append("{5}|{2} {0} -> {1} ({3})".format(
                         orig, dest.capitalize(), theTime, nick, msg, t1+t2))
-        text = sorted(text)
-        textP = []
-        for line in text:
-            lineS = line.split('|')[1]
-            line1,line2 = lineS.split('->')
-            self.log.debug("line 1 {}".format(line1))
-            textP.append(line1)
-            textP.append("         🡒 {}".format(line2))
+                    else:
+                        textF.append("{5}|{2} {0} -> {1} ({3})".format(
+                        orig, dest.capitalize(), theTime, nick, msg, t1+t2))
+        textF = sorted(textF)
+        textW = sorted(textW)
+        textP = self.formatList(textF, 'finished')
+        textP = textP + self.formatList(textW, 'waiting')
         yield('\n'.join(textP))
         yield(end())
         
