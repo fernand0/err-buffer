@@ -158,7 +158,9 @@ class Buffer(BotPlugin):
                 textR.append(line1)
                 textR.append("      ⟶{}".format(line2))
         else:
+            textR.append("===========")
             textR.append("None {}".format(status))
+            textR.append("===========")
 
         return textR
  
