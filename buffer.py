@@ -99,9 +99,15 @@ class Buffer(BotPlugin):
                                     and (dd in config.options(section))): 
                                 delayedList.append(dd)
                     elif isinstance(myDelayed, str): 
-                            delayedList.append(myDelayed)
+                        if myDelayed.find('\n'):
+                            myDelayed = myDelayed.split('\n') 
+                        else:
+                            myDelayed = [ myDelayed ]
+                        for myDel in myDelayed: 
+                            delayedList.append(myDel)
 
                     for dd in delayedList: 
+                        self.log.info("dd {}".format(dd))
                         nick = config.get(section, dd) 
                         toAppend = (config.get(section, 'url'), 
                                 (dd,nick, posts))
