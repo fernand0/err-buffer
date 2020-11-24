@@ -73,7 +73,7 @@ class Buffer(BotPlugin):
 
         delayed = ['cache', 'buffer']
         content = ['twitter', 'facebook', 'mastodon', 'linkedin',
-                'imgur','rss','forum', 'slack', 'gmail','imdb']
+                'imgur','rss','forum', 'slack', 'gmail','imdb','pocket']
         types = ['posts','drafts']
 
         myKeys = {}
