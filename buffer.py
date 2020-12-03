@@ -84,10 +84,6 @@ class Buffer(BotPlugin):
 
         for section in config.sections():
             url = config.get(section,'url')
-            if 'posts' in config.options(section): 
-                posts = config.get(section, 'posts') 
-            else: 
-                posts = 'posts' 
             service = ''
             for option in config.options(section):
                 if (option in delayed) or (option in direct):
@@ -110,6 +106,10 @@ class Buffer(BotPlugin):
 
                     for dd in delayedList: 
                         nick = config.get(section, dd) 
+                        if 'posts' in config.options(section): 
+                            posts = config.get(section, 'posts') 
+                        else: 
+                            posts = 'posts' 
                         toAppend = ((config.get(section, 'url'), 
                                 (dd, nick, posts)), '')
 
@@ -132,6 +132,11 @@ class Buffer(BotPlugin):
                     else: 
                         url = config.get(section, option)
                     #toAppend = ((nick, (option, nick, posts)), '')
+
+                    if 'posts' in config.options(section): 
+                        posts = config.get(section, 'posts') 
+                    else: 
+                        posts = 'posts' 
                     toAppend = ((url, (option, nick, posts)), '')
                     #print("url toapp",toAppend)
                     iniK, nKey = self.getIniKey(key, myKeys, myIniKeys) 
