@@ -73,6 +73,96 @@ class Buffer(BotPlugin):
 
         delayed = ['cache', 'buffer']
         direct = ['direct']
+        content = ['twitter', 'facebook', 'mastodon', 'linkedin', 'xmlrpc',
+                'imgur','rss','forum', 'slack', 'gmail','imdb','pocket',  
+                'wordpress','flickr', 'tumblr', 'devto','medium','telegram']
+        types = ['posts','drafts']
+
+        myKeys = {}
+        myIniKeys = []
+        self.available = {}
+
+        for section in config.sections():
+            url = config.get(section,'url')
+            if 'posts' in config.options(section): 
+                posts = config.get(section, 'posts') 
+            else: 
+                posts = 'posts' 
+            service = ''
+            for option in config.options(section):
+                if (option in delayed) or (option in direct):
+                    key = option 
+                    iniK = key[0] 
+                    myDelayed = config.get(section, option)
+                    delayedList = []
+                    if isinstance(myDelayed, str) and len(myDelayed)<5: 
+                        for dd in content:
+                            if ((dd[0] in myDelayed) 
+                                    and (dd in config.options(section))): 
+                                delayedList.append(dd)
+                    elif isinstance(myDelayed, str): 
+                        if myDelayed.find('\n'):
+                            myDelayed = myDelayed.split('\n') 
+                        else:
+                            myDelayed = [ myDelayed ]
+                        for myDel in myDelayed: 
+                            delayedList.append(myDel)
+
+                    for dd in delayedList: 
+                        nick = config.get(section, dd) 
+                        toAppend = ((config.get(section, 'url'), 
+                                (dd, nick, posts)), '')
+
+                        iniK, nKey = self.getIniKey(key, myKeys, myIniKeys) 
+                        if iniK not in self.available: 
+                                self.available[iniK] = {'name':nKey, 
+                                        'data':[], 'social':[]}
+                        if (toAppend, '') not in self.available[iniK]['data']:
+                                self.available[iniK]['data'].append(toAppend) 
+ 
+                if option in content:
+                    nick = config.get(section, option)
+                    key = option 
+                    if option == 'rss':
+                        url = config.get(section, 'url')+nick
+                    #elif config.get(section, 'url').find('slack')>=0:
+                    #    url = config.get(section, 'url')
+                    #    #print("url",url)
+                    else: 
+                        url = config.get(section, option)
+                    #toAppend = ((nick, (option, nick, posts)), '')
+                    toAppend = ((url, (option, nick, posts)), '')
+                    #print("url toapp",toAppend)
+                    iniK, nKey = self.getIniKey(key, myKeys, myIniKeys) 
+                    if iniK not in self.available: 
+                        self.available[iniK] = {'name':nKey, 
+                                'data':[], 'social':[]}
+                    if toAppend not in self.available[iniK]['data']:
+                        self.available[iniK]['data'].append(toAppend) 
+
+        for av in self.available:
+            for it in self.available[av]['data']:
+                logging.debug("it available {}".format(str(it)))
+        logging.debug("available %s"%str(self.available))
+
+        myList = []
+        for elem in self.available:
+            component = '{}: {}'.format(self.available[elem]['name'], 
+                    len(self.available[elem]['data']))
+            myList.append(component) 
+            
+
+        if myList:
+            self.availableList = myList
+        logging.debug("available list %s"%str(self.availableList))
+
+
+    def checkConfigFiless(self):
+        config = configparser.ConfigParser()
+        config.read(CONFIGDIR + '/.rssBlogs')
+
+        delayed = ['cache', 'buffer']
+        direct = ['direct']
         content = ['twitter', 'facebook', 'mastodon', 'linkedin',
                 'imgur','rss','forum', 'slack', 'gmail','imdb','pocket']
         types = ['posts','drafts']
@@ -279,7 +369,8 @@ class Buffer(BotPlugin):
         myList[theKey] = []
         for key in self.available:
             for i, elem in enumerate(self.available[key]['data']):
-                myList[theKey].append((elem[0], key, '{}-{}'.format(key,i)))
+                if (args and (key == args)) or not args:
+                    myList[theKey].append((elem[0], key, '{}-{}'.format(key,i)))
         self.log.info("myList: %s" % str(myList))
 
         response = self.sendReply('', '', myList, ['sent','pending'])
@@ -293,7 +384,13 @@ class Buffer(BotPlugin):
             if arg[0].capitalize() == key.capitalize(): 
                 if arg[1:].isdigit(): 
                     pos = int(arg[1:]) 
-                    if pos < len(self.available[key]['data']): 
+                #else:
+                #    cad = arg[1:] 
+                #    self.log.debug("Argss... {}".format(str(cad)))
+                #    num = ord(cad.upper())-ord('A') 
+                #    self.log.debug("Argss... {}".format(num))
+                #    pos = 10+num 
+                if pos < len(self.available[key]['data']): 
                         myList.append(arg)
         self.log.debug("mylist... %s"%str(myList))
 
@@ -320,7 +417,7 @@ class Buffer(BotPlugin):
             for element in myList:
                 self.log.info("Element %s" % str(element))
 
-                name, nick, profile, param = self.getSocialNetwork(element)
+                name, nick, profile, param, socialNetworks = self.getSocialNetwork(element)
                 self.log.debug("Result: {} {} {}".format(element, 
                     profile, name))
                 self.log.debug("clients : {}".format(str(self.clients)))
@@ -401,7 +498,7 @@ class Buffer(BotPlugin):
         url = self.available[key]['data'][pos][0][0]
         nick = ((self.available[key]['data'][pos][0][0], 
                 self.available[key]['data'][pos][0][1]))
-        socialNetworks = self.available[key]['data'][pos][2]
+        socialNetworks = [nick] #self.available[key]['data'][pos][2]
         self.log.info("Nick %s",str(nick))
         name = nick
         param = nick
