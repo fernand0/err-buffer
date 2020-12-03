@@ -123,8 +123,9 @@ class Buffer(BotPlugin):
                 if option in content:
                     nick = config.get(section, option)
                     key = option 
-                    if option == 'rss':
-                        url = config.get(section, 'url')+nick
+                    if option == 'rss': 
+                        url = urllib.parse.urljoin(url,nick)
+                        #url = config.get(section, 'url')+nick
                     #elif config.get(section, 'url').find('slack')>=0:
                     #    url = config.get(section, 'url')
                     #    #print("url",url)
