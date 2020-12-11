@@ -83,6 +83,10 @@ class Buffer(BotPlugin):
         self.available = {}
 
         for section in config.sections():
+            if 'posts' in config.options(section): 
+                posts = config.get(section, 'posts') 
+            else: 
+                posts = 'posts' 
             url = config.get(section,'url')
             service = ''
             for option in config.options(section):
@@ -106,10 +110,10 @@ class Buffer(BotPlugin):
 
                     for dd in delayedList: 
                         nick = config.get(section, dd) 
-                        if 'posts' in config.options(section): 
-                            posts = config.get(section, 'posts') 
-                        else: 
-                            posts = 'posts' 
+                        #if 'posts' in config.options(section): 
+                        #    posts = config.get(section, 'posts') 
+                        #else: 
+                        #    posts = 'posts' 
                         toAppend = ((config.get(section, 'url'), 
                                 (dd, nick, posts)), '')
 
@@ -120,9 +124,12 @@ class Buffer(BotPlugin):
                         if (toAppend, '') not in self.available[iniK]['data']:
                                 self.available[iniK]['data'].append(toAppend) 
  
-                if option in content:
+                if 'service' in config.options(section):
+                    service = config.get(section, 'service') 
+                if (option in content): # or (service and (service in content))):
                     nick = config.get(section, option)
                     key = option 
+                    if service: key = service
                     if option == 'rss': 
                         url = urllib.parse.urljoin(url,nick)
                         #url = config.get(section, 'url')+nick
@@ -133,10 +140,10 @@ class Buffer(BotPlugin):
                         url = config.get(section, option)
                     #toAppend = ((nick, (option, nick, posts)), '')
 
-                    if 'posts' in config.options(section): 
-                        posts = config.get(section, 'posts') 
-                    else: 
-                        posts = 'posts' 
+                    #if 'posts' in config.options(section): 
+                    #    posts = config.get(section, 'posts') 
+                    #else: 
+                    #    posts = 'posts' 
                     toAppend = ((url, (option, nick, posts)), '')
                     #print("url toapp",toAppend)
                     iniK, nKey = self.getIniKey(key, myKeys, myIniKeys) 
