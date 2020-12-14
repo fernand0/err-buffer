@@ -571,10 +571,11 @@ class Buffer(BotPlugin):
                 self.log.debug("Url: %s" % str(nick))
                 self.log.debug("Nick: %s" % str(nick))
                 self.log.debug("sN: {}".format(socialNetworks))
+                self.log.debug("ssN: {}".format(socialNetworks[0][1]))
                 try:
                     self.clients[(element, profile, name)].setPosts()
                     self.clients[(element, profile, name)].newsetSocialNetworks(
-                            socialNetworks)
+                            socialNetworks[0][1])
                 except:
                     import importlib
                     if profile.find('-')>=0:
@@ -595,7 +596,7 @@ class Buffer(BotPlugin):
                                 typePosts)                    
                     self.clients[(element, profile, name)].setPosts()
                     self.clients[(element, profile, name)].newsetSocialNetworks(
-                            socialNetworks)
+                            socialNetworks[0][1])
 
                 postsTmp = [] 
                 posts = [] 
