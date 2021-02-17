@@ -133,8 +133,8 @@ class Buffer(BotPlugin):
                     if option == 'rss': 
                         url = urllib.parse.urljoin(url,nick)
                         #url = config.get(section, 'url')+nick
-                    #elif config.get(section, 'url').find('slack')>=0:
-                    #    url = config.get(section, 'url')
+                    elif config.get(section, 'url').find('slack')>=0:
+                        url = config.get(section, 'url')
                     #    #print("url",url)
                     else: 
                         url = config.get(section, option)
@@ -602,20 +602,31 @@ class Buffer(BotPlugin):
                 sN = socialNetworks[0][1][0]
                 logging.debug("ssN...: {}".format(str(sN)))
                 sNNick = socialNetworks[0][1][1]
+                logging.debug("ssNick...: {}".format(str(sNNick)))
                 if (sN != name[0]): 
                     logging.warning(f"sN {sN} and {name[0]} differ")
                 if (sNNick != name[1]): 
                     logging.warning(f"sNNick {sNNick} and {name[1]} differ")
 
+                logging.debug(f"Element {element} "
+                              f"Profile {profile} Name {name}")
                 try:
                     logging.debug("sN--> {}".format(str(sN)))
                     self.clients[(element, profile, name)].setPosts()
-                    logging.debug("sN--> {}".format(str(sN)))
+                    logging.debug("sN---> {}".format(str(sN)))
                     self.clients[(element, profile, name)].setSocialNetworks(
                             {sN:sNNick})
+                    logging.debug("sN----> {}".format(str(sN)))
+                    logging.debug("sNetworks--> {}".format(str( 
+                        self.clients[(
+                            element, profile, name)].getSocialNetworks()
+                    )))
                 except:
                     if profile.find('-')>=0:
                         profile = profile.split('-')[0]
+
+                    logging.debug(f"Element {element} "
+                                  f"Profile {profile} Name {name}")
                     if sN == 'rss':
                         name = (name[0], socialNetworks[0][0], name[2])
                     if ((socialNetworks[0][0].find('slack')>=0)
@@ -623,17 +634,21 @@ class Buffer(BotPlugin):
                         name = (socialNetworks[0][0], name[0], name[1])
                     logging.debug(f"new Name {name}")
 
+                    logging.debug(f"Element {element} "
+                                  f"Profile {profile} Name {name}")
                     api = getApi(profile.capitalize(), name)
                     self.clients[(element, profile, name)] = api
-                    logging.debug("Setting posts type {}".format(typePosts))
-                    if not self.clients[(element, profile, 
-                        name)].getPostsType(): 
-                        self.clients[(element, profile, name)].setPostsType(
+                    self.clients[(element, profile, name)].setPostsType(
                                 typePosts)                    
 
                     self.clients[(element, profile, name)].setPosts()
                     self.clients[(element, profile, name)].setSocialNetworks(
                             {sN:sNNick})
+
+                    logging.debug("sNetworks--> {}".format(str( 
+                        self.clients[(
+                            element, profile, name)].getSocialNetworks()
+                    )))
                 self.log.debug("posts",self.clients[(element, profile, name)].getPosts())
 
                 postsTmp = [] 
@@ -823,7 +838,39 @@ class Buffer(BotPlugin):
     @botcmd
     def publish(self, mess, args):
         """A command to publish some update"""
-        res = self.execute('publish', args)
+
+        # Dirty trick?
+        logging.info(f"Publishing {args}")
+        res = ""
+        for client in self.clients:
+            if client[0].upper() == args[:2].upper():
+                myClient = client
+        for avail in self.available['c']['data']:
+            logging.info(f"avail {avail[0][0]} {self} {args}")
+            logging.info(f"avail {myClient}")
+            if myClient[2][0] == avail[0][0]: 
+                logging.info(f"is avail {avail}")
+                api = getApi('cache', (avail[0][0], 
+                    avail[0][1][0], avail[0][1][1]))
+                post = self.clients[client].obtainPostData(int(args[2:]))
+                logging.info(f"Post: {post}")
+                api.setPosts()
+                reply = api.addPosts((post, ))
+                res = f"{res}\n{reply}"
+                logging.info(f"Posts: {api.getPosts()}")
+        for avail in self.available['j']['data']:
+            logging.info(f"avail {avail[0][0]} {self} {args}")
+            logging.info(f"avail {avail}")
+            logging.info(f"avail {myClient}")
+            if myClient[2][0] == avail[0][1][0]: 
+                logging.info(f"is avail {avail}")
+                logging.info(f"Api: {self.clients[myClient]}")
+
+                reply = self.clients[myClient].publish(int(args[2:]))
+                res = f"{res}\n{reply}"
+ 
+        # Not sure about this
+        # res = self.execute('publish', args)
         yield res 
         yield end()
 
