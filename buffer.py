@@ -114,7 +114,7 @@ class Buffer(BotPlugin):
                         #    posts = config.get(section, 'posts') 
                         #else: 
                         #    posts = 'posts' 
-                        toAppend = ((config.get(section, 'url'), 
+                        toAppend = (((config.get(section, 'url'), posts),
                                 (dd, nick, posts)), '')
 
                         iniK, nKey = self.getIniKey(key, myKeys, myIniKeys) 
@@ -138,14 +138,7 @@ class Buffer(BotPlugin):
                     #    #print("url",url)
                     else: 
                         url = config.get(section, option)
-                    #toAppend = ((nick, (option, nick, posts)), '')
-
-                    #if 'posts' in config.options(section): 
-                    #    posts = config.get(section, 'posts') 
-                    #else: 
-                    #    posts = 'posts' 
-                    toAppend = ((url, (option, nick, posts)), '')
-                    #print("url toapp",toAppend)
+                    toAppend = (((url, posts), (option, nick, posts)), '')
                     iniK, nKey = self.getIniKey(key, myKeys, myIniKeys) 
                     if iniK not in self.available: 
                         self.available[iniK] = {'name':nKey, 
@@ -168,109 +161,6 @@ class Buffer(BotPlugin):
         if myList:
             self.availableList = myList
         logging.debug("available list %s"%str(self.availableList))
-
-    #def checkConfigFiles(self):
-    #    config = configparser.ConfigParser()
-    #    config.read(CONFIGDIR + '/.rssBlogs')
-
-    #    delayed = ['cache', 'buffer']
-    #    direct = ['direct']
-    #    content = ['twitter', 'facebook', 'mastodon', 'linkedin', 'xmlrpc',
-    #            'imgur','rss','forum', 'slack', 'gmail','imdb','pocket',  
-    #            'wordpress','flickr', 'tumblr', 'devto','medium','telegram']
-    #    types = ['posts','drafts']
-
-    #    myKeys = {}
-    #    myIniKeys = []
-    #    self.available = {}
-
-    #    for section in config.sections():
-    #        if 'posts' in config.options(section): 
-    #            posts = config.get(section, 'posts') 
-    #        else: 
-    #            posts = 'posts' 
-    #        url = config.get(section,'url')
-    #        service = ''
-    #        for option in config.options(section):
-    #            if (option in delayed) or (option in direct):
-    #                key = option 
-    #                iniK = key[0] 
-    #                myDelayed = config.get(section, option)
-    #                delayedList = []
-    #                if isinstance(myDelayed, str) and len(myDelayed)<5: 
-    #                    for dd in content:
-    #                        if ((dd[0] in myDelayed) 
-    #                                and (dd in config.options(section))): 
-    #                            delayedList.append(dd)
-    #                elif isinstance(myDelayed, str): 
-    #                    if myDelayed.find('\n'):
-    #                        myDelayed = myDelayed.split('\n') 
-    #                    else:
-    #                        myDelayed = [ myDelayed ]
-    #                    for myDel in myDelayed: 
-    #                        delayedList.append(myDel)
-
-    #                for dd in delayedList: 
-    #                    nick = config.get(section, dd) 
-    #                    #if 'posts' in config.options(section): 
-    #                    #    posts = config.get(section, 'posts') 
-    #                    #else: 
-    #                    #    posts = 'posts' 
-    #                    toAppend = ((config.get(section, 'url'), 
-    #                            (dd, nick, posts)), '')
-
-    #                    iniK, nKey = self.getIniKey(key, myKeys, myIniKeys) 
-    #                    if iniK not in self.available: 
-    #                            self.available[iniK] = {'name':nKey, 
-    #                                    'data':[], 'social':[]}
-    #                    if (toAppend, '') not in self.available[iniK]['data']:
-    #                            self.available[iniK]['data'].append(toAppend) 
- 
-    #            if 'service' in config.options(section):
-    #                service = config.get(section, 'service') 
-    #            if (option in content): # or (service and (service in content))):
-    #                nick = config.get(section, option)
-    #                key = option 
-    #                if service: key = service
-    #                if option == 'rss': 
-    #                    url = urllib.parse.urljoin(url,nick)
-    #                    #url = config.get(section, 'url')+nick
-    #                #elif config.get(section, 'url').find('slack')>=0:
-    #                #    url = config.get(section, 'url')
-    #                #    #print("url",url)
-    #                else: 
-    #                    url = config.get(section, option)
-    #                #toAppend = ((nick, (option, nick, posts)), '')
-
-    #                #if 'posts' in config.options(section): 
-    #                #    posts = config.get(section, 'posts') 
-    #                #else: 
-    #                #    posts = 'posts' 
-    #                toAppend = ((url, (option, nick, posts)), '')
-    #                #print("url toapp",toAppend)
-    #                iniK, nKey = self.getIniKey(key, myKeys, myIniKeys) 
-    #                if iniK not in self.available: 
-    #                    self.available[iniK] = {'name':nKey, 
-    #                            'data':[], 'social':[]}
-    #                if toAppend not in self.available[iniK]['data']:
-    #                    self.available[iniK]['data'].append(toAppend) 
-
-    #    for av in self.available:
-    #        for it in self.available[av]['data']:
-    #            logging.debug("it available {}".format(str(it)))
-    #    logging.debug("available %s"%str(self.available))
-
-    #    myList = []
-    #    for elem in self.available:
-    #        component = '{}: {}'.format(self.available[elem]['name'], 
-    #                len(self.available[elem]['data']))
-    #        myList.append(component) 
-    #        
-
-    #    if myList:
-    #        self.availableList = myList
-    #    logging.debug("available list %s"%str(self.availableList))
-
 
     def addMore(self):
         response = "There are {0} lists. You can add more with command list add".format(len(self.config))
@@ -504,53 +394,42 @@ class Buffer(BotPlugin):
         yield response
         yield end()
 
+    def getUrlSelected(self, selected):
+        url = selected[0][0][0]
+        return url
+
+    def getSelectedProfile(self, key, pos):
+        selected = self.available[key]['data'][pos]
+        return selected
+
+    def getProfile(self, key):
+        profile = self.available[key]['name']
+        return profile
+
     def getSocialProfile(self, element):
         key = element[0].lower()
+        logging.info("Key: %s",str(key))
         pos = int(element[1:])
-        profile = self.available[key]['name']
-        logging.debug("Prof %s",str(profile))
-        logging.debug("Selected %s",str(self.available[key]['data'][pos]))
-        url = self.available[key]['data'][pos][0][0]
-        nick = ((self.available[key]['data'][pos][0][0], 
-                self.available[key]['data'][pos][0][1]))
-        socialNetworks = [nick] 
-        logging.info("Nick %s",str(nick))
+        profile = self.getProfile(key)
+        logging.debug(f"Profile: {profile}")
+        selected = self.getSelectedProfile(key,pos)
+        logging.debug(f"Selected: {selected}")
+        url = self.getUrlSelected(selected)
+        logging.debug(f"Url: {url}")
+        nick = selected[0] 
+        logging.debug(f"Nick: {nick}")
+        socialNetworks = [nick[1]] 
         name = nick
-        if key[0] == 's':
+        # if key[0] == 's':
+        #     name = nick[0][0]
+        # el
+        if type(nick) == tuple:
             name = nick[0]
-            nick = None
-        elif type(nick) == tuple:
-            nick = nick[1]
-            name = nick
         elif nick.find('@') >= 0:
             nick, profile = nick.split('@')
             name = nick
         return (name, profile, socialNetworks)
 
-    #def getSocialProfile(self, element):
-    #    key = element[0].lower()
-    #    pos = int(element[1:])
-    #    profile = self.available[key]['name']
-    #    logging.debug("Prof %s",str(profile))
-    #    logging.debug("Selected %s",str(self.available[key]['data'][pos]))
-    #    url = self.available[key]['data'][pos][0][0]
-    #    nick = ((self.available[key]['data'][pos][0][0], 
-    #            self.available[key]['data'][pos][0][1]))
-    #    socialNetworks = [nick] 
-    #    logging.info("Nick %s",str(nick))
-    #    name = nick
-    #    param = nick
-    #    if key[0] == 's':
-    #        name = nick[0]
-    #        nick = None
-    #        param = None
-    #    elif type(nick) == tuple:
-    #        nick = nick[1]
-    #        name = nick
-    #    elif nick.find('@') >= 0:
-    #        nick, profile = nick.split('@')
-    #        name = nick
-    #    return (name, profile, param, socialNetworks)
 
     @botcmd(split_args_with=None, template="buffer")
     def list(self, mess, args):
@@ -588,28 +467,41 @@ class Buffer(BotPlugin):
 
         if pos >= 0:
             for element in myList:
+                logging.debug("Clients %s" % str(self.clients))
                 logging.debug("Element %s" % str(element))
                 name, profile, socialNetworks = self.getSocialProfile(element)
-                logging.debug("Name %s Profile %s"%(str(name), str(profile)))
+                logging.debug(f"Name: {name}")
+                logging.debug(f"Profile: {profile}")
+                logging.debug(f"SocialNetworks: {socialNetworks}")
                 if isinstance(name, tuple):
-                    typePosts = name[2]
+                    typePosts = name[1]
                 else:
                     # Some problem with moduleSlack
                     typePosts = 'posts'
-                logging.debug("Clients %s" % str(self.clients))
-                logging.debug("sN: {}".format(socialNetworks))
                 logging.debug("ssN: {}".format(socialNetworks[0][1]))
-                sN = socialNetworks[0][1][0]
-                logging.debug("ssN...: {}".format(str(sN)))
-                sNNick = socialNetworks[0][1][1]
-                logging.debug("ssNick...: {}".format(str(sNNick)))
+                sN = socialNetworks[0][0]
+                logging.debug(f"Social Network: {sN}")
+                sNNick = socialNetworks[0][1]
+                logging.debug(f"Social Network Nick: {sNNick}")
                 if (sN != name[0]): 
                     logging.warning(f"sN {sN} and {name[0]} differ")
                 if (sNNick != name[1]): 
                     logging.warning(f"sNNick {sNNick} and {name[1]} differ")
 
-                logging.debug(f"Element {element} "
-                              f"Profile {profile} Name {name}")
+                logging.debug(f"Element profile Name")
+                logging.debug(f"({element}, {profile}, {name})")
+                if profile.startswith('cache'):
+                    name = (name[0], (sN, sNNick))
+                elif profile.startswith('direct'):
+                    # Only for pocket
+                    if name[0].find('pocket')>=0:
+                        name = (name[0], ('pocket', 
+                            name[0].split('/')[-1][1:]))
+                    elif name[0].find('tumblr')>=0:
+                        name = (name[0], ('tumblr', 
+                            name[0].split('.')[0].split('/')[-1]))
+                logging.debug(f"({element}, {profile}, {name})")
+
                 try:
                     logging.debug("sN--> {}".format(str(sN)))
                     self.clients[(element, profile, name)].setPosts()
@@ -629,9 +521,9 @@ class Buffer(BotPlugin):
                                   f"Profile {profile} Name {name}")
                     if sN == 'rss':
                         name = (name[0], socialNetworks[0][0], name[2])
-                    if ((socialNetworks[0][0].find('slack')>=0)
-                            or (socialNetworks[0][0].find('img')>=0)):
-                        name = (socialNetworks[0][0], name[0], name[1])
+                    # if ((socialNetworks[0][0].find('slack')>=0)
+                    #         or (socialNetworks[0][0].find('img')>=0)):
+                    #     name = (socialNetworks[0][0], name[0], name[1])
                     logging.debug(f"new Name {name}")
 
                     logging.debug(f"Element {element} "
@@ -659,27 +551,35 @@ class Buffer(BotPlugin):
                     logging.debug("Types %s"%(self.clients[(element, 
                         profile, name)].getPostsType()))
 
-                    if self.clients[(element, profile, name)].getPostsType() == 'drafts': 
-                        postsTmp = self.clients[(element, profile, name)].getDrafts() 
+                    if self.clients[(element, profile, 
+                                     name)].getPostsType() == 'drafts': 
+                        postsTmp = self.clients[(element, profile, 
+                                                 name)].getDrafts() 
                     else: 
-                        postsTmp = self.clients[(element, profile, name)].getPosts()
+                        postsTmp = self.clients[(element, profile, 
+                                                 name)].getPosts()
                 else:
-                        postsTmp = self.clients[(element, profile, name)].getPosts
+                        postsTmp = self.clients[(element, profile, 
+                                                 name)].getPosts
                 if postsTmp:
                     for (i, post) in enumerate(postsTmp):
                         if (hasattr(self.clients[(element, profile, name)], 
                             'getPostLine')):
-                            title = self.clients[(element, profile, name)].getPostLine(post)
+                            title = self.clients[(element, profile, 
+                                                  name)].getPostLine(post)
                             link = ''
                         else: 
-                            title = self.clients[(element, profile, name)].getPostTitle(post)
-                            link = self.clients[(element, profile, name)].getPostLink(post)
+                            title = self.clients[(element, profile, 
+                                                  name)].getPostTitle(post)
+                            link = self.clients[(element, profile, 
+                                                 name)].getPostLink(post)
                         posts.append((title, link, '{:2}'.format(i)))
                         #logging.debug("I: %s %s %d"%(title,link,i))
 
                 self.posts[(element, profile, name)] = posts
                 logging.info("Posts posts %s" % (self.posts))
-                response = self.sendReply(mess, args, self.posts, ['sent','pending'])
+                response = self.sendReply(mess, args, 
+                                          self.posts, ['sent','pending'])
                 logging.debug("Response %s End" % str(response))
 
         if response: 
@@ -842,31 +742,42 @@ class Buffer(BotPlugin):
         # Dirty trick?
         logging.info(f"Publishing {args}")
         res = ""
+        logging.info(f"Clients: {self.clients}")
         for client in self.clients:
+            logging.info(f"client client {client}")
             if client[0].upper() == args[:2].upper():
                 myClient = client
         for avail in self.available['c']['data']:
-            logging.info(f"avail {avail[0][0]} {self} {args}")
-            logging.info(f"avail {myClient}")
-            if myClient[2][0] == avail[0][0]: 
-                logging.info(f"is avail {avail}")
-                api = getApi('cache', (avail[0][0], 
-                    avail[0][1][0], avail[0][1][1]))
-                post = self.clients[client].obtainPostData(int(args[2:]))
+            logging.info(f"avail avail {avail} {self} {args}")
+            logging.info(f"avail avail {avail[0][1]} {self} {args}")
+            logging.info(f"avail myClient {myClient}")
+            # if (myClient[2][1][0] == avail[0][1][0]):
+            if ((myClient[2][1][0] == avail[0][1][0])
+                    and (myClient[2][0] == avail[0][0][0])):
+                logging.info(f"is avail c {avail}")
+                orig = self.clients[myClient]
+                dest = getApi(avail[0][1][0], avail[0][1][1])
+                logging.debug(f"Api orig: {orig}") 
+                logging.debug(f"Api dest: {dest}")
+                post = orig.obtainPostData(int(args[2:]))
                 logging.info(f"Post: {post}")
-                api.setPosts()
-                reply = api.addPosts((post, ))
+                reply = dest.publishPost(post[0], post[1], '')
+                if reply != 'Fail!':
+                    orig.delete(int(args[2:]))
                 res = f"{res}\n{reply}"
-                logging.info(f"Posts: {api.getPosts()}")
         for avail in self.available['j']['data']:
             logging.info(f"avail {avail[0][0]} {self} {args}")
-            logging.info(f"avail {avail}")
-            logging.info(f"avail {myClient}")
-            if myClient[2][0] == avail[0][1][0]: 
-                logging.info(f"is avail {avail}")
-                logging.info(f"Api: {self.clients[myClient]}")
-
-                reply = self.clients[myClient].publish(int(args[2:]))
+            logging.info(f"avail avail {avail}")
+            logging.info(f"avail myClient {myClient}")
+            if myClient[2][0] == avail[0][0][0]: 
+                logging.info(f"is avail j {avail}")
+                orig = self.clients[myClient]
+                dest = getApi(avail[0][1][0], avail[0][1][1])
+                logging.info(f"Orig: {orig}")
+                logging.debug(f"Api dest: {dest}")
+                reply = orig.publish(int(args[2:]))
+                # This should be: getting post from orig, using dest to publish
+                # ??
                 res = f"{res}\n{reply}"
  
         # Not sure about this
@@ -982,7 +893,7 @@ class Buffer(BotPlugin):
             logging.info("socialNetwork ... %s" % str(socialNetwork))
             if theUpdates: 
                 if len(socialNetwork)>2:
-                    socialNetworktxt = socialNetwork[2][1].capitalize()+' (' + socialNetwork[2][0] + ' ' + socialNetwork[0]+')'
+                    socialNetworktxt = socialNetwork[2][1][0].capitalize()+' (' + socialNetwork[2][1][1] + ' ' + socialNetwork[0]+')'
                     if len(socialNetworktxt)+3 > maxLen:
                         maxLen = len(socialNetworktxt)+3
                     if (1 + len(theUpdates))*maxLen > 1024:
