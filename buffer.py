@@ -31,14 +31,409 @@ class Buffer(BotPlugin):
         super(Buffer, self).activate()
 
         self.clients = {}
+        self.clients2 = {}
         self.posts = {}
+        self.posts2 = {}
         self.config = []
+        self.config2 = []
         self.available = None
+        self.available2 = None
         self.schedules = None
         self.lastList = None
         self.lastEdit = None
         self.lastLink = None
         self.argsArchive = []
+
+    def hasSetMethods(self, service):
+        if service == "social":
+            return []
+        clsService = getModule(service)
+        listMethods = clsService.__dir__()
+
+        methods = []
+        for method in listMethods:
+            if (not method.startswith("__")) and (method.find("set") >= 0):
+                action = "set"
+                target = ""
+                myModule = eval(f"clsService.{method}.__module__")
+
+                if method.find("Api") >= 0:
+                    target = method[len("setApi"):].lower()
+                # elif (clsService.setPosts.__module__
+                elif myModule == f"module{service.capitalize()}":
+                    target = method[len("set"):].lower()
+                if target and (
+                    target.lower() in ["posts", "drafts", "favs", 
+                                       "messages", "queue"]
+                ):
+                    toAppend = (action, target)
+                    if not (toAppend in methods):
+                        methods.append(toAppend)
+        return methods
+
+    def hasPublishMethod(self, service):
+        clsService = getModule(service)
+        listMethods = clsService.__dir__()
+
+        methods = []
+        for method in listMethods:
+            if method.find("publish") >= 0:
+                action = "publish"
+                target = ""
+                moduleService = clsService.publishPost.__module__
+                if method.find("Api") >= 0:
+                    target = method[len("publishApi"):].lower()
+                    logging.info(f"Target api {target}")
+                elif moduleService == f"module{service.capitalize()}":
+                    target = method[len("publish"):].lower()
+                    logging.info(f"Target mod {target}")
+                #else:
+                #    target = 'post'
+                #    logging.info(f"Target else {target}")
+                if target:
+                    toAppend = (action, target)
+                    if not (toAppend in methods):
+                        methods.append(toAppend)
+        return methods
+
+    def getServices(self):
+        modulesFiles = os.listdir('/home/ftricas/usr/src/socialModules')
+        modules = {"special": ["cache", "direct"], "regular": []}
+        # Initialized with some special services
+        name = "module"
+        for module in modulesFiles:
+            if module.startswith(name):
+                moduleName = module[len(name): -3].lower()
+                if not (moduleName in modules["special"]):
+                    # We drop the 'module' and the '.py' parts
+                    modules["regular"].append(moduleName)
+
+        return modules
+
+    def checkRules(self):
+        config = configparser.ConfigParser()
+        config.read(CONFIGDIR + "/.rssBlogs")
+
+        services = self.getServices()
+
+        srcs = []
+        dsts = []
+        ruls = {}
+        impRuls = []
+        acts = []
+        for section in config.sections():
+            url = config.get(section, "url")
+            logging.info(f"Url: {url}")
+            # Sources
+            if "rss" in config.options(section):
+                rss = config.get(section, "rss")
+                logging.info(f"Service: rss -> {rss}")
+                toAppend = ("rss", "set",
+                            urllib.parse.urljoin(url, rss), "posts")
+                srcs.append(toAppend)
+            else:
+                print(f"url {url}")
+                for service in services["regular"]:
+                    if (
+                        ("service" in config[section])
+                        and (service == config[section]["service"])
+                       ) or (url.find(service) >= 0): 
+                        methods = self.hasSetMethods(service)
+                        print(f"Has set {methods}")
+                        for method in methods:
+                            # If it has a method for setting, we can set
+                            # directly using this
+                            if service in config[section]:
+                                nick = config[section][service]
+                            else:
+                                nick = url
+                                if nick.find("slack") < 0:
+                                    nick = nick.split("/")[-1]
+                            toAppend = (service, "set", nick, method[1])
+                            if not (toAppend in srcs):
+                                srcs.append(toAppend)
+            fromSrv = toAppend
+
+            # Destinations
+            hasSpecial = False
+            for service in services["special"]:
+                toAppend = ""
+                print(f"Service: {service}")
+                if service in config.options(section):
+                    valueE = config.get(section, service).split("\n")
+                    for val in valueE:
+                        nick = config.get(section, val)
+                        logging.info(f"Service special: {service} "
+                                     f"({val}, {nick})")
+                        if service == "direct":
+                            url = 'posts'
+                            if 'posts' in config[section]:
+                                fromSrv = (fromSrv[0], fromSrv[1], fromSrv[2],
+                                           config[section]['posts'])
+                            #else:
+                            #    url = ""
+                        toAppend = (service, url, val, nick)
+                        logging.info(f"Service special toAppend: {toAppend} ")
+                        logging.info(f"Service special from: {fromSrv} ")
+                        if toAppend not in dsts:
+                            dsts.append(toAppend)
+                        if toAppend:
+                            if fromSrv in ruls:
+                                ruls[fromSrv].append(toAppend)
+                            else:
+                                ruls[fromSrv] = []
+                                ruls[fromSrv].append(toAppend)
+
+                            # if 'imp' in ruls:
+                            #     ruls['imp'].append((('direct', 'post', 
+                            #             toAppend[2], toAppend[3])))
+                            # else:
+                            #     ruls['imp'] = []
+                            #     ruls['imp'].append((('direct', 'post', 
+                            #             toAppend[2], toAppend[3])))
+                            # ruls.append((toAppend,
+                            #        (('direct', 'post', 
+                            #            toAppend[2], toAppend[3]))))
+                        #(toAppend[2][1][0], 'set', toAppend[2][1][1], 'posts'), ('direct', 'post',
+
+
+                            hasSpecial = True
+
+            for service in services["regular"]:
+                toAppend = ""
+                if service in config.options(section):
+                    methods = self.hasPublishMethod(service)
+                    logging.info(f"Service: {service} has {methods}")
+                    logging.info(f"Methods: {methods}")
+                    for method in methods:
+                        # If it has a method for publishing, we can publish
+                        # directly using this
+
+                        toAppend = (
+                            "direct",
+                            method[1],
+                            service,
+                            config.get(section, service),
+                        )
+                        if not (toAppend in dsts):
+                            dsts.append(toAppend)
+                        if toAppend:
+                            if hasSpecial: 
+                                fromSrvSp = ('cache', 'set', (fromSrv[2], 
+                                    (toAppend[2], toAppend[3])), 'posts')
+                                impRuls.append((fromSrvSp, toAppend))
+
+                                if fromSrvSp in ruls:
+                                    ruls[fromSrvSp].append(toAppend)
+                                else:
+                                    ruls[fromSrvSp] = []
+                                    ruls[fromSrvSp].append(toAppend)
+
+                            else: 
+                                if fromSrv in ruls:
+                                    ruls[fromSrv].append(toAppend)
+                                else:
+                                    ruls[fromSrv] = []
+                                    ruls[fromSrv].append(toAppend)
+
+        # Now we can see which destinations can be also sources
+        for dst in dsts:
+            if dst[0] == "direct":
+                service = dst[2]
+                methods = self.hasSetMethods(service)
+                for method in methods:
+                    logging.debug(f"cache dst {dst}")
+                    toAppend = (service, "set", dst[3], method[1])
+                    if not (toAppend in srcs):
+                        srcs.append(toAppend)
+            elif dst[0] == "cache":
+                toAppend = (dst[0], "set", (dst[1], (dst[2], dst[3])), "posts")
+                if not (toAppend in srcs):
+                    srcs.append(toAppend) 
+
+        available = {} 
+        myKeys = {}
+        myIniKeys = [] 
+        for src in srcs: 
+            iniK, nameK = self.getIniKey(src[0], myKeys, myIniKeys)
+            if not (iniK in  available): 
+                available[iniK] = {'name':src[0], 'data':[], 'social':[]}
+                available[iniK]['data'] = [src[1:]]
+            else:
+                available[iniK]['data'].append(src[1:])
+
+        self.available2 = available
+
+        myList = []
+        for elem in self.available2: 
+            component = f"{elem}) " \
+                        f"{self.available2[elem]['name']}: " \
+                        f"{len(self.available2[elem]['data'])}"
+            myList.append(component) 
+            
+        if myList:
+            self.availableList2 = myList
+
+        self.rules = ruls
+
+        return (srcs, dsts, ruls, impRuls)
+
+
+    def checkRulesOld(self):
+        config = configparser.ConfigParser()
+        config.read(CONFIGDIR + "/.rssBlogs")
+
+        services = self.getServices()
+
+        srcs = []
+        dsts = []
+        ruls = {}
+        impRuls = []
+        acts = []
+        for section in config.sections():
+            url = config.get(section, "url")
+            logging.info(f"Url: {url}")
+            # Sources
+            if "rss" in config.options(section):
+                rss = config.get(section, "rss")
+                logging.info(f"Service: rss -> {rss}")
+                toAppend = ("rss", "set",
+                            urllib.parse.urljoin(url, rss), "posts")
+                srcs.append(toAppend)
+            else:
+                print(f"url {url}")
+                for service in services["regular"]:
+                    if (
+                        ("service" in config[section])
+                        and (service == config[section]["service"])
+                    ) or (url.find(service) >= 0):
+                        methods = self.hasSetMethods(service)
+                        print(f"Has set {methods}")
+                        for method in methods:
+                            # If it has a method for setting, we can set
+                            # directly using this
+                            if service in config[section]:
+                                nick = config[section][service]
+                            else:
+                                nick = url
+                                if nick.find("slack") < 0:
+                                    nick = nick.split("/")[-1]
+                            toAppend = (service, "set", nick, method[1])
+                            if not (toAppend in srcs):
+                                srcs.append(toAppend)
+            fromSrv = toAppend
+
+            # Destinations
+            hasSpecial = False
+            for service in services["special"]:
+                toAppend = ""
+                print(f"Service: {service}")
+                if service in config.options(section):
+                    valueE = config.get(section, service).split("\n")
+                    for val in valueE:
+                        nick = config.get(section, val)
+                        logging.info(f"Service special: {service} "
+                                     f"({val}, {nick})")
+                        if service == "direct":
+                            url = ""
+                        toAppend = (service, url, val, nick)
+                        if toAppend not in dsts:
+                            dsts.append(toAppend)
+                        if toAppend:
+                            if fromSrv in ruls:
+                                ruls[fromSrv].append(toAppend)
+                            else:
+                                ruls[fromSrv] = []
+                                ruls[fromSrv].append(toAppend)
+
+                            if 'imp' in ruls:
+                                ruls['imp'].append((('direct', 'post', 
+                                        toAppend[2], toAppend[3])))
+                            else:
+                                ruls['imp'] = []
+                                ruls['imp'].append((('direct', 'post', 
+                                        toAppend[2], toAppend[3])))
+                            #ruls.append((toAppend,
+                            #        (('direct', 'post', 
+                            #            toAppend[2], toAppend[3]))))
+                        #(toAppend[2][1][0], 'set', toAppend[2][1][1], 'posts'), ('direct', 'post',
+
+
+                            hasSpecial = True
+
+            for service in services["regular"]:
+                toAppend = ""
+                if service in config.options(section):
+                    methods = self.hasPublishMethod(service)
+                    print(f"Service: {service} has {methods}")
+                    print(f"Methods: {methods}")
+                    for method in methods:
+                        # If it has a method for publishing, we can publish
+                        # directly using this
+
+                        toAppend = (
+                            "direct",
+                            method[1],
+                            service,
+                            config.get(section, service),
+                        )
+                        if not (toAppend in dsts):
+                            dsts.append(toAppend)
+                        if toAppend:
+                            if hasSpecial: 
+                                impRuls.append((fromSrv, toAppend))
+                            else: 
+                                if fromSrv in ruls:
+                                    ruls[fromSrv].append(toAppend)
+                                else:
+                                    ruls[fromSrv] = []
+                                    ruls[fromSrv].append(toAppend)
+
+        # Now we can see which destinations can be also sources
+        for dst in dsts:
+            if dst[0] == "direct":
+                service = dst[2]
+                methods = self.hasSetMethods(service)
+                for method in methods:
+                    self.log.debug(f"cache dst {dst}")
+                    toAppend = (service, "set", dst[3], method[1])
+                    if not (toAppend in srcs):
+                        srcs.append(toAppend)
+            elif dst[0] == "cache":
+                toAppend = (dst[0], "set", (dst[1], (dst[2], dst[3])), "posts")
+                if not (toAppend in srcs):
+                    srcs.append(toAppend) 
+
+        available = {} 
+        myKeys = {}
+        myIniKeys = [] 
+        for src in srcs: 
+            iniK, nameK = self.getIniKey(src[0], myKeys, myIniKeys)
+            if not (iniK in  available): 
+                available[iniK] = {'name':src[0], 'data':[], 'social':[]}
+                available[iniK]['data'] = [src[1:]]
+            else:
+                available[iniK]['data'].append(src[1:])
+
+        self.available2 = available
+
+        myList = []
+        for elem in self.available2: 
+            component = f"{elem}) " \
+                        f"{self.available2[elem]['name']}: " \
+                        f"{len(self.available2[elem]['data'])}"
+            myList.append(component) 
+            
+        if myList:
+            self.availableList2 = myList
+
+        return (srcs, dsts, ruls, impRuls)
+
+    def printList(self, myList, title):
+        print(f"{title}:")
+        for i, element in enumerate(myList):
+            print(f"  {i}) {element}")
+
 
     def getIniKey(self, key, myKeys, myIniKeys):
        if key not in myKeys:
@@ -286,18 +681,23 @@ class Buffer(BotPlugin):
             yield(rep)
         return(end)
 
+    def appendMyList2(self, arg, myList): 
+        logging.debug("Args... {}".format(str(arg)))
+        for key in self.available2: 
+            if arg[0].capitalize() == key.capitalize(): 
+                if arg[1:].isdigit(): 
+                    pos = int(arg[1:]) 
+                if pos < len(self.available2[key]['data']): 
+                        myList.append(arg)
+        logging.debug("mylist... %s"%str(myList))
+
+
     def appendMyList(self, arg, myList): 
         logging.debug("Args... {}".format(str(arg)))
         for key in self.available: 
             if arg[0].capitalize() == key.capitalize(): 
                 if arg[1:].isdigit(): 
                     pos = int(arg[1:]) 
-                #else:
-                #    cad = arg[1:] 
-                #    logging.debug("Argss... {}".format(str(cad)))
-                #    num = ord(cad.upper())-ord('A') 
-                #    logging.debug("Argss... {}".format(num))
-                #    pos = 10+num 
                 if pos < len(self.available[key]['data']): 
                         myList.append(arg)
         logging.debug("mylist... %s"%str(myList))
@@ -373,17 +773,34 @@ class Buffer(BotPlugin):
         """
         if not self.available:
             self.checkConfigFiles()
+        if not self.available2:
+            self.checkRules()
 
         myList = []
+        myList2 = []
 
         for arg in args:
             self.appendMyList(arg, myList)
+            self.appendMyList2(arg, myList2)
 
         if myList: 
             self.config.append(myList)
+        if myList2: 
+            self.config2.append(myList2)
 
         yield(self.config)
+        yield(self.config2)
         yield(end())
+
+    @botcmd
+    def list_list2(self, msg, args):
+        if not self.available2:
+            self.checkRules()
+
+        response = [ self.availableList2 ]
+        yield response
+        yield end()
+
 
     @botcmd
     def list_list(self, msg, args):
@@ -590,6 +1007,98 @@ class Buffer(BotPlugin):
             yield(self.addMore())
         yield end()
 
+    @botcmd(split_args_with=None, template="buffer")
+    def list2(self, mess, args):
+        """ A command to show available posts in a list of available sites
+        """
+        logging.debug("Posts posts %s" % (self.posts))
+        logging.debug("args %s" % str(args))
+
+        myList = []
+        response = []
+        self.posts2 = {}
+        if not self.available2:
+            self.checkRules()
+
+        pos = -1
+        if args: 
+            if args[0].isdigit(): 
+                pos = int(args[0]) 
+        else:
+            pos = 0
+                
+        if (len(self.config2) == 0) and (not args):
+            yield("There are not lists defined")
+            yield("Add some elements with list add")
+            return
+        elif (pos >= 0) and (pos < len(self.config2)): 
+            if len(self.config2)>0:
+                myList = self.config2[pos]
+        else: 
+            self.appendMyList2(args[0].upper(), myList)
+            pos = 0
+
+        logging.debug("myList %s" % str(myList))
+        self.lastList = myList
+
+        if pos >= 0:
+            for element in myList:
+                logging.debug("Clients %s" % str(self.clients2))
+                logging.debug("Element %s" % str(element))
+                logging.debug(f"Available {self.available2}")
+                profile = self.available2[element[0].lower()]
+                logging.debug(f"Profile {profile}")
+                #yield str(profile)
+                name = profile['name']
+                #yield name
+                #yield element
+                myElem = profile['data'][int(element[1:])]
+                #yield str(myElem)
+                try:
+                    self.clients2[element].setPosts()
+                except:
+                    api = getApi(name.capitalize(), myElem[1])
+                    self.clients2[element] = api
+                    self.clients2[element].setPostsType(myElem[2])
+                    self.clients2[element].setPosts()
+
+                self.log.debug("posts",self.clients2[element].getPosts())
+
+                postsTmp = [] 
+                posts = [] 
+
+                if hasattr(self.clients2[element], 'getPostsType'): 
+                    if self.clients2[element].getPostsType() == 'drafts': 
+                        postsTmp = self.clients2[element].getDrafts() 
+                    else: 
+                        postsTmp = self.clients2[element].getPosts()
+                else:
+                        postsTmp = self.clients2[element].getPosts
+                if postsTmp:
+                    for (i, post) in enumerate(postsTmp):
+                        if (hasattr(self.clients2[element], 'getPostLine')):
+                            title = self.clients2[element].getPostLine(post)
+                            link = ''
+                        else: 
+                            title = self.clients2[element].getPostTitle(post)
+                            link = self.clients2[element].getPostLink(post)
+                        posts.append((title, link, '{:2}'.format(i)))
+                        #logging.debug("I: %s %s %d"%(title,link,i))
+
+                self.posts2[element] = posts
+                logging.info("Posts posts %s" % (self.posts2))
+                response = self.sendReply(mess, args, 
+                                          self.posts2, ['sent','pending'])
+                logging.debug("Response %s End" % str(response))
+
+        if response: 
+            for resp in response: 
+                logging.info(f"Resp: {resp}")
+                yield(resp) 
+        else:
+            yield(self.addMore())
+        yield end()
+
     #def list(self, mess, args):
 
     #    """ A command to show available posts in a list of available sites
@@ -732,6 +1241,86 @@ class Buffer(BotPlugin):
         res = self.execute('insert', args)
         yield res 
         yield end()
+
+    # Passing split_args_with=None will cause arguments to be split on any kind
+    # of whitespace, just like Python's split() does
+    @botcmd
+    def publish2(self, mess, args):
+        """A command to publish some update"""
+
+        clients = self.clients2
+        available = self.available2
+        rules = self.rules
+
+        logging.info(f"Publishing {args}")
+        yield(f"Publishing {args}")
+        res = ""
+        logging.info(f"Clients: {self.clients}")
+        for client in clients:
+            logging.info(f"client client {client}")
+            if client[0].upper() == args[:2].upper():
+                myClient = client
+
+        #yield(f"Avail: {available}")
+        logging.debug(f"Avail: {available}")
+        dst = (available[args[0].lower()]['name'], 'set', 
+                available[args[0].lower()]['data'][int(args[1])][1],
+                available[args[0].lower()]['data'][int(args[1])][2])
+        src = (dst[0], dst[2])
+        #yield(f"Src: {src}")
+        #yield(f"Dst: {dst}")
+        logging.info(f"Dst: {dst}")
+        logging.info(f"Rules: {rules}")
+        actions = rules[dst]
+        apiSrc = getApi(src[0], src[1])
+        #yield apiSrc
+        apiSrc.setPostsType(dst[3])
+        apiSrc.setPosts()
+        j = int(args[2:])
+        post = apiSrc.getPost(j)
+        title = apiSrc.getPostTitle(post)
+        link = apiSrc.getPostLink(post)
+        #yield(title)
+        #yield(link)
+        yield(actions)
+ 
+        for action in actions:
+            #yield(f"Action: {action}")
+            if action[0] == 'cache':
+                apiDst = getApi('cache', (action[1], (action[2], action[3]))) 
+                #yield(apiDst)
+                res = apiDst.addPosts( [apiSrc.obtainPostData(j), ])
+            else:
+                apiDst = getApi(action[2], action[3]) 
+                apiDst.setPostsType(dst[3])
+                # yield(apiDst)
+                # apiDst.setPosts()
+                yield(f"I'll publish {title} - {link}")
+                yield(f"I'll publish {post}")
+                if hasattr(apiDst, 'publishApiPost'): 
+                    yield(f"yes")
+                    continue
+                    res = apiDst.publishPost(title, link, '')
+                else:
+                    res = apiDst.publish(j)
+                continue
+                #res = apiDst.publishPost(title, link, '')
+            yield(f"Published, reply: {res}")
+ 
+        postaction = apiSrc.getPostAction()
+        if ((not postaction)
+                and (src[0] in ['cache'])): 
+            postaction='delete'
+        yield(f"Post Action {postaction}")
+        try:
+            cmdPost = getattr(apiSrc, postaction)
+            yield(f"Post Action {postaction} command {cmdPost}")
+            res = cmdPost(j)
+            yield(f"End {postaction}, reply: {res}")
+        except:
+            yield(f"No postaction or wrong one")
+        yield end()
+
 
     # Passing split_args_with=None will cause arguments to be split on any kind
     # of whitespace, just like Python's split() does
@@ -890,10 +1479,30 @@ class Buffer(BotPlugin):
             else:
                 socialTime = ""
     
+            logging.info(f"self.available ... {self.available2}")
             logging.info("socialNetwork ... %s" % str(socialNetwork))
+            data = self.available2[socialNetwork[0].lower()]
+            name = data['name']
+            logging.info(f"Name ... {name}")
+            pos = int(socialNetwork[1])
+            logging.info(f"Soc ... {data['data'][pos][1]}")
+            social = socialNetwork
+            if isinstance(data['data'][pos][1], str):
+                socNick = f"{data['data'][pos][1]}"
+            else:
+                socNick = f"{data['data'][pos][1][1][0].capitalize()} "\
+                          f"{data['data'][pos][1][1][1]}"
+            logging.info(f"Nick ... {social}")
+            logging.info(f"Nick ... {socNick}")
+            socialNetworktxt = f"{social.capitalize()} "\
+                               f"({name.capitalize()} - {socNick})"
             if theUpdates: 
                 if len(socialNetwork)>2:
-                    socialNetworktxt = socialNetwork[2][1][0].capitalize()+' (' + socialNetwork[2][1][1] + ' ' + socialNetwork[0]+')'
+                    socialNetworktxt = ( 
+                            socialNetwork[2][1][0].capitalize() + ' (' 
+                            + socialNetwork[2][1][1] + ' ' 
+                            + socialNetwork[0]+')'
+                            )
                     if len(socialNetworktxt)+3 > maxLen:
                         maxLen = len(socialNetworktxt)+3
                     if (1 + len(theUpdates))*maxLen > 1024:
@@ -905,14 +1514,16 @@ class Buffer(BotPlugin):
                             maxPos = self.schedules
                             numEle = self.schedules
                         while iniPos <= len(theUpdates): 
+                            #compResponse.append((tt, socialNetworktxt, theUpdates[iniPos:maxPos]))
                             compResponse.append((tt, socialNetworktxt, theUpdates[iniPos:maxPos]))
                             iniPos = maxPos
                             maxPos = maxPos + math.trunc(numEle)
                     else:
                         compResponse.append((tt, socialNetworktxt, theUpdates))
                 else:
-                    compResponse.append((tt, 
-                        socialNetwork[0].capitalize()+' (' + socialNetwork[1]+')', theUpdates))
+                    compResponse.append((tt, socialNetworktxt, theUpdates))
+                    # compResponse.append((tt, 
+                    #     socialNetwork[0].capitalize()+' (' + socialNetwork[1]+')', theUpdates))
             else:
                     compResponse.append((tt, 
                         socialNetwork[0].capitalize()+' (' + socialNetwork[1]+')', theUpdates))
