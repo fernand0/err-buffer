@@ -33,9 +33,7 @@ class Buffer(BotPlugin):
         self.clients = {}
         self.clients2 = {}
         self.posts = {}
-        self.posts2 = {}
         self.config = []
-        self.config2 = []
         self.available = None
         self.available2 = None
         self.schedules = None
@@ -262,172 +260,25 @@ class Buffer(BotPlugin):
             else:
                 available[iniK]['data'].append(src[1:])
 
-        self.available2 = available
-
         myList = []
-        for elem in self.available2: 
+        for elem in available: 
             component = f"{elem}) " \
-                        f"{self.available2[elem]['name']}: " \
-                        f"{len(self.available2[elem]['data'])}"
+                        f"{available[elem]['name']}: " \
+                        f"{len(available[elem]['data'])}"
             myList.append(component) 
             
         if myList:
-            self.availableList2 = myList
+            availableList = myList
+        else:
+            availableList = []
+
+        self.available = available
+        self.availableList = availableList
 
         self.rules = ruls
 
         return (srcs, dsts, ruls, impRuls)
 
-
-    def checkRulesOld(self):
-        config = configparser.ConfigParser()
-        config.read(CONFIGDIR + "/.rssBlogs")
-
-        services = self.getServices()
-
-        srcs = []
-        dsts = []
-        ruls = {}
-        impRuls = []
-        acts = []
-        for section in config.sections():
-            url = config.get(section, "url")
-            logging.info(f"Url: {url}")
-            # Sources
-            if "rss" in config.options(section):
-                rss = config.get(section, "rss")
-                logging.info(f"Service: rss -> {rss}")
-                toAppend = ("rss", "set",
-                            urllib.parse.urljoin(url, rss), "posts")
-                srcs.append(toAppend)
-            else:
-                print(f"url {url}")
-                for service in services["regular"]:
-                    if (
-                        ("service" in config[section])
-                        and (service == config[section]["service"])
-                    ) or (url.find(service) >= 0):
-                        methods = self.hasSetMethods(service)
-                        print(f"Has set {methods}")
-                        for method in methods:
-                            # If it has a method for setting, we can set
-                            # directly using this
-                            if service in config[section]:
-                                nick = config[section][service]
-                            else:
-                                nick = url
-                                if nick.find("slack") < 0:
-                                    nick = nick.split("/")[-1]
-                            toAppend = (service, "set", nick, method[1])
-                            if not (toAppend in srcs):
-                                srcs.append(toAppend)
-            fromSrv = toAppend
-
-            # Destinations
-            hasSpecial = False
-            for service in services["special"]:
-                toAppend = ""
-                print(f"Service: {service}")
-                if service in config.options(section):
-                    valueE = config.get(section, service).split("\n")
-                    for val in valueE:
-                        nick = config.get(section, val)
-                        logging.info(f"Service special: {service} "
-                                     f"({val}, {nick})")
-                        if service == "direct":
-                            url = ""
-                        toAppend = (service, url, val, nick)
-                        if toAppend not in dsts:
-                            dsts.append(toAppend)
-                        if toAppend:
-                            if fromSrv in ruls:
-                                ruls[fromSrv].append(toAppend)
-                            else:
-                                ruls[fromSrv] = []
-                                ruls[fromSrv].append(toAppend)
-
-                            if 'imp' in ruls:
-                                ruls['imp'].append((('direct', 'post', 
-                                        toAppend[2], toAppend[3])))
-                            else:
-                                ruls['imp'] = []
-                                ruls['imp'].append((('direct', 'post', 
-                                        toAppend[2], toAppend[3])))
-                            #ruls.append((toAppend,
-                            #        (('direct', 'post', 
-                            #            toAppend[2], toAppend[3]))))
-                        #(toAppend[2][1][0], 'set', toAppend[2][1][1], 'posts'), ('direct', 'post',
-
-
-                            hasSpecial = True
-
-            for service in services["regular"]:
-                toAppend = ""
-                if service in config.options(section):
-                    methods = self.hasPublishMethod(service)
-                    print(f"Service: {service} has {methods}")
-                    print(f"Methods: {methods}")
-                    for method in methods:
-                        # If it has a method for publishing, we can publish
-                        # directly using this
-
-                        toAppend = (
-                            "direct",
-                            method[1],
-                            service,
-                            config.get(section, service),
-                        )
-                        if not (toAppend in dsts):
-                            dsts.append(toAppend)
-                        if toAppend:
-                            if hasSpecial: 
-                                impRuls.append((fromSrv, toAppend))
-                            else: 
-                                if fromSrv in ruls:
-                                    ruls[fromSrv].append(toAppend)
-                                else:
-                                    ruls[fromSrv] = []
-                                    ruls[fromSrv].append(toAppend)
-
-        # Now we can see which destinations can be also sources
-        for dst in dsts:
-            if dst[0] == "direct":
-                service = dst[2]
-                methods = self.hasSetMethods(service)
-                for method in methods:
-                    self.log.debug(f"cache dst {dst}")
-                    toAppend = (service, "set", dst[3], method[1])
-                    if not (toAppend in srcs):
-                        srcs.append(toAppend)
-            elif dst[0] == "cache":
-                toAppend = (dst[0], "set", (dst[1], (dst[2], dst[3])), "posts")
-                if not (toAppend in srcs):
-                    srcs.append(toAppend) 
-
-        available = {} 
-        myKeys = {}
-        myIniKeys = [] 
-        for src in srcs: 
-            iniK, nameK = self.getIniKey(src[0], myKeys, myIniKeys)
-            if not (iniK in  available): 
-                available[iniK] = {'name':src[0], 'data':[], 'social':[]}
-                available[iniK]['data'] = [src[1:]]
-            else:
-                available[iniK]['data'].append(src[1:])
-
-        self.available2 = available
-
-        myList = []
-        for elem in self.available2: 
-            component = f"{elem}) " \
-                        f"{self.available2[elem]['name']}: " \
-                        f"{len(self.available2[elem]['data'])}"
-            myList.append(component) 
-            
-        if myList:
-            self.availableList2 = myList
-
-        return (srcs, dsts, ruls, impRuls)
 
     def printList(self, myList, title):
         print(f"{title}:")
@@ -475,7 +326,7 @@ class Buffer(BotPlugin):
 
         myKeys = {}
         myIniKeys = []
-        self.available = {}
+        available = {}
 
         for section in config.sections():
             if 'posts' in config.options(section): 
@@ -513,11 +364,11 @@ class Buffer(BotPlugin):
                                 (dd, nick, posts)), '')
 
                         iniK, nKey = self.getIniKey(key, myKeys, myIniKeys) 
-                        if iniK not in self.available: 
-                                self.available[iniK] = {'name':nKey, 
+                        if iniK not in available: 
+                                available[iniK] = {'name':nKey, 
                                         'data':[], 'social':[]}
-                        if (toAppend, '') not in self.available[iniK]['data']:
-                                self.available[iniK]['data'].append(toAppend) 
+                        if (toAppend, '') not in available[iniK]['data']:
+                                available[iniK]['data'].append(toAppend) 
  
                 if 'service' in config.options(section):
                     service = config.get(section, 'service') 
@@ -535,26 +386,31 @@ class Buffer(BotPlugin):
                         url = config.get(section, option)
                     toAppend = (((url, posts), (option, nick, posts)), '')
                     iniK, nKey = self.getIniKey(key, myKeys, myIniKeys) 
-                    if iniK not in self.available: 
-                        self.available[iniK] = {'name':nKey, 
+                    if iniK not in available: 
+                        available[iniK] = {'name':nKey, 
                                 'data':[], 'social':[]}
-                    if toAppend not in self.available[iniK]['data']:
-                        self.available[iniK]['data'].append(toAppend) 
+                    if toAppend not in available[iniK]['data']:
+                        available[iniK]['data'].append(toAppend) 
 
-        for av in self.available:
-            for it in self.available[av]['data']:
+        for av in available:
+            for it in available[av]['data']:
                 logging.debug("it available {}".format(str(it)))
-        logging.debug("available %s"%str(self.available))
+        logging.debug("available %s"%str(available))
 
         myList = []
-        for elem in self.available:
-            component = '{}: {}'.format(self.available[elem]['name'], 
-                    len(self.available[elem]['data']))
+        for elem in available:
+            component = '{}: {}'.format(available[elem]['name'], 
+                    len(available[elem]['data']))
             myList.append(component) 
             
 
         if myList:
-            self.availableList = myList
+            availableList = myList
+        else:
+            availableList = []
+
+        self.available = available
+        self.availableList = availableList
         logging.debug("available list %s"%str(self.availableList))
 
     def addMore(self):
@@ -681,17 +537,6 @@ class Buffer(BotPlugin):
             yield(rep)
         return(end)
 
-    def appendMyList2(self, arg, myList): 
-        logging.debug("Args... {}".format(str(arg)))
-        for key in self.available2: 
-            if arg[0].capitalize() == key.capitalize(): 
-                if arg[1:].isdigit(): 
-                    pos = int(arg[1:]) 
-                if pos < len(self.available2[key]['data']): 
-                        myList.append(arg)
-        logging.debug("mylist... %s"%str(myList))
-
-
     def appendMyList(self, arg, myList): 
         logging.debug("Args... {}".format(str(arg)))
         for key in self.available: 
@@ -701,6 +546,17 @@ class Buffer(BotPlugin):
                 if pos < len(self.available[key]['data']): 
                         myList.append(arg)
         logging.debug("mylist... %s"%str(myList))
+
+
+    # def appendMyList(self, arg, myList): 
+    #     logging.debug("Args... {}".format(str(arg)))
+    #     for key in self.available: 
+    #         if arg[0].capitalize() == key.capitalize(): 
+    #             if arg[1:].isdigit(): 
+    #                 pos = int(arg[1:]) 
+    #             if pos < len(self.available[key]['data']): 
+    #                     myList.append(arg)
+    #     logging.debug("mylist... %s"%str(myList))
 
     @botcmd(split_args_with=None, template="buffer")
     def list_read(self, mess, args):
@@ -772,24 +628,17 @@ class Buffer(BotPlugin):
         """ Add list of services to the quick list
         """
         if not self.available:
-            self.checkConfigFiles()
-        if not self.available2:
             self.checkRules()
 
         myList = []
-        myList2 = []
 
         for arg in args:
             self.appendMyList(arg, myList)
-            self.appendMyList2(arg, myList2)
 
         if myList: 
             self.config.append(myList)
-        if myList2: 
-            self.config2.append(myList2)
 
         yield(self.config)
-        yield(self.config2)
         yield(end())
 
     @botcmd
@@ -849,7 +698,7 @@ class Buffer(BotPlugin):
 
 
     @botcmd(split_args_with=None, template="buffer")
-    def list(self, mess, args):
+    def listOld(self, mess, args):
         """ A command to show available posts in a list of available sites
         """
         logging.debug("Posts posts %s" % (self.posts))
@@ -1008,7 +857,7 @@ class Buffer(BotPlugin):
         yield end()
 
     @botcmd(split_args_with=None, template="buffer")
-    def list2(self, mess, args):
+    def list(self, mess, args):
         """ A command to show available posts in a list of available sites
         """
         logging.debug("Posts posts %s" % (self.posts))
@@ -1016,9 +865,11 @@ class Buffer(BotPlugin):
 
         myList = []
         response = []
-        self.posts2 = {}
-        if not self.available2:
+        self.posts = {}
+        if not self.available:
             self.checkRules()
+
+        available = self.available
 
         pos = -1
         if args: 
@@ -1027,26 +878,27 @@ class Buffer(BotPlugin):
         else:
             pos = 0
                 
-        if (len(self.config2) == 0) and (not args):
+        if (len(self.config) == 0) and (not args):
             yield("There are not lists defined")
             yield("Add some elements with list add")
             return
-        elif (pos >= 0) and (pos < len(self.config2)): 
-            if len(self.config2)>0:
-                myList = self.config2[pos]
+        elif (pos >= 0) and (pos < len(self.config)): 
+            if len(self.config)>0:
+                myList = self.config[pos]
         else: 
-            self.appendMyList2(args[0].upper(), myList)
+            self.appendMyList(args[0].upper(), myList)
             pos = 0
 
         logging.debug("myList %s" % str(myList))
         self.lastList = myList
+        clients = self.clients
 
         if pos >= 0:
             for element in myList:
-                logging.debug("Clients %s" % str(self.clients2))
+                logging.debug("Clients %s" % str(clients))
                 logging.debug("Element %s" % str(element))
-                logging.debug(f"Available {self.available2}")
-                profile = self.available2[element[0].lower()]
+                logging.debug(f"Available {available}")
+                profile = available[element[0].lower()]
                 logging.debug(f"Profile {profile}")
                 #yield str(profile)
                 name = profile['name']
@@ -1055,40 +907,40 @@ class Buffer(BotPlugin):
                 myElem = profile['data'][int(element[1:])]
                 #yield str(myElem)
                 try:
-                    self.clients2[element].setPosts()
+                    clients[element].setPosts()
                 except:
                     api = getApi(name.capitalize(), myElem[1])
-                    self.clients2[element] = api
-                    self.clients2[element].setPostsType(myElem[2])
-                    self.clients2[element].setPosts()
+                    clients[element] = api
+                    clients[element].setPostsType(myElem[2])
+                    clients[element].setPosts()
 
-                self.log.debug("posts",self.clients2[element].getPosts())
+                self.log.debug("posts", clients[element].getPosts())
 
                 postsTmp = [] 
                 posts = [] 
 
-                if hasattr(self.clients2[element], 'getPostsType'): 
-                    if self.clients2[element].getPostsType() == 'drafts': 
-                        postsTmp = self.clients2[element].getDrafts() 
+                if hasattr(clients[element], 'getPostsType'): 
+                    if clients[element].getPostsType() == 'drafts': 
+                        postsTmp = clients[element].getDrafts() 
                     else: 
-                        postsTmp = self.clients2[element].getPosts()
+                        postsTmp = clients[element].getPosts()
                 else:
-                        postsTmp = self.clients2[element].getPosts
+                        postsTmp = clients[element].getPosts
                 if postsTmp:
                     for (i, post) in enumerate(postsTmp):
-                        if (hasattr(self.clients2[element], 'getPostLine')):
-                            title = self.clients2[element].getPostLine(post)
+                        if (hasattr(clients[element], 'getPostLine')):
+                            title = clients[element].getPostLine(post)
                             link = ''
                         else: 
-                            title = self.clients2[element].getPostTitle(post)
-                            link = self.clients2[element].getPostLink(post)
+                            title = clients[element].getPostTitle(post)
+                            link = clients[element].getPostLink(post)
                         posts.append((title, link, '{:2}'.format(i)))
                         #logging.debug("I: %s %s %d"%(title,link,i))
 
-                self.posts2[element] = posts
-                logging.info("Posts posts %s" % (self.posts2))
+                self.posts[element] = posts
+                logging.info("Posts posts %s" % (self.posts))
                 response = self.sendReply(mess, args, 
-                                          self.posts2, ['sent','pending'])
+                                          self.posts, ['sent','pending'])
                 logging.debug("Response %s End" % str(response))
 
         if response: 
@@ -1097,114 +949,9 @@ class Buffer(BotPlugin):
                 yield(resp) 
         else:
             yield(self.addMore())
-        yield end()
 
-    #def list(self, mess, args):
-
-    #    """ A command to show available posts in a list of available sites
-    #    """
-
-    #    logging.debug("Posts posts %s" % (self.posts))
-    #    logging.debug("args %s" % str(args))
-
-    #    myList = []
-    #    response = []
-    #    self.posts = {}
-    #    if not self.available:
-    #        self.checkConfigFiles()
-
-    #    pos = -1
-    #    if args: 
-    #        if args[0].isdigit(): 
-    #            pos = int(args[0]) 
-    #    else:
-    #        pos = 0
-    #            
-    #    if (len(self.config) == 0) and (not args):
-    #        yield("There are not lists defined")
-    #        yield("Add some elements with list add")
-    #        return
-    #    elif (pos >= 0) and (pos < len(self.config)): 
-    #        if len(self.config)>0:
-    #            myList = self.config[pos]
-    #    else: 
-    #        self.appendMyList(args[0].upper(), myList)
-    #        pos = 0
-
-    #    logging.debug("myList %s" % str(myList))
-    #    self.lastList = myList
-
-    #    if pos >= 0:
-    #        for element in myList:
-    #            logging.debug("Element %s" % str(element))
-    #            name, profile, param, socialNetworks = self.getSocialProfile(element)
-    #            logging.debug("Name %s Profile %s Param %s"%(str(name), 
-    #                str(profile), str(param)))
-    #            logging.debug("Clients %s" % str(self.clients))
-    #            logging.debug("sN: {}".format(socialNetworks))
-    #            logging.debug("ssN: {}".format(socialNetworks[0][1]))
-    #            sN = socialNetworks[0][1][0]
-    #            sNNick = socialNetworks[0][1][1]
-    #            if (sN != name[0]): logging.warning(f"sN {sN} and {name[0]} differ")
-    #            if (sNNick != name[1]): logging.warning(f"sNNick {sNNick} and {name[1]} differ")
-
-    #            try:
-    #                self.clients[(element, profile, name)].setPosts()
-    #                self.clients[(element, profile, name)].setSocialNetworks(
-    #                        {sN:sNNick})
-    #            except:
-    #                if profile.find('-')>=0:
-    #                    profile = profile.split('-')[0]
-
-    #                api = getApi(profile.capitalize(), param)
-    #                self.clients[(element, profile, name)] = api
-    #                if param and (len(param[1]) == 3): 
-    #                    typePosts = param[1][2]
-    #                    logging.debug("Setting posts type {}".format(
-    #                        typePosts))
-    #                    self.clients[(element, profile, name)].setPostsType(
-    #                            typePosts)                    
-    #                self.clients[(element, profile, name)].setPosts()
-    #                self.clients[(element, profile, name)].setSocialNetworks(
-    #                        {sN:sNNick})
-
-    #            postsTmp = [] 
-    #            posts = [] 
-
-    #            if hasattr(self.clients[(element, profile, name)], 
-    #                    'getPostsType'): 
-    #                logging.debug("Types %s"%(self.clients[(element, 
-    #                    profile, name)].getPostsType()))
-
-    #                if self.clients[(element, profile, name)].getPostsType() == 'drafts': 
-    #                    postsTmp = self.clients[(element, profile, name)].getDrafts() 
-    #                else: 
-    #                    postsTmp = self.clients[(element, profile, name)].getPosts()
-    #            else:
-    #                    postsTmp = self.clients[(element, profile, name)].getPosts
-    #            if postsTmp:
-    #                for (i, post) in enumerate(postsTmp):
-    #                    if (hasattr(self.clients[(element, profile, name)], 
-    #                        'getPostLine')):
-    #                        title = self.clients[(element, profile, name)].getPostLine(post)
-    #                        link = ''
-    #                    else: 
-    #                        title = self.clients[(element, profile, name)].getPostTitle(post)
-    #                        link = self.clients[(element, profile, name)].getPostLink(post)
-    #                    posts.append((title, link, '{:2}'.format(i)))
-    #                    #logging.debug("I: %s %s %d"%(title,link,i))
-
-    #            self.posts[(element, profile, name)] = posts
-    #            logging.info("Posts posts %s" % (self.posts))
-    #            response = self.sendReply(mess, args, self.posts, ['sent','pending'])
-    #            logging.debug("Response %s End" % response)
-
-    #    if response: 
-    #        for resp in response: 
-    #            yield(resp) 
-    #    else:
-    #        yield(self.addMore())
-    #    yield end()
+        self.clients = clients
+        yield end() 
 
     def execute(self, command, args):
         """Execute a command """
@@ -1219,7 +966,7 @@ class Buffer(BotPlugin):
         for profile in self.clients:
             logging.debug("Executing in profile: {} with args {}".format(
                 profile,str(args)))
-            theProfile = profile[0]
+            theProfile = profile[:2]
             if ((theProfile.upper() == args[:len(theProfile)].upper()) 
                   or (args[0] == '*')
                   or (('*' in args) and (args[:1] == profile[0][:1]))):
@@ -1245,11 +992,11 @@ class Buffer(BotPlugin):
     # Passing split_args_with=None will cause arguments to be split on any kind
     # of whitespace, just like Python's split() does
     @botcmd
-    def publish2(self, mess, args):
+    def publish(self, mess, args):
         """A command to publish some update"""
 
-        clients = self.clients2
-        available = self.available2
+        clients = self.clients
+        available = self.available
         rules = self.rules
 
         logging.info(f"Publishing {args}")
@@ -1298,8 +1045,6 @@ class Buffer(BotPlugin):
                 yield(f"I'll publish {title} - {link}")
                 yield(f"I'll publish {post}")
                 if hasattr(apiDst, 'publishApiPost'): 
-                    yield(f"yes")
-                    continue
                     res = apiDst.publishPost(title, link, '')
                 else:
                     res = apiDst.publish(j)
@@ -1322,57 +1067,57 @@ class Buffer(BotPlugin):
         yield end()
 
 
-    # Passing split_args_with=None will cause arguments to be split on any kind
-    # of whitespace, just like Python's split() does
-    @botcmd
-    def publish(self, mess, args):
-        """A command to publish some update"""
+    # # Passing split_args_with=None will cause arguments to be split on any kind
+    # # of whitespace, just like Python's split() does
+    # @botcmd
+    # def publishOld(self, mess, args):
+    #     """A command to publish some update"""
 
-        # Dirty trick?
-        logging.info(f"Publishing {args}")
-        res = ""
-        logging.info(f"Clients: {self.clients}")
-        for client in self.clients:
-            logging.info(f"client client {client}")
-            if client[0].upper() == args[:2].upper():
-                myClient = client
-        for avail in self.available['c']['data']:
-            logging.info(f"avail avail {avail} {self} {args}")
-            logging.info(f"avail avail {avail[0][1]} {self} {args}")
-            logging.info(f"avail myClient {myClient}")
-            # if (myClient[2][1][0] == avail[0][1][0]):
-            if ((myClient[2][1][0] == avail[0][1][0])
-                    and (myClient[2][0] == avail[0][0][0])):
-                logging.info(f"is avail c {avail}")
-                orig = self.clients[myClient]
-                dest = getApi(avail[0][1][0], avail[0][1][1])
-                logging.debug(f"Api orig: {orig}") 
-                logging.debug(f"Api dest: {dest}")
-                post = orig.obtainPostData(int(args[2:]))
-                logging.info(f"Post: {post}")
-                reply = dest.publishPost(post[0], post[1], '')
-                if reply != 'Fail!':
-                    orig.delete(int(args[2:]))
-                res = f"{res}\n{reply}"
-        for avail in self.available['j']['data']:
-            logging.info(f"avail {avail[0][0]} {self} {args}")
-            logging.info(f"avail avail {avail}")
-            logging.info(f"avail myClient {myClient}")
-            if myClient[2][0] == avail[0][0][0]: 
-                logging.info(f"is avail j {avail}")
-                orig = self.clients[myClient]
-                dest = getApi(avail[0][1][0], avail[0][1][1])
-                logging.info(f"Orig: {orig}")
-                logging.debug(f"Api dest: {dest}")
-                reply = orig.publish(int(args[2:]))
-                # This should be: getting post from orig, using dest to publish
-                # ??
-                res = f"{res}\n{reply}"
+    #     # Dirty trick?
+    #     logging.info(f"Publishing {args}")
+    #     res = ""
+    #     logging.info(f"Clients: {self.clients}")
+    #     for client in self.clients:
+    #         logging.info(f"client client {client}")
+    #         if client[0].upper() == args[:2].upper():
+    #             myClient = client
+    #     for avail in self.available['c']['data']:
+    #         logging.info(f"avail avail {avail} {self} {args}")
+    #         logging.info(f"avail avail {avail[0][1]} {self} {args}")
+    #         logging.info(f"avail myClient {myClient}")
+    #         # if (myClient[2][1][0] == avail[0][1][0]):
+    #         if ((myClient[2][1][0] == avail[0][1][0])
+    #                 and (myClient[2][0] == avail[0][0][0])):
+    #             logging.info(f"is avail c {avail}")
+    #             orig = self.clients[myClient]
+    #             dest = getApi(avail[0][1][0], avail[0][1][1])
+    #             logging.debug(f"Api orig: {orig}") 
+    #             logging.debug(f"Api dest: {dest}")
+    #             post = orig.obtainPostData(int(args[2:]))
+    #             logging.info(f"Post: {post}")
+    #             reply = dest.publishPost(post[0], post[1], '')
+    #             if reply != 'Fail!':
+    #                 orig.delete(int(args[2:]))
+    #             res = f"{res}\n{reply}"
+    #     for avail in self.available['j']['data']:
+    #         logging.info(f"avail {avail[0][0]} {self} {args}")
+    #         logging.info(f"avail avail {avail}")
+    #         logging.info(f"avail myClient {myClient}")
+    #         if myClient[2][0] == avail[0][0][0]: 
+    #             logging.info(f"is avail j {avail}")
+    #             orig = self.clients[myClient]
+    #             dest = getApi(avail[0][1][0], avail[0][1][1])
+    #             logging.info(f"Orig: {orig}")
+    #             logging.debug(f"Api dest: {dest}")
+    #             reply = orig.publish(int(args[2:]))
+    #             # This should be: getting post from orig, using dest to publish
+    #             # ??
+    #             res = f"{res}\n{reply}"
  
-        # Not sure about this
-        # res = self.execute('publish', args)
-        yield res 
-        yield end()
+    #     # Not sure about this
+    #     # res = self.execute('publish', args)
+    #     yield res 
+    #     yield end()
 
     @botcmd
     def show(self, mess, args):
@@ -1481,7 +1226,7 @@ class Buffer(BotPlugin):
     
             logging.info(f"self.available ... {self.available2}")
             logging.info("socialNetwork ... %s" % str(socialNetwork))
-            data = self.available2[socialNetwork[0].lower()]
+            data = self.available[socialNetwork[0].lower()]
             name = data['name']
             logging.info(f"Name ... {name}")
             pos = int(socialNetwork[1])
