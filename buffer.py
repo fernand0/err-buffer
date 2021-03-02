@@ -31,11 +31,9 @@ class Buffer(BotPlugin):
         super(Buffer, self).activate()
 
         self.clients = {}
-        self.clients2 = {}
         self.posts = {}
         self.config = []
         self.available = None
-        self.available2 = None
         self.schedules = None
         self.lastList = None
         self.lastEdit = None
@@ -313,108 +311,109 @@ class Buffer(BotPlugin):
 
        return iniK, nKey
 
-    def checkConfigFiles(self):
-        config = configparser.ConfigParser()
-        config.read(CONFIGDIR + '/.rssBlogs')
+    # def checkConfigFiles(self):
+    #     config = configparser.ConfigParser()
+    #     config.read(CONFIGDIR + '/.rssBlogs')
 
-        delayed = ['cache', 'buffer']
-        direct = ['direct']
-        content = ['twitter', 'facebook', 'mastodon', 'linkedin', 'xmlrpc',
-                'imgur','rss','forum', 'slack', 'gmail','imdb','pocket',  
-                'wordpress','flickr', 'tumblr', 'devto','medium','telegram']
-        types = ['posts','drafts']
+    #     delayed = ['cache', 'buffer']
+    #     direct = ['direct']
+    #     content = ['twitter', 'facebook', 'mastodon', 'linkedin', 'xmlrpc',
+    #             'imgur','rss','forum', 'slack', 'gmail','imdb','pocket',  
+    #             'wordpress','flickr', 'tumblr', 'devto','medium','telegram']
+    #     types = ['posts','drafts']
 
-        myKeys = {}
-        myIniKeys = []
-        available = {}
+    #     myKeys = {}
+    #     myIniKeys = []
+    #     available = {}
 
-        for section in config.sections():
-            if 'posts' in config.options(section): 
-                posts = config.get(section, 'posts') 
-            else: 
-                posts = 'posts' 
-            url = config.get(section,'url')
-            service = ''
-            for option in config.options(section):
-                if (option in delayed) or (option in direct):
-                    key = option 
-                    iniK = key[0] 
-                    myDelayed = config.get(section, option)
-                    delayedList = []
-                    if isinstance(myDelayed, str) and len(myDelayed)<5: 
-                        for dd in content:
-                            if ((dd[0] in myDelayed) 
-                                    and (dd in config.options(section))): 
-                                delayedList.append(dd)
-                    elif isinstance(myDelayed, str): 
-                        if myDelayed.find('\n'):
-                            myDelayed = myDelayed.split('\n') 
-                        else:
-                            myDelayed = [ myDelayed ]
-                        for myDel in myDelayed: 
-                            delayedList.append(myDel)
+    #     for section in config.sections():
+    #         if 'posts' in config.options(section): 
+    #             posts = config.get(section, 'posts') 
+    #         else: 
+    #             posts = 'posts' 
+    #         url = config.get(section,'url')
+    #         service = ''
+    #         for option in config.options(section):
+    #             if (option in delayed) or (option in direct):
+    #                 key = option 
+    #                 iniK = key[0] 
+    #                 myDelayed = config.get(section, option)
+    #                 delayedList = []
+    #                 if isinstance(myDelayed, str) and len(myDelayed)<5: 
+    #                     for dd in content:
+    #                         if ((dd[0] in myDelayed) 
+    #                                 and (dd in config.options(section))): 
+    #                             delayedList.append(dd)
+    #                 elif isinstance(myDelayed, str): 
+    #                     if myDelayed.find('\n'):
+    #                         myDelayed = myDelayed.split('\n') 
+    #                     else:
+    #                         myDelayed = [ myDelayed ]
+    #                     for myDel in myDelayed: 
+    #                         delayedList.append(myDel)
 
-                    for dd in delayedList: 
-                        nick = config.get(section, dd) 
-                        #if 'posts' in config.options(section): 
-                        #    posts = config.get(section, 'posts') 
-                        #else: 
-                        #    posts = 'posts' 
-                        toAppend = (((config.get(section, 'url'), posts),
-                                (dd, nick, posts)), '')
+    #                 for dd in delayedList: 
+    #                     nick = config.get(section, dd) 
+    #                     #if 'posts' in config.options(section): 
+    #                     #    posts = config.get(section, 'posts') 
+    #                     #else: 
+    #                     #    posts = 'posts' 
+    #                     toAppend = (((config.get(section, 'url'), posts),
+    #                             (dd, nick, posts)), '')
 
-                        iniK, nKey = self.getIniKey(key, myKeys, myIniKeys) 
-                        if iniK not in available: 
-                                available[iniK] = {'name':nKey, 
-                                        'data':[], 'social':[]}
-                        if (toAppend, '') not in available[iniK]['data']:
-                                available[iniK]['data'].append(toAppend) 
+    #                     iniK, nKey = self.getIniKey(key, myKeys, myIniKeys) 
+    #                     if iniK not in available: 
+    #                             available[iniK] = {'name':nKey, 
+    #                                     'data':[], 'social':[]}
+    #                     if (toAppend, '') not in available[iniK]['data']:
+    #                             available[iniK]['data'].append(toAppend) 
  
-                if 'service' in config.options(section):
-                    service = config.get(section, 'service') 
-                if (option in content): # or (service and (service in content))):
-                    nick = config.get(section, option)
-                    key = option 
-                    if service: key = service
-                    if option == 'rss': 
-                        url = urllib.parse.urljoin(url,nick)
-                        #url = config.get(section, 'url')+nick
-                    elif config.get(section, 'url').find('slack')>=0:
-                        url = config.get(section, 'url')
-                    #    #print("url",url)
-                    else: 
-                        url = config.get(section, option)
-                    toAppend = (((url, posts), (option, nick, posts)), '')
-                    iniK, nKey = self.getIniKey(key, myKeys, myIniKeys) 
-                    if iniK not in available: 
-                        available[iniK] = {'name':nKey, 
-                                'data':[], 'social':[]}
-                    if toAppend not in available[iniK]['data']:
-                        available[iniK]['data'].append(toAppend) 
+    #             if 'service' in config.options(section):
+    #                 service = config.get(section, 'service') 
+    #             if (option in content): # or (service and (service in content))):
+    #                 nick = config.get(section, option)
+    #                 key = option 
+    #                 if service: key = service
+    #                 if option == 'rss': 
+    #                     url = urllib.parse.urljoin(url,nick)
+    #                     #url = config.get(section, 'url')+nick
+    #                 elif config.get(section, 'url').find('slack')>=0:
+    #                     url = config.get(section, 'url')
+    #                 #    #print("url",url)
+    #                 else: 
+    #                     url = config.get(section, option)
+    #                 toAppend = (((url, posts), (option, nick, posts)), '')
+    #                 iniK, nKey = self.getIniKey(key, myKeys, myIniKeys) 
+    #                 if iniK not in available: 
+    #                     available[iniK] = {'name':nKey, 
+    #                             'data':[], 'social':[]}
+    #                 if toAppend not in available[iniK]['data']:
+    #                     available[iniK]['data'].append(toAppend) 
 
-        for av in available:
-            for it in available[av]['data']:
-                logging.debug("it available {}".format(str(it)))
-        logging.debug("available %s"%str(available))
+    #     for av in available:
+    #         for it in available[av]['data']:
+    #             logging.debug("it available {}".format(str(it)))
+    #     logging.debug("available %s"%str(available))
 
-        myList = []
-        for elem in available:
-            component = '{}: {}'.format(available[elem]['name'], 
-                    len(available[elem]['data']))
-            myList.append(component) 
-            
+    #     myList = []
+    #     for elem in available:
+    #         component = '{}: {}'.format(available[elem]['name'], 
+    #                 len(available[elem]['data']))
+    #         myList.append(component) 
+    #         
 
-        if myList:
-            availableList = myList
-        else:
-            availableList = []
+    #     if myList:
+    #         availableList = myList
+    #     else:
+    #         availableList = []
 
-        self.available = available
-        self.availableList = availableList
-        logging.debug("available list %s"%str(self.availableList))
+    #     self.available = available
+    #     self.availableList = availableList
+    #     logging.debug("available list %s"%str(self.availableList))
 
     def addMore(self):
-        response = "There are {0} lists. You can add more with command list add".format(len(self.config))
+        response = f"There are {len(self.config)} lists. "\
+                   f"You can add more with command list add"
         return (response)
 
     def formatList(self, text, status):
@@ -462,7 +461,6 @@ class Buffer(BotPlugin):
                 orig = url
                 t1 = None
                 if True:
-                    #with open(fileNamePath(url, name)+'.timeNext','rb') as f: 
                     if element.find('Next')>0:
                         with open('{}/{}'.format(DATADIR,element),'rb') as f: 
                             t1, t2 = pickle.load(f)
@@ -470,13 +468,15 @@ class Buffer(BotPlugin):
                             msg = "[W]: "
                         else:
                             msg = "[F]: "
-                        theTime = time.strftime("%H:%M:%S",time.localtime(t1+t2))
+                        theTime = time.strftime("%H:%M:%S", 
+                                                time.localtime(t1+t2))
                     else:
                         if dest and nick:
                             link, t1 = checkLastLink(url, (dest,nick))
                         else:
                             link, t1 = checkLastLink(url)
-                        theTime = time.strftime("%H:%M:%S",time.localtime(t1))
+                        theTime = time.strftime("%H:%M:%S",
+                                                time.localtime(t1))
                         msg = "[L]: "
                         t2 = 0
                 else:
@@ -900,12 +900,8 @@ class Buffer(BotPlugin):
                 logging.debug(f"Available {available}")
                 profile = available[element[0].lower()]
                 logging.debug(f"Profile {profile}")
-                #yield str(profile)
                 name = profile['name']
-                #yield name
-                #yield element
                 myElem = profile['data'][int(element[1:])]
-                #yield str(myElem)
                 try:
                     clients[element].setPosts()
                 except:
@@ -955,30 +951,29 @@ class Buffer(BotPlugin):
 
     def execute(self, command, args):
         """Execute a command """
-        resTxt = 'Executing: {}\n'.format(command)
+        resTxt = f"Executing: {command}\n"
         logging.info(resTxt)
-        resTxt = 'Args: {}\n'.format(str(args))
+        resTxt = f"Args: {args}\n"
         logging.info(resTxt)
         updates = ''
         update = None
         res = None
         logging.debug("Clients {}".format(self.clients))
         for profile in self.clients:
-            logging.debug("Executing in profile: {} with args {}".format(
-                profile,str(args)))
+            logging.debug(f"Executing in profile: {profile} with args {args}")
             theProfile = profile[:2]
             if ((theProfile.upper() == args[:len(theProfile)].upper()) 
                   or (args[0] == '*')
                   or (('*' in args) and (args[:1] == profile[0][:1]))):
                 # We need to do something for '*' commands
-                logging.info("I'll {} in {}".format(str(command), profile))
+                logging.info(f"I'll {command} in {profile}")
                 update = self.clients[profile].selectAndExecute(command,args)
                 if update: 
-                    updates = '{}* {} ({})\n'.format(updates, update, 
-                            profile[0])
+                    updates = f"{updates}* {update} ({profile[0]})\n"
                     update = None
 
-        if updates: res = resTxt + '\n' + updates + '\n'
+        if updates: 
+            res = f"{resTxt}\n{updates}"
 
         return res 
 
@@ -1065,7 +1060,6 @@ class Buffer(BotPlugin):
         except:
             yield(f"No postaction or wrong one")
         yield end()
-
 
     # # Passing split_args_with=None will cause arguments to be split on any kind
     # # of whitespace, just like Python's split() does
@@ -1185,22 +1179,19 @@ class Buffer(BotPlugin):
 
     def prepareReply(self, updates, types):
         compResponse = [] 
-        logging.debug("Pposts %s" % updates)
-        logging.debug("Keys %s" % updates.keys())
+        logging.debug(f"Pposts {updates}")
+        logging.debug(f"Keys {updates.keys()}")
         tt = 'pending'
         for socialNetwork in updates.keys():
-            logging.info("Update social network %s " % str(socialNetwork))
-            logging.debug("Updates %s End" % updates[socialNetwork])
+            logging.debug(f"Update social network {socialNetwork}")
+            logging.debug(f"Updates {updates[socialNetwork]}\nEnd")
             theUpdates = []
             maxLen = 0
             for update in updates[socialNetwork]:
                 if update:
                     if len(update)>0:
-                        logging.info("Update %s " % str(update))
+                        logging.info(f"Update {update} ")
                         if update[0]:
-                            #if update[1] and (update[0] != update[1]): 
-                            #    theUpdatetxt = '{} {}'.format(update[0],str(update[1])).replace('_','\_')
-                            #else: 
                             theUpdatetxt = str(update[0]).replace('_','\_')
                             if theUpdatetxt.find('> ')>=0:
                                 # We do not need to show the mark. Maybe we
@@ -1224,8 +1215,8 @@ class Buffer(BotPlugin):
             else:
                 socialTime = ""
     
-            logging.info(f"self.available ... {self.available2}")
-            logging.info("socialNetwork ... %s" % str(socialNetwork))
+            logging.debug(f"self.available ... {self.available}")
+            logging.info(f"socialNetwork ... {socialNetwork}")
             data = self.available[socialNetwork[0].lower()]
             name = data['name']
             logging.info(f"Name ... {name}")
@@ -1259,7 +1250,6 @@ class Buffer(BotPlugin):
                             maxPos = self.schedules
                             numEle = self.schedules
                         while iniPos <= len(theUpdates): 
-                            #compResponse.append((tt, socialNetworktxt, theUpdates[iniPos:maxPos]))
                             compResponse.append((tt, socialNetworktxt, theUpdates[iniPos:maxPos]))
                             iniPos = maxPos
                             maxPos = maxPos + math.trunc(numEle)
@@ -1267,8 +1257,6 @@ class Buffer(BotPlugin):
                         compResponse.append((tt, socialNetworktxt, theUpdates))
                 else:
                     compResponse.append((tt, socialNetworktxt, theUpdates))
-                    # compResponse.append((tt, 
-                    #     socialNetwork[0].capitalize()+' (' + socialNetwork[1]+')', theUpdates))
             else:
                     compResponse.append((tt, 
                         socialNetwork[0].capitalize()+' (' + socialNetwork[1]+')', theUpdates))
@@ -1279,9 +1267,10 @@ class Buffer(BotPlugin):
         reps = self.prepareReply(updates, types) 
         compResponse = ""
         for rep in reps:
-            response = tenv().get_template('buffer.md').render({'type': rep[0],
-                        'nameSocialNetwork': rep[1], 
-                        'updates': rep[2]})
+            response = tenv().get_template('buffer.md').render(
+                                              {'type': rep[0], 
+                                               'nameSocialNetwork': rep[1], 
+                                               'updates': rep[2]})
             yield(response)
 
     @botcmd(split_args_with=None, template="buffer")
