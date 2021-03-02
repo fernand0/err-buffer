@@ -20,13 +20,13 @@ def end(msg=""):
 
 class Buffer(BotPlugin):
     """
-    A plugin to manage our buffer account with the bot (at least some features, this is not a translation for the whole API).
+    A plugin to manage our buffer account with the bot (at least some
+    features, this is not a translation for the whole API).  
     """
 
     def activate(self):
         """
         Triggers on plugin activation
-        You should delete it if you're not using it to override any default behaviour
         """
         super(Buffer, self).activate()
 
@@ -311,106 +311,6 @@ class Buffer(BotPlugin):
 
        return iniK, nKey
 
-    # def checkConfigFiles(self):
-    #     config = configparser.ConfigParser()
-    #     config.read(CONFIGDIR + '/.rssBlogs')
-
-    #     delayed = ['cache', 'buffer']
-    #     direct = ['direct']
-    #     content = ['twitter', 'facebook', 'mastodon', 'linkedin', 'xmlrpc',
-    #             'imgur','rss','forum', 'slack', 'gmail','imdb','pocket',  
-    #             'wordpress','flickr', 'tumblr', 'devto','medium','telegram']
-    #     types = ['posts','drafts']
-
-    #     myKeys = {}
-    #     myIniKeys = []
-    #     available = {}
-
-    #     for section in config.sections():
-    #         if 'posts' in config.options(section): 
-    #             posts = config.get(section, 'posts') 
-    #         else: 
-    #             posts = 'posts' 
-    #         url = config.get(section,'url')
-    #         service = ''
-    #         for option in config.options(section):
-    #             if (option in delayed) or (option in direct):
-    #                 key = option 
-    #                 iniK = key[0] 
-    #                 myDelayed = config.get(section, option)
-    #                 delayedList = []
-    #                 if isinstance(myDelayed, str) and len(myDelayed)<5: 
-    #                     for dd in content:
-    #                         if ((dd[0] in myDelayed) 
-    #                                 and (dd in config.options(section))): 
-    #                             delayedList.append(dd)
-    #                 elif isinstance(myDelayed, str): 
-    #                     if myDelayed.find('\n'):
-    #                         myDelayed = myDelayed.split('\n') 
-    #                     else:
-    #                         myDelayed = [ myDelayed ]
-    #                     for myDel in myDelayed: 
-    #                         delayedList.append(myDel)
-
-    #                 for dd in delayedList: 
-    #                     nick = config.get(section, dd) 
-    #                     #if 'posts' in config.options(section): 
-    #                     #    posts = config.get(section, 'posts') 
-    #                     #else: 
-    #                     #    posts = 'posts' 
-    #                     toAppend = (((config.get(section, 'url'), posts),
-    #                             (dd, nick, posts)), '')
-
-    #                     iniK, nKey = self.getIniKey(key, myKeys, myIniKeys) 
-    #                     if iniK not in available: 
-    #                             available[iniK] = {'name':nKey, 
-    #                                     'data':[], 'social':[]}
-    #                     if (toAppend, '') not in available[iniK]['data']:
-    #                             available[iniK]['data'].append(toAppend) 
- 
-    #             if 'service' in config.options(section):
-    #                 service = config.get(section, 'service') 
-    #             if (option in content): # or (service and (service in content))):
-    #                 nick = config.get(section, option)
-    #                 key = option 
-    #                 if service: key = service
-    #                 if option == 'rss': 
-    #                     url = urllib.parse.urljoin(url,nick)
-    #                     #url = config.get(section, 'url')+nick
-    #                 elif config.get(section, 'url').find('slack')>=0:
-    #                     url = config.get(section, 'url')
-    #                 #    #print("url",url)
-    #                 else: 
-    #                     url = config.get(section, option)
-    #                 toAppend = (((url, posts), (option, nick, posts)), '')
-    #                 iniK, nKey = self.getIniKey(key, myKeys, myIniKeys) 
-    #                 if iniK not in available: 
-    #                     available[iniK] = {'name':nKey, 
-    #                             'data':[], 'social':[]}
-    #                 if toAppend not in available[iniK]['data']:
-    #                     available[iniK]['data'].append(toAppend) 
-
-    #     for av in available:
-    #         for it in available[av]['data']:
-    #             logging.debug("it available {}".format(str(it)))
-    #     logging.debug("available %s"%str(available))
-
-    #     myList = []
-    #     for elem in available:
-    #         component = '{}: {}'.format(available[elem]['name'], 
-    #                 len(available[elem]['data']))
-    #         myList.append(component) 
-    #         
-
-    #     if myList:
-    #         availableList = myList
-    #     else:
-    #         availableList = []
-
-    #     self.available = available
-    #     self.availableList = availableList
-    #     logging.debug("available list %s"%str(self.availableList))
-
     def addMore(self):
         response = f"There are {len(self.config)} lists. "\
                    f"You can add more with command list add"
@@ -547,16 +447,6 @@ class Buffer(BotPlugin):
                         myList.append(arg)
         logging.debug("mylist... %s"%str(myList))
 
-
-    # def appendMyList(self, arg, myList): 
-    #     logging.debug("Args... {}".format(str(arg)))
-    #     for key in self.available: 
-    #         if arg[0].capitalize() == key.capitalize(): 
-    #             if arg[1:].isdigit(): 
-    #                 pos = int(arg[1:]) 
-    #             if pos < len(self.available[key]['data']): 
-    #                     myList.append(arg)
-    #     logging.debug("mylist... %s"%str(myList))
 
     @botcmd(split_args_with=None, template="buffer")
     def list_read(self, mess, args):
