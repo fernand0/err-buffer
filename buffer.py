@@ -340,7 +340,7 @@ class Buffer(BotPlugin):
             logging.info(f"Element {element}")
             if (element.find("last") > 0) and (element.find("Next") > 0):
                 continue
-            if element.find("Next") > 0:  # or (element.find('last')>0):
+            if element.find("Next") > 0:
                 # yield element
                 if element.find("_") > 0:
                     res = element.split("_")
@@ -414,15 +414,15 @@ class Buffer(BotPlugin):
     def list_all(self, mess, args):
         """List available services"""
         if not self.available:
-            self.checkConfigFiles()
+            self.checkRules()
         logging.info("Available: %s" % str(self.available))
         myList = {}
-        theKey = ("All", "All", ("All", "All", "All"))
+        theKey = ("A0") #, "All", ("All", "All", "All"))
         myList[theKey] = []
         for key in self.available:
             for i, elem in enumerate(self.available[key]["data"]):
                 if (args and (key == args)) or not args:
-                    myList[theKey].append((elem[0], key, f"{key}-{i}"))
+                    myList[theKey].append((elem[1], key, f"{key}-{i}"))
         logging.info("myList: %s" % str(myList))
 
         response = self.sendReply("", "", myList, ["sent", "pending"])
@@ -463,18 +463,15 @@ class Buffer(BotPlugin):
         if pos >= 0:
             for element in myList:
                 logging.info("Element %s" % str(element))
-
-                name, profile, socialNetworks = self.getSocialProfile(element)
-                logging.debug(f"Result: {element} {profile} {name}")
-                logging.debug(f"clients: {clients}")
-                profile = profile.split("-")[0]
-                if (element, profile, name) in clients:
-                    thePosts = clients[(element, profile, name)].getPosts()
+                logging.info("Clients %s" % str(clients))
+                if element in clients:
+                    thePosts = clients[element].getPosts()
                     if thePosts:
-                        posts = clients[(element, profile, name)].getPosts()
-                        link = posts[-1][1]
-                        if profile.upper() == "Forum".upper():
-                            updateLastLink(name[1], link)
+                        link = thePosts[-1][1]
+                        service = clients[element].getService().upper()
+                        if  service == "Forum".upper():
+                            name = clients[element].getUrl()
+                            updateLastLink(name, link)
                         yield ("Marked read {}".format(element))
         yield end()
 
@@ -513,15 +510,6 @@ class Buffer(BotPlugin):
 
         yield (self.config)
         yield (end())
-
-    @botcmd
-    def list_list2(self, msg, args):
-        if not self.available2:
-            self.checkRules()
-
-        response = [self.availableList2]
-        yield response
-        yield end()
 
     @botcmd
     def list_list(self, msg, args):
