@@ -1,7 +1,7 @@
 err-buffer
 ============
 
-A plugin to manage our buffer account with the bot (at least some features, this is not a translation for the whole API).
+A plugin to manage some social networks accounts. I was originally using the buffer API, but they changed business model and I'm not using it anymore. Some ideas of the original use and even some unused code can remain. I'll change the name of the project soon. I'll probably change the license.
 
 Licence
 -------
