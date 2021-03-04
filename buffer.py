@@ -127,7 +127,7 @@ class Buffer(BotPlugin):
                             urllib.parse.urljoin(url, rss), "posts")
                 srcs.append(toAppend)
             else:
-                print(f"url {url}")
+                logging.debug(f"url {url}")
                 for service in services["regular"]:
                     if (
                         ("service" in config[section])
@@ -144,6 +144,9 @@ class Buffer(BotPlugin):
                                 nick = url
                                 if nick.find("slack") < 0:
                                     nick = nick.split("/")[-1]
+                            if service == 'imdb':
+                                nick = url
+
                             toAppend = (service, "set", nick, method[1])
                             if not (toAppend in srcs):
                                 srcs.append(toAppend)
@@ -417,7 +420,7 @@ class Buffer(BotPlugin):
             self.checkRules()
         logging.info("Available: %s" % str(self.available))
         myList = {}
-        theKey = ("A0") #, "All", ("All", "All", "All"))
+        theKey = ("A0")
         myList[theKey] = []
         for key in self.available:
             for i, elem in enumerate(self.available[key]["data"]):
@@ -469,7 +472,7 @@ class Buffer(BotPlugin):
                     if thePosts:
                         link = thePosts[-1][1]
                         service = clients[element].getService().upper()
-                        if  service == "Forum".upper():
+                        if service == "Forum".upper():
                             name = clients[element].getUrl()
                             updateLastLink(name, link)
                         yield ("Marked read {}".format(element))
