@@ -1,11 +1,11 @@
 {% if type == 'pending' %} 
 {% if updates %} 
-*{{nameSocialNetwork}}* ({{socialTime}}) 
+*{{nameSocialNetwork}}* ({{post}}) 
 {% for text, link, pos in updates %} {{ pos}}) {{ text | truncate(50, True)}}
-{% endfor %} {% else %} *{{nameSocialNetwork}}* {% endif %} {% else %} 
+{% endfor %} {% else %} *{{nameSocialNetwork}}* ({{post}}){% endif %} {% else %} 
 {% if type == 'longer' %}
 {% if updates %} 
-*{{nameSocialNetwork}}* ({{socialTime}}) 
+*{{nameSocialNetwork}}* ({{post}}) 
 {% for text, link, pos in updates %} {{ pos}} {{ text }}
 {% endfor %} {% else %} *{{nameSocialNetwork}}* {% endif %} {% else %}
 {% if updates %} *{{nameSocialNetwork}}*

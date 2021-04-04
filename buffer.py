@@ -72,6 +72,7 @@ class Buffer(BotPlugin):
         listMethods = clsService.__dir__()
 
         methods = []
+        target = None
         for method in listMethods:
             if method.find("publish") >= 0:
                 action = "publish"
@@ -517,7 +518,7 @@ class Buffer(BotPlugin):
     @botcmd
     def list_list(self, msg, args):
         if not self.available:
-            self.checkConfigFiles()
+            self.checkRules()
 
         response = [self.availableList]
         yield response
@@ -714,6 +715,7 @@ class Buffer(BotPlugin):
         src = (dst[0], dst[2])
         # yield(f"Src: {src}")
         # yield(f"Dst: {dst}")
+        logging.info(f"Src: {src}")
         logging.info(f"Dst: {dst}")
         logging.info(f"Rules: {rules}")
         actions = rules[dst]
@@ -725,15 +727,14 @@ class Buffer(BotPlugin):
         post = apiSrc.getPost(j)
         title = apiSrc.getPostTitle(post)
         link = apiSrc.getPostLink(post)
-        # yield(title)
-        # yield(link)
-        yield (actions)
+        logging.debug(f"Title: {title}")
+        logging.debug(f"Link: {link}")
+        logging.debug(f"Actions: {actions}")
 
         for action in actions:
-            # yield(f"Action: {action}")
+            logging.info(f"Action: {action}")
             if action[0] == "cache":
-                apiDst = getApi("cache", (action[1], (action[2], action[3])))
-                # yield(apiDst)
+                apiDst = getApi("cache", (src[1], (action[2], action[3])))
                 res = apiDst.addPosts(
                     [
                         apiSrc.obtainPostData(j),
@@ -745,19 +746,17 @@ class Buffer(BotPlugin):
                 # yield(apiDst)
                 # apiDst.setPosts()
                 yield (f"I'll publish {title} - {link}")
-                yield (f"I'll publish {post}")
                 if hasattr(apiDst, "publishApiPost"):
                     res = apiDst.publishPost(title, link, "")
                 else:
                     res = apiDst.publish(j)
-                continue
                 # res = apiDst.publishPost(title, link, '')
             yield (f"Published, reply: {res}")
 
         postaction = apiSrc.getPostAction()
         if (not postaction) and (src[0] in ["cache"]):
             postaction = "delete"
-        yield (f"Post Action {postaction}")
+        logging.debug(f"Post Action {postaction}")
         try:
             cmdPost = getattr(apiSrc, postaction)
             yield (f"Post Action {postaction} command {cmdPost}")
@@ -874,6 +873,8 @@ class Buffer(BotPlugin):
             logging.info(f"Name ... {name}")
             pos = int(socialNetwork[1])
             logging.info(f"Soc ... {data['data'][pos][1]}")
+            myType = data['data'][pos][2]
+            logging.info(f"Type ... {myType}")
             social = socialNetwork
             if isinstance(data["data"][pos][1], str):
                 socNick = f"{data['data'][pos][1]}"
@@ -911,32 +912,36 @@ class Buffer(BotPlugin):
                         while iniPos <= len(theUpdates):
                             compResponse.append((tt,
                                                  socialNetworktxt,
+                                                 myType,
                                                  theUpdates[iniPos:maxPos]
                                                  )
                                                 )
                             iniPos = maxPos
                             maxPos = maxPos + math.trunc(numEle)
                     else:
-                        compResponse.append((tt, socialNetworktxt, theUpdates))
+                        compResponse.append((tt, socialNetworktxt, 
+                            myType, theUpdates))
                 else:
-                    compResponse.append((tt, socialNetworktxt, theUpdates))
+                    compResponse.append((tt, socialNetworktxt, 
+                        myType, theUpdates))
             else:
-                compResponse.append((tt,
-                                     f"{socialNetwork[0].capitalize()} "
-                                     f"({socialNetwork[1]})",
-                                     theUpdates,))
+                compResponse.append((tt, socialNetworktxt,
+                                     myType, theUpdates,))
 
         return compResponse
 
     def sendReply(self, mess, args, updates, types):
         reps = self.prepareReply(updates, types)
+        logging.info(f"Reps: {reps}")
         for rep in reps:
             response = (
                 tenv()
                 .get_template("buffer.md")
                 .render(
                     {"type": rep[0],
-                        "nameSocialNetwork": rep[1], "updates": rep[2]}
+                        "nameSocialNetwork": rep[1], 
+                        "post": rep[2],
+                        "updates": rep[3]}
                 )
             )
             yield (response)
