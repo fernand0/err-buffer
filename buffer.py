@@ -108,6 +108,306 @@ class Buffer(BotPlugin):
         return modules
 
     def checkRules(self):
+        msgLog = "Checking rules"
+        logMsg(msgLog, 1, 2)
+        config = configparser.ConfigParser()
+        config.read(CONFIGDIR + "/.rssBlogs")
+
+        services = self.getServices()
+        services['regular'].append('cache')
+        indent = 3*"  "+4*" "
+
+        srcs = []
+        srcsA = []
+        more = []
+        dsts = []
+        ruls = {}
+        mor = {}
+        impRuls = []
+        for section in config.sections():
+            url = config.get(section, "url")
+            msgLog = f"Section: {section} Url: {url}"
+            logMsg(msgLog, 1, 1)
+            # Sources
+            moreS = dict(config.items(section))
+            moreSS = None
+            if "rss" in config.options(section):
+                rss = config.get(section, "rss")
+                msgLog = (f"Service: rss -> {rss}")
+                logMsg(msgLog, 2, 0)
+                toAppend = ("rss", "set", 
+                            urllib.parse.urljoin(url, rss), "posts")
+                srcs.append(toAppend)
+                more.append(moreS)
+            else:
+                msgLog = (f"url {url}")
+                logMsg(msgLog, 2, 0)
+                for service in services["regular"]:
+                    if (
+                        ("service" in config[section])
+                        and (service == config[section]["service"])
+                    ) or (url.find(service) >= 0):
+                        methods = self.hasSetMethods(service)
+                        logging.debug(f"Service: {service} has set {methods}")
+                        for method in methods:
+                            msgLog = (f"Method: {method}")
+                            logMsg(msgLog, 2, 0)
+                            msgLog = (f"moreS: {moreS}")
+                            logMsg(msgLog, 2, 0)
+                            # If it has a method for setting, we can set
+                            # directly using this
+                            if service in config[section]:
+                                nick = config[section][service]
+                            else:
+                                nick = url
+                                if nick.find("slack") < 0:
+                                    nick = nick.split("/")[-1]
+                            if (service == 'imdb') or (service == 'imgur'):
+                                nick = url
+
+                            if 'posts' in moreS: 
+                                if moreS['posts'] == method[1]: 
+                                   toAppend = (service, "set", nick, method[1])
+                            else:
+                               toAppend = (service, "set", nick, method[1])
+                            msgLog = (f"toAppend: {toAppend}")
+                            logMsg(msgLog, 2, 0)
+                            if not (toAppend in srcs):
+                                if (('posts' in moreS) 
+                                    and (moreS['posts'] == method[1])):
+                                    srcs.append(toAppend)
+                                    more.append(moreS)
+                                else:
+                                    # Available, but with no rules
+                                    srcsA.append(toAppend)
+            fromSrv = toAppend
+            msgLog = (f"fromSrv toAppend: {toAppend}")
+            logMsg(msgLog, 2, 0)
+            msgLog = (f"fromSrv moreS: {moreS}")
+            logMsg(msgLog, 2, 0)
+
+            if "time" in config.options(section):
+                timeW = config.get(section, "time")
+            else:
+                timeW = 0
+            if "buffermax" in config.options(section):
+                bufferMax = config.get(section, "buffermax")
+            else:
+                bufferMax = 0
+            if "max" in config.options(section):
+                bufferMax = config.get(section, "max")
+
+            # Destinations
+            hasSpecial = False
+            if "posts" in config[section]:
+                postsType = config[section]["posts"]
+            else:
+                postsType = "posts"
+            if fromSrv:
+                fromSrv = ( fromSrv[0], fromSrv[1], fromSrv[2], postsType,)
+                for service in services["special"]:
+                    toAppend = ""
+                    msgLog = (f"Service: {service}")
+                    logMsg(msgLog, 2, 0)
+                    if service in config.options(section):
+                        valueE = config.get(section, service).split("\n")
+                        for val in valueE:
+                            nick = config.get(section, val)
+                            msgLog = (f"Service special: {service} "
+                                      f"({val}, {nick})")
+                            logMsg(msgLog, 2, 0)
+                            if service == "direct":
+                                url = "posts"
+                            toAppend = (service, url, val, nick, timeW, bufferMax)
+                            msgLog = (f"Service special toAppend: {toAppend} ")
+                            logMsg(msgLog, 2, 0)
+                            msgLog = (f"Service special from: {fromSrv} ")
+                            logMsg(msgLog, 2, 0)
+                            if toAppend not in dsts:
+                                dsts.append(toAppend)
+                            if toAppend:
+                                if fromSrv not in mor:
+                                    mor[fromSrv] = moreS
+                                if fromSrv in ruls:
+                                    if not toAppend in ruls[fromSrv]:
+                                        ruls[fromSrv].append(toAppend)
+                                        msgLog = (f"1 added: {toAppend} "
+                                                  f"in {fromSrv} ")
+                                        logMsg(msgLog, 2, 0)
+                                else:
+                                    ruls[fromSrv] = []
+                                    ruls[fromSrv].append(toAppend)
+                                    msgLog = (f"1.1 added: {toAppend} "
+                                              f"in {fromSrv} ")
+                                    logMsg(msgLog, 2, 0)
+
+                                hasSpecial = True
+
+                for service in services["regular"]:
+                    if (service == 'cache'):
+                        continue
+                    toAppend = ""
+                    if service in config.options(section):
+                        methods = self.hasPublishMethod(service)
+                        msgLog = (f"Service: {service} has {methods}")
+                        logMsg(msgLog, 2, 0)
+                        for method in methods:
+                            msgLog = (f"Method: {method}")
+                            logMsg(msgLog, 2, 0)
+                            # If it has a method for publishing, we can
+                            # publish directly using this
+
+                            if not method[1]:
+                                mmethod = 'post'
+                            else:
+                                mmethod = method[1]
+                            toAppend = (
+                                    "direct",
+                                    mmethod,
+                                    service,
+                                    config.get(section, service),
+                                    timeW,
+                                    bufferMax,
+                                    )
+
+                            if not (toAppend in dsts):
+                                dsts.append(toAppend)
+                            if toAppend:
+                                if hasSpecial: 
+                                    msgLog = (f"hasSpecial: {fromSrv}---")
+                                    logMsg(msgLog, 2, 0)
+                                    msgLog = (f"hasSpecial: {toAppend}---")
+                                    logMsg(msgLog, 2, 0)
+                                    nickSn = f"{toAppend[2]}@{toAppend[3]}"
+                                    fromSrvSp = (
+                                            "cache",
+                                            "set",
+                                            nickSn,
+                                            "posts",
+                                            )
+                                    impRuls.append((fromSrvSp, toAppend))
+                                    if fromSrvSp not in mor:
+                                        mor[fromSrvSp] = moreS
+                                    if fromSrvSp in ruls:
+                                        if not toAppend in ruls[fromSrvSp]:
+                                            ruls[fromSrvSp].append(toAppend)
+                                            msgLog = (f"2 added: {toAppend} "
+                                                      f"in {fromSrvSp} ")
+                                            logMsg(msgLog, 1, 0)
+                                    else:
+                                        ruls[fromSrvSp] = []
+                                        ruls[fromSrvSp].append(toAppend)
+                                        if url:
+                                            msgLog = (f"2.1 added: {toAppend} "
+                                                      f"in {fromSrvSp} "
+                                                      f"with {url}")
+                                        else:
+                                            msgLog = (f"2.1 added: {toAppend} "
+                                                      f"in {fromSrvSp} "
+                                                      f"with no url")
+                                        logMsg(msgLog, 1, 0)
+                                else:
+                                    msgLog = (f"From {fromSrv}")
+                                    logMsg(msgLog, 2, 0)
+                                    msgLog = (f"direct: {dsts}---")
+                                    logMsg(msgLog, 2, 0)
+
+                                    if fromSrv not in mor:
+                                        msgLog = (f"Adding {moreS}")
+                                        logMsg(msgLog, 2, 0)
+                                        mor[fromSrv] = moreS
+                                    if fromSrv in ruls:
+                                        if not toAppend in ruls[fromSrv]:
+                                            ruls[fromSrv].append(toAppend)
+                                            msgLog = (f"3 added: {toAppend} in "
+                                                      f"{fromSrv} ")
+                                            logMsg(msgLog, 2, 0)
+                                    else:
+                                        ruls[fromSrv] = []
+                                        ruls[fromSrv].append(toAppend)
+                                        msgLog = (f"3.1 added: {toAppend} in "
+                                                  f"{fromSrv} ")
+                                        logMsg(msgLog, 2, 0)
+
+        # Now we can add the sources not added.
+
+        for src in srcsA:
+            if not src in srcs: 
+                msgLog = (f"Adding implicit {src}")
+                logMsg(msgLog, 2, 0)
+                srcs.append(src)
+                more.append({})
+
+        # Now we can see which destinations can be also sources
+        for dst in dsts:
+            if dst[0] == "direct":
+                service = dst[2]
+                methods = self.hasSetMethods(service)
+                for method in methods:
+                    msgLog = (f"cache dst {dst}")
+                    logMsg(msgLog, 2, 0)
+                    toAppend = (service, "set", dst[3], method[1], dst[4])
+                    msgLog = (f"toAppend src {toAppend}")
+                    logMsg(msgLog, 2, 0)
+                    if not (toAppend[:4] in srcs):
+                        srcs.append(toAppend[:4])
+                        more.append({})
+            elif dst[0] == "cache":
+                if len(dst)>4 :
+                    toAppend = (dst[0], "set", (dst[1], (dst[2], dst[3])), 
+                                "posts", dst[4], 1)
+                else:
+                    toAppend = (dst[0], "set", (dst[1], (dst[2], dst[3])), 
+                                "posts", 0, 1)
+                if not (toAppend[:4] in srcs):
+                        srcs.append(toAppend[:4])
+                        more.append({})
+
+        available = {}
+        myKeys = {}
+        myIniKeys = []
+        for i, src in enumerate(srcs):
+            if not src:
+                continue
+            iniK, nameK = self.getIniKey(src[0], myKeys, myIniKeys)
+            if not (iniK in available):
+                available[iniK] = {"name": src[0], "data": [], "social": []}
+                available[iniK]["data"] = [{'src': src[1:], 'more': more[i]}]
+            else:
+                available[iniK]["data"].append({'src': src[1:], 
+                                                'more': more[i]})
+            # srcC = (src[0], "set", src[1], src[2])
+            # if srcC not in ruls:
+            #     ruls[srcC] = 
+
+        myList = []
+        for elem in available:
+            component = (
+                f"{elem}) "
+                f"{available[elem]['name']}: "
+                f"{len(available[elem]['data'])}"
+            )
+            myList.append(component)
+
+        if myList:
+            availableList = myList
+        else:
+            availableList = []
+
+        self.available = available
+        self.availableList = availableList
+
+        msgLog = (f"Avail: {self.available}")
+        logMsg(msgLog, 2, 0)
+        msgLog = (f"Ruls: {ruls}")
+        logMsg(msgLog, 2, 0)
+        self.rules = ruls
+        self.more = mor
+
+        return (srcs, dsts, ruls, impRuls)
+
+
+    def checkRules2(self):
         config = configparser.ConfigParser()
         config.read(CONFIGDIR + "/.rssBlogs")
 
@@ -362,7 +662,10 @@ class Buffer(BotPlugin):
                 if True:
                     if element.find("Next") > 0:
                         with open("{}/{}".format(DATADIR, element), "rb") as f:
-                            t1, t2 = pickle.load(f)
+                            try:
+                                t1, t2 = pickle.load(f)
+                            except:
+                                t1, t2 = (0,0)
                         if time.time() < t1 + t2:
                             msg = "[W]: "
                         else:
@@ -385,11 +688,14 @@ class Buffer(BotPlugin):
                     if nick and nick.find("_") > 0:
                         nick = nick.split("_")[1]
                     if msg.find("[W]") >= 0:
-                        textW.append(f"{t1 + t2}|{theTime} {orig} -> "
+                        textElement = (f"{t1 + t2}|{theTime} {orig} -> "
                                      f"{dest.capitalize()} ({nick})")
+                        textW.append(textElement)
                     else:
-                        textF.append(f"{t1 + t2}|{theTime} {orig} -> "
+                        textElement = (f"{t1 + t2}|{theTime} {orig} -> "
                                      f"{dest.capitalize()} ({nick})")
+                        textF.append(textElement)
+                    logging.info(f"Element text {textElement}")
         textF = sorted(textF)
         textW = sorted(textW)
         textP = self.formatList(textF, "finished")
@@ -441,7 +747,7 @@ class Buffer(BotPlugin):
                 if arg[1:].isdigit():
                     pos = int(arg[1:])
                 if pos < len(self.available[key]["data"]):
-                    myList.append(arg)
+                    myList.append(arg.capitalize())
         logging.debug("mylist... %s" % str(myList))
 
     @botcmd(split_args_with=None, template="buffer")
@@ -605,12 +911,13 @@ class Buffer(BotPlugin):
                 logging.debug(f"Profile {profile}")
                 name = profile["name"]
                 myElem = profile["data"][int(element[1:])]
+                logging.debug(f"myElem {myElem}")
                 try:
                     clients[element].setPosts()
                 except:
-                    api = getApi(name.capitalize(), myElem[1])
+                    api = getApi(name.capitalize(), myElem['src'][1])
                     clients[element] = api
-                    clients[element].setPostsType(myElem[2])
+                    clients[element].setPostsType(myElem['src'][2])
                     clients[element].setPosts()
 
                 self.log.debug("posts", clients[element].getPosts())
@@ -709,16 +1016,22 @@ class Buffer(BotPlugin):
         dst = (
             available[args[0].lower()]["name"],
             "set",
-            available[args[0].lower()]["data"][int(args[1])][1],
-            available[args[0].lower()]["data"][int(args[1])][2],
+            available[args[0].lower()]["data"][int(args[1])]['src'][1],
+            available[args[0].lower()]["data"][int(args[1])]['src'][2],
         )
         src = (dst[0], dst[2])
         # yield(f"Src: {src}")
         # yield(f"Dst: {dst}")
         logging.info(f"Src: {src}")
         logging.info(f"Dst: {dst}")
-        logging.info(f"Rules: {rules}")
-        actions = rules[dst]
+        logging.debug(f"Rules: {rules}")
+        if isinstance(dst[2], tuple):
+            nickSn = f"{dst[2][1][0]}@{dst[2][1][1]}"
+            dst2 = dst[:2]+ (nickSn,)+('posts', )
+        else:
+            dst2 = dst
+        logging.debug(f"Dst2: {dst2}")
+        actions = rules[dst2]
         apiSrc = getApi(src[0], src[1])
         # yield apiSrc
         apiSrc.setPostsType(dst[3])
@@ -731,8 +1044,8 @@ class Buffer(BotPlugin):
         logging.debug(f"Link: {link}")
         logging.debug(f"Actions: {actions}")
 
-        for action in actions:
-            logging.info(f"Action: {action}")
+        for i, action in enumerate(actions):
+            logging.info(f"Action {i}: {action}")
             if action[0] == "cache":
                 apiDst = getApi("cache", (src[1], (action[2], action[3])))
                 res = apiDst.addPosts(
@@ -742,10 +1055,12 @@ class Buffer(BotPlugin):
                 )
             else:
                 apiDst = getApi(action[2], action[3])
-                apiDst.setPostsType(dst[3])
-                # yield(apiDst)
-                # apiDst.setPosts()
-                yield (f"I'll publish {title} - {link}")
+                apiDst.setPostsType(action[1])
+                if 'tumblr' in dst2[0]:
+                    # Dirty trick. The publishing method checks data which
+                    # comes from source. Not OK
+                    apiDst.setPostsType('queue')
+                yield (f"I'll publish {title} - {link} ({action[1]})")
                 if hasattr(apiDst, "publishApiPost"):
                     res = apiDst.publishPost(title, link, "")
                 else:
@@ -754,12 +1069,15 @@ class Buffer(BotPlugin):
             yield (f"Published, reply: {res}")
 
         postaction = apiSrc.getPostAction()
-        if (not postaction) and (src[0] in ["cache"]):
+        if (not postaction) and (src[0] in ["cache","slack"]):
+            # Different from batch process because we do not want the item to
+            # reappear in scheduled sending. There can be problems if the link
+            # is in some cache.
             postaction = "delete"
         logging.debug(f"Post Action {postaction}")
         try:
             cmdPost = getattr(apiSrc, postaction)
-            yield (f"Post Action {postaction} command {cmdPost}")
+            yield (f"Post Action: {postaction}")
             res = cmdPost(j)
             yield (f"End {postaction}, reply: {res}")
         except:
@@ -872,16 +1190,17 @@ class Buffer(BotPlugin):
             name = data["name"]
             logging.info(f"Name ... {name}")
             pos = int(socialNetwork[1])
-            logging.info(f"Soc ... {data['data'][pos][1]}")
-            myType = data['data'][pos][2]
+            logging.info(f"Soc ... {data['data']}")
+            logging.info(f"Soc ... {data['data'][pos]['src'][1]}")
+            myType = data['data'][pos]['src'][2]
             logging.info(f"Type ... {myType}")
             social = socialNetwork
-            if isinstance(data["data"][pos][1], str):
-                socNick = f"{data['data'][pos][1]}"
+            if isinstance(data["data"][pos]['src'][1], str):
+                socNick = f"{data['data'][pos]['src'][1]}"
             else:
                 socNick = (
-                    f"{data['data'][pos][1][1][0].capitalize()} "
-                    f"{data['data'][pos][1][1][1]}"
+                    f"{data['data'][pos]['src'][1][1][0].capitalize()} "
+                    f"{data['data'][pos]['src'][1][1][1]}"
                 )
             logging.info(f"Nick ... {social}")
             logging.info(f"Nick ... {socNick}")
