@@ -148,7 +148,8 @@ class Buffer(BotPlugin):
                         and (service == config[section]["service"])
                     ) or (url.find(service) >= 0):
                         methods = self.hasSetMethods(service)
-                        logging.debug(f"Service: {service} has set {methods}")
+                        logging.debug(f"Service: {service} ({section}) has "
+                                      f"set {methods}")
                         for method in methods:
                             msgLog = (f"Method: {method}")
                             logMsg(msgLog, 2, 0)
@@ -164,6 +165,8 @@ class Buffer(BotPlugin):
                                     nick = nick.split("/")[-1]
                             if (service == 'imdb') or (service == 'imgur'):
                                 nick = url
+                            elif ('twitter' in url):
+                                nick = url.split("/")[-1]
 
                             if 'posts' in moreS: 
                                 if moreS['posts'] == method[1]: 
@@ -249,7 +252,8 @@ class Buffer(BotPlugin):
                     toAppend = ""
                     if service in config.options(section):
                         methods = self.hasPublishMethod(service)
-                        msgLog = (f"Service: {service} has {methods}")
+                        msgLog = (f"Service: {service} ({section}) "
+                                  f"has {methods}")
                         logMsg(msgLog, 2, 0)
                         for method in methods:
                             msgLog = (f"Method: {method}")
@@ -618,6 +622,7 @@ class Buffer(BotPlugin):
 
     def formatList(self, text, status):
         textR = []
+        linePrev = ''
         if text:
             textR.append("=======")
             textR.append("{}:".format(status.capitalize()))
@@ -626,8 +631,16 @@ class Buffer(BotPlugin):
                 lineS = line.split("|")[1]
                 line1, line2 = lineS.split("->")
                 logging.debug("line 1 {}".format(line1))
-                textR.append(line1)
-                textR.append("      ⟶{}".format(line2))
+                if line[:8] == linePrev[:8]:
+                    # FIXME: dirty trick to avoid duplicate content while the
+                    # old and the new approach to file names coexists
+                    if line[9].isupper():
+                        textR[-2] = line1
+                        textR[-1] = f"      ⟶{line2}"
+                else:
+                    textR.append(line1)
+                    textR.append("      ⟶{}".format(line2))
+                linePrev = line
         else:
             textR.append("===========")
             textR.append("None {}".format(status))
@@ -646,7 +659,24 @@ class Buffer(BotPlugin):
                 continue
             if element.find("Next") > 0:
                 # yield element
-                if element.find("_") > 0:
+                if element.find("__") > 0:
+                    res = element[:-len('.timeNext')]
+                    res = res.split("__")
+                    src = res[0].split('_')
+                    dst = res[1].split('_')
+
+                    url = f"{src[0]} ({src[2]} {src[1]})"
+                    url = url.replace('https', '').replace('http','')
+                    url = url.replace('---','').replace('.com','')
+                    url = url.replace('-(','(').replace('- ',' ')
+
+                    dest = f"{dst[0]}({dst[1]}){dst[2]}"
+                    nick = f"{dst[2]}-{dst[1]}"
+                    dest = f"{dst[0]}"
+                    nick = nick.replace('https', '').replace('http','')
+                    nick = nick.replace('---','').replace('.com','')
+                    nick = nick.replace('-(','(').replace('- ',' ')
+                elif element.find("_") > 0:
                     res = element.split("_")
                     url = res[0]
                     dest = res[1]
@@ -916,6 +946,10 @@ class Buffer(BotPlugin):
                     clients[element].setPosts()
                 except:
                     api = getApi(name.capitalize(), myElem['src'][1])
+                    if name == 'cache':
+                        # FIXME
+                        api.socialNetwork=myElem['src'][1][1][0]
+                        api.nick=myElem['src'][1][1][1]
                     clients[element] = api
                     clients[element].setPostsType(myElem['src'][2])
                     clients[element].setPosts()
@@ -1044,10 +1078,14 @@ class Buffer(BotPlugin):
         logging.debug(f"Link: {link}")
         logging.debug(f"Actions: {actions}")
 
+        published = False
         for i, action in enumerate(actions):
             logging.info(f"Action {i}: {action}")
             if action[0] == "cache":
                 apiDst = getApi("cache", (src[1], (action[2], action[3])))
+                # FIXME
+                apiDst.socialNetwork=action[2]
+                apiDst.nick=action[3]
                 res = apiDst.addPosts(
                     [
                         apiSrc.obtainPostData(j),
@@ -1060,11 +1098,19 @@ class Buffer(BotPlugin):
                     # Dirty trick. The publishing method checks data which
                     # comes from source. Not OK
                     apiDst.setPostsType('queue')
+                elif 'gmail' in dst2[0]:
+                    # Needs some working
+                    apiDst.setPostsType('drafts')
                 yield (f"I'll publish {title} - {link} ({action[1]})")
-                if hasattr(apiDst, "publishApiPost"):
-                    res = apiDst.publishPost(title, link, "")
+                if not published:
+                    if hasattr(apiDst, "publishApiPost"):
+                        res = apiDst.publishPost(title, link, "")
+                    else:
+                        res = apiDst.publish(j)
+                    if not ('Fail' in res):
+                        published = True
                 else:
-                    res = apiDst.publish(j)
+                    res = "Other action published before"
                 # res = apiDst.publishPost(title, link, '')
             yield (f"Published, reply: {res}")
 
@@ -1081,7 +1127,8 @@ class Buffer(BotPlugin):
             res = cmdPost(j)
             yield (f"End {postaction}, reply: {res}")
         except:
-            yield ("No postaction or wrong one")
+            res = "No postaction or wrong one"
+            yield (res)
         yield end()
 
     @botcmd
