@@ -12,6 +12,7 @@ from errbot.templating import tenv
 
 from configMod import *
 import moduleBuffer
+import moduleRules
 
 
 def end(msg=""):
@@ -772,6 +773,18 @@ class Buffer(BotPlugin):
 
     def appendMyList(self, arg, myList):
         logging.debug("Args... {}".format(str(arg)))
+        for key in self.available.keys():
+            if arg[0].capitalize() == key.capitalize():
+                if arg[1:].isdigit():
+                    pos = int(arg[1:])
+                if pos < len(self.available[key]["data"]):
+                    myList.append(arg.capitalize())
+        logging.debug("mylist... %s" % str(myList))
+
+    def appendMyListOld(self, arg, myList):
+        logging.debug("Args... {}".format(str(arg)))
+        logging.debug(f"avail: {self.rules.available}")
+        logging.debug(f"avail: {self.rules.available.keys()}")
         for key in self.available:
             if arg[0].capitalize() == key.capitalize():
                 if arg[1:].isdigit():
@@ -897,6 +910,39 @@ class Buffer(BotPlugin):
         return (name, profile, socialNetworks)
 
     @botcmd(split_args_with=None, template="buffer")
+    def list2(self, mess, args):
+        """A command to show available posts in a list of available sites"""
+        import moduleRules
+        self.rules = moduleRules.moduleRules()
+        srcs, dsts, ruls, impRuls = self.rules.checkRules()
+        yield(self.rules.rules.keys())
+        yield("===========================")
+        yield(self.rules.available.keys())
+        yield("===========================")
+
+        myList = []
+        response = []
+        self.posts = {}
+        pos = -1
+        if args:
+            if args[0].isdigit():
+                pos = int(args[0])
+        else:
+            pos = 0
+
+        yield(f"args: {args}")
+        self.appendMyList(args[0].upper(), myList)
+        yield("myList")
+        yield(myList)
+
+        if pos >= 0:
+            for element in myList:
+                yield("element")
+                yield(element)
+
+
+
+    @botcmd(split_args_with=None, template="buffer")
     def list(self, mess, args):
         """A command to show available posts in a list of available sites"""
         logging.debug("Posts posts %s" % (self.posts))
@@ -940,18 +986,29 @@ class Buffer(BotPlugin):
                 profile = available[element[0].lower()]
                 logging.debug(f"Profile {profile}")
                 name = profile["name"]
-                myElem = profile["data"][int(element[1:])]
+                logging.debug(f"Name {name}")
+                myElemOld = profile["data"][int(element[1:])]['src']
+                logging.debug(f"myElem {myElemOld}")
+                #myElem = (myElemOld[1][0], myElemOld[1][1], 'posts')
+                if name == 'cache':
+                    # FIXME
+                    myElem = ('slack', myElemOld[1][0], 
+                        f"{myElemOld[1][1][0]}@{myElemOld[1][1][1]}", 'posts')
+                    typePosts = 'posts'
+                else:
+                    myElem = (name, myElemOld[1], 'posts')
+                    typePosts = myElem[2]
                 logging.debug(f"myElem {myElem}")
                 try:
                     clients[element].setPosts()
                 except:
-                    api = getApi(name.capitalize(), myElem['src'][1])
-                    if name == 'cache':
-                        # FIXME
-                        api.socialNetwork=myElem['src'][1][1][0]
-                        api.nick=myElem['src'][1][1][1]
+                    api = getApi(name.capitalize(), myElem)
+                    #if name == 'cache':
+                    #    # FIXME
+                    #    api.socialNetwork=myElem['src'][1][1][0]
+                    #    api.nick=myElem['src'][1][1][1]
                     clients[element] = api
-                    clients[element].setPostsType(myElem['src'][2])
+                    clients[element].setPostsType(typePosts)
                     clients[element].setPosts()
 
                 self.log.debug("posts", clients[element].getPosts())
