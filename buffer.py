@@ -941,7 +941,6 @@ class Buffer(BotPlugin):
                 yield(element)
 
 
-
     @botcmd(split_args_with=None, template="buffer")
     def list(self, mess, args):
         """A command to show available posts in a list of available sites"""
@@ -992,13 +991,17 @@ class Buffer(BotPlugin):
                 #myElem = (myElemOld[1][0], myElemOld[1][1], 'posts')
                 if name == 'cache':
                     # FIXME
-                    myElem = ('slack', myElemOld[1][0], 
-                        f"{myElemOld[1][1][0]}@{myElemOld[1][1][1]}", 'posts')
+                    if 'slack' in myElemOld[1][0]:
+                        name1 = 'slack'
+                    elif 'imgur' in myElemOld[1][0]:
+                        name1 = 'imgur'
+                    myElem = (name1, myElemOld[1][0], 
+                        f"{myElemOld[1][1][0]}@{myElemOld[1][1][1]}")
                     typePosts = 'posts'
                 else:
-                    myElem = (name, myElemOld[1], 'posts')
-                    typePosts = myElem[2]
-                logging.debug(f"myElem {myElem}")
+                    myElem = (name, myElemOld[1])
+                    typePosts = myElemOld[2]
+                logging.debug(f">myElem {myElem}")
                 try:
                     clients[element].setPosts()
                 except:
