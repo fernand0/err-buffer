@@ -307,6 +307,7 @@ class Buffer(BotPlugin):
     def appendMyList2(self, arg, myList):
         logging.debug(f"Args... {arg}")
         logging.debug(f"Avail... {self.rules.available}")
+        logging.debug(f"Ruls... {self.rules.rules}")
         for key in self.rules.available.keys():
             if arg[0].capitalize() == key.capitalize():
                 if arg[1:].isdigit():
@@ -457,13 +458,7 @@ class Buffer(BotPlugin):
         profile = self.rules.available[element[0].lower()]
         logging.debug(f"getKey: {profile['data'][int(element[1])]['src']}")
         key = (profile['name'], ) + profile['data'][int(element[1])]['src']
-        logging.debug(f"getKey key: {key}")
-        if key[0] in ['cache']: #,'gitter']:
-            #FIXME
-            key1 = (key[0], ('slack', key[2][0]), f"{key[2][1][0]}@{key[2][1][1]}", key[3])
-            key = (key[0], key[1], f"{key[2][1][0]}@{key[2][1][1]}", key[3])
-        logging.debug(f"getKey: {profile['data'][int(element[1])]['src']}")
-        return key, key1
+        return key 
 
     @botcmd(split_args_with=None, template="buffer")
     def list(self, mess, args):
@@ -500,7 +495,7 @@ class Buffer(BotPlugin):
 
         if pos >= 0:
             for element in myList: 
-                src, key = self.getKey(element)
+                src = self.getKey(element)
                 if src in self.rules.more:
                     more = self.rules.more[src]
                 else:
@@ -509,7 +504,7 @@ class Buffer(BotPlugin):
                 try:
                     clients[element].setPosts()
                 except:
-                    api = self.rules.readConfigSrc("", key, more)
+                    api = self.rules.readConfigSrc("", src, more)
                     clients[element] = api
                     clients[element].setPosts()
 
@@ -713,12 +708,13 @@ class Buffer(BotPlugin):
             yield f"{k}) {action}"
             #FIXME code duplicated with  moduleRules
             pos = int(args[2:])
+            if 'hold' in more:
+                more['hold'] = 'no'
             res = self.rules.executeAction(src, more, action, True, 0, 
                                             False, "", False, pos)
         #res = self.execute("publish", args)
             yield res
 
-        yield(f"Src: {src}")
         if (src[0] in ["cache","slack", "gitter", "twitter", "mastodon"]):
             # FIXME
             # Different from batch process because we do not want the item to
