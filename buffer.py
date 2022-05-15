@@ -153,25 +153,14 @@ class Buffer(BotPlugin):
 
     def formatList(self, text, status):
         textR = []
-        linePrev = ''
         if text:
             textR.append("=======")
             textR.append("{}:".format(status.capitalize()))
             textR.append("=======")
+            logging.info(f"Text: {text}")
             for line in text:
                 lineS = line.split("|")[1]
-                line1, line2 = lineS.split("->")
-                logging.debug("line 1 {}".format(line1))
-                if line[:8] == linePrev[:8]:
-                    # FIXME: dirty trick to avoid duplicate content while the
-                    # old and the new approach to file names coexists
-                    if line[9].isupper():
-                        textR[-2] = line1
-                        textR[-1] = f"      ⟶{line2}"
-                else:
-                    textR.append(line1)
-                    textR.append("      ⟶{}".format(line2))
-                linePrev = line
+                textR.append(lineS.replace('->',' ⟶'))
         else:
             textR.append("===========")
             textR.append("None {}".format(status))
@@ -198,17 +187,36 @@ class Buffer(BotPlugin):
                     src = res[0].split('_')
                     dst = res[1].split('_')
 
-                    url = f"{src[0]} ({src[2]} {src[1]})"
-                    url = url.replace('https', '').replace('http','')
-                    url = url.replace('---','').replace('.com','')
-                    url = url.replace('-(','(').replace('- ',' ')
+                    orig = src[0]
+                    if src[1] != 'posts':
+                        nickOrig = f"{src[1]}@{src[2]}"
+                    else:
+                        nickOrig = f"{src[2]}"
+                    #url = f"{src[0]} ({src[2]} {src[1]})"
+                    nickOrig = nickOrig.replace('https', '').replace('http','')
+                    nickOrig = nickOrig.replace('---','').replace('.com','')
+                    nickOrig = nickOrig.replace('-(','(').replace('- ',' ')
+                    nickOrig = nickOrig .replace('feeds-','').replace('feed','')
+                    nickOrig = nickOrig.replace('user-','').replace('services','')
+                    if nickOrig.endswith('-'):
+                        nickOrig = nickOrig[:-1]
 
-                    dest = f"{dst[0]}({dst[1]}){dst[2]}"
-                    nick = f"{dst[2]}-{dst[1]}"
+                    #dest = f"{dst[0]}({dst[1]}){dst[2]}"
                     dest = f"{dst[0]}"
+                    if dst[1] != 'posts':
+                        nick = f"{dst[1]}@{dst[2]}"
+                    else:
+                        if len(dst)>2:
+                            nick = f"{dst[2]}"
+                        else:
+                            nick = f"{dst}"
                     nick = nick.replace('https', '').replace('http','')
                     nick = nick.replace('---','').replace('.com','')
                     nick = nick.replace('-(','(').replace('- ',' ')
+                    nick= nick.replace('feeds-','').replace('feed','')
+                    nick= nick.replace('user-','').replace('services','')
+                    if nick.endswith('-'):
+                        nick = nick[:-1]
                 elif element.find("_") > 0:
                     res = element.split("_")
                     url = res[0]
@@ -219,11 +227,12 @@ class Buffer(BotPlugin):
                     url = element
                     dest = ""
                     nick = ""
-                orig = url.split(".")[0]
-                orig = url
+                logging.info(f"Res {res}")
+                logging.info(f"Orig: {orig}")
                 t1 = None
                 if True:
                     if element.find("Next") > 0:
+                        logging.info(f"File {DATADIR}/{element}")
                         with open("{}/{}".format(DATADIR, element), "rb") as f:
                             try:
                                 t1, t2 = pickle.load(f)
@@ -247,16 +256,16 @@ class Buffer(BotPlugin):
                 else:
                     msg = "No Time"
                     theTime = ""
+                
                 if t1:
                     if nick and nick.find("_") > 0:
                         nick = nick.split("_")[1]
+                    textElement = (f"{t1 + t2}|{theTime} {orig} -> "
+                                   f"{dest.capitalize()}\n"
+                                   f"   ({nickOrig} -> {nick})")
                     if msg.find("[W]") >= 0:
-                        textElement = (f"{t1 + t2}|{theTime} {orig} -> "
-                                     f"{dest.capitalize()} ({nick})")
                         textW.append(textElement)
                     else:
-                        textElement = (f"{t1 + t2}|{theTime} {orig} -> "
-                                     f"{dest.capitalize()} ({nick})")
                         textF.append(textElement)
                     logging.info(f"Element text {textElement}")
         textF = sorted(textF)
@@ -679,7 +688,15 @@ class Buffer(BotPlugin):
             ):
                 # We need to do something for '*' commands
                 logging.info(f"I'll {command} in {profile}")
-                update = self.clients[profile].selectAndExecute(command, args)
+                if command in ["copy"]:
+                    destination = args[len(theProfile)+1+1:].upper()
+                    logging.debug(f"Args: {destination}")
+                    logging.debug(f"Client: {self.clients}")
+                    logging.debug(f"Client: {self.clients[destination]}")
+                    update = self.clients[profile].selectAndExecute(command, 
+                            [args, self.clients[destination]])
+                else:
+                    update = self.clients[profile].selectAndExecute(command, args)
                 if update:
                     updates = f"{updates}* {update} ({profile[0]})\n"
                     update = None
@@ -824,6 +841,13 @@ class Buffer(BotPlugin):
         except:
             res = "No postaction or wrong one"
             yield (res)
+        yield end()
+
+    @botcmd
+    def showR(self, mess, args):
+        """A command to show the content of some update"""
+        res = self.execute("showR", args)
+        yield res
         yield end()
 
     @botcmd
@@ -1054,11 +1078,13 @@ class Buffer(BotPlugin):
                 )
         yield (end())
 
-    @botcmd(split_args_with=None)
+    @botcmd#(split_args_with=None)
     def copy(self, mess, args):
         """A command to copy some update"""
-        pp = pprint.PrettyPrinter(indent=4)
-        moduleBuffer.copyPost(self.api, logging, pp,
-                              self.profiles, args[0], args[1])
+        res = self.execute("copy", args)
+        #pp = pprint.PrettyPrinter(indent=4)
+        #moduleBuffer.copyPost(self.api, logging, pp,
+        #                      self.profiles, args[0], args[1])
+        yield res
         yield "Copied"
         yield end()
