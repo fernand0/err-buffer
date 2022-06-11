@@ -11,7 +11,7 @@ from errbot.templating import tenv
 # Needs to set $PYTHONPATH to the dir where this modules are located
 
 from configMod import *
-import moduleBuffer
+# import moduleBuffer
 import moduleRules
 
 
@@ -321,6 +321,10 @@ class Buffer(BotPlugin):
             if arg[0].capitalize() == key.capitalize():
                 if arg[1:].isdigit():
                     pos = int(arg[1:])
+                    # What happens when str(int(arg[1:])) is not  arg[1:]?
+                    # For example, 00, 01, ...
+                    # C00, C01
+                    arg = arg[0]+str(pos)
                 if pos < len(self.rules.available[key]["data"]):
                     myList.append(arg.capitalize())
         logging.debug("mylist... %s" % str(myList))
@@ -480,6 +484,8 @@ class Buffer(BotPlugin):
         response = []
         self.posts = {}
         clients = self.clients
+        logging.info("Clients %s" % str(clients))
+
         pos = -1
 
         if args:
@@ -545,6 +551,7 @@ class Buffer(BotPlugin):
                 logging.debug("Response %s End" % str(response))
 
         if response:
+            logging.debug("Response %s End" % str(response))
             for resp in response:
                 logging.info(f"Resp: {resp}")
                 yield (resp)
@@ -679,7 +686,8 @@ class Buffer(BotPlugin):
         res = None
         logging.debug("Clients {}".format(self.clients))
         for profile in self.clients:
-            logging.debug(f"Executing in profile: {profile} with args {args}")
+            logging.debug(f"Trying to execute in profile: {profile} "
+                          f"with args {args}")
             theProfile = profile[:2]
             if (
                 (theProfile.upper() == args[: len(theProfile)].upper())
@@ -732,12 +740,12 @@ class Buffer(BotPlugin):
         #res = self.execute("publish", args)
             yield res
 
-        if (src[0] in ["cache","slack", "gitter", "twitter", "mastodon"]):
-            # FIXME
-            # Different from batch process because we do not want the item to
-            # reappear in scheduled sending. There can be problems if the link
-            # is in some cache.
-            yield self.execute("delete", args)
+        # if (src[0] in ["cache","slack", "gitter", "twitter", "mastodon"]):
+        #     # FIXME
+        #     # Different from batch process because we do not want the item to
+        #     # reappear in scheduled sending. There can be problems if the link
+        #     # is in some cache.
+        #     yield self.execute("delete", args)
  
         yield end()
 
@@ -963,13 +971,16 @@ class Buffer(BotPlugin):
                     f"{data['data'][pos]['src'][1][1][0].capitalize()} "
                     f"{data['data'][pos]['src'][1][1][1]}"
                 )
-            logging.info(f"Nick ... {social}")
-            logging.info(f"Nick ... {socNick}")
+            logging.info(f"Social ... {social}")
+            logging.info(f"Social Nick ... {socNick}")
             socialNetworktxt = (
                 f"{social.capitalize()} " f"({name.capitalize()} - {socNick})"
             )
+            logging.info(f"Social Network txt... {socialNetwork} len {len(socialNetwork)}")
+            logging.info(f"Social Network txt... {socialNetworktxt}")
             if theUpdates:
-                if len(socialNetwork) > 2:
+                if (not isinstance(socialNetwork, str) 
+                        and len(socialNetwork) > 2):
                     socialNetworktxt = (
                         socialNetwork[2][1][0].capitalize()
                         + " ("
