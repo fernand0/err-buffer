@@ -42,547 +42,547 @@ class Buffer(BotPlugin):
         self.lastLink = None
         self.argsArchive = []
 
-    def hasSetMethods(self, service):
-        if service == "social":
-            return []
-        clsService = getModule(service)
-        listMethods = clsService.__dir__()
+    # def hasSetMethods(self, service):
+    #     if service == "social":
+    #         return []
+    #     clsService = getModule(service)
+    #     listMethods = clsService.__dir__()
 
-        methods = []
-        for method in listMethods:
-            if (not method.startswith("__")) and (method.find("set") >= 0):
-                action = "set"
-                target = ""
-                myModule = eval(f"clsService.{method}.__module__")
+    #     methods = []
+    #     for method in listMethods:
+    #         if (not method.startswith("__")) and (method.find("set") >= 0):
+    #             action = "set"
+    #             target = ""
+    #             myModule = eval(f"clsService.{method}.__module__")
 
-                if method.find("Api") >= 0:
-                    target = method[len("setApi"):].lower()
-                # elif (clsService.setPosts.__module__
-                elif myModule == f"module{service.capitalize()}":
-                    target = method[len("set"):].lower()
-                if target and (
-                    target.lower() in ["posts", "drafts", "favs",
-                                       "messages", "queue"]
-                              ):
-                    toAppend = (action, target)
-                    if not (toAppend in methods):
-                        methods.append(toAppend)
-        return methods
+    #             if method.find("Api") >= 0:
+    #                 target = method[len("setApi"):].lower()
+    #             # elif (clsService.setPosts.__module__
+    #             elif myModule == f"module{service.capitalize()}":
+    #                 target = method[len("set"):].lower()
+    #             if target and (
+    #                 target.lower() in ["posts", "drafts", "favs",
+    #                                    "messages", "queue"]
+    #                           ):
+    #                 toAppend = (action, target)
+    #                 if not (toAppend in methods):
+    #                     methods.append(toAppend)
+    #     return methods
 
-    def hasPublishMethod(self, service):
-        clsService = getModule(service)
-        listMethods = clsService.__dir__()
+    # def hasPublishMethod(self, service):
+    #     clsService = getModule(service)
+    #     listMethods = clsService.__dir__()
 
-        methods = []
-        target = None
-        for method in listMethods:
-            if method.find("publish") >= 0:
-                action = "publish"
-                target = ""
-                moduleService = clsService.publishPost.__module__
-                if method.find("Api") >= 0:
-                    target = method[len("publishApi"):].lower()
-                    logging.info(f"Target api {target}")
-                elif moduleService == f"module{service.capitalize()}":
-                    target = method[len("publish"):].lower()
-                    logging.info(f"Target mod {target}")
-                # else:
-                #    target = 'post'
-                #    logging.info(f"Target else {target}")
-                if target:
-                    toAppend = (action, target)
-                    if not (toAppend in methods):
-                        methods.append(toAppend)
-        return methods
+    #     methods = []
+    #     target = None
+    #     for method in listMethods:
+    #         if method.find("publish") >= 0:
+    #             action = "publish"
+    #             target = ""
+    #             moduleService = clsService.publishPost.__module__
+    #             if method.find("Api") >= 0:
+    #                 target = method[len("publishApi"):].lower()
+    #                 logging.info(f"Target api {target}")
+    #             elif moduleService == f"module{service.capitalize()}":
+    #                 target = method[len("publish"):].lower()
+    #                 logging.info(f"Target mod {target}")
+    #             # else:
+    #             #    target = 'post'
+    #             #    logging.info(f"Target else {target}")
+    #             if target:
+    #                 toAppend = (action, target)
+    #                 if not (toAppend in methods):
+    #                     methods.append(toAppend)
+    #     return methods
 
-    def getServices(self):
-        # FIXME: Delete!
-        modulesFiles = os.listdir("/home/ftricas/usr/src/socialModules/src/socialModules")
-        modules = {"special": ["cache", "direct"], "regular": []}
-        # Initialized with some special services
-        name = "module"
-        for module in modulesFiles:
-            if module.startswith(name):
-                moduleName = module[len(name): -3].lower()
-                if not (moduleName in modules["special"]):
-                    # We drop the 'module' and the '.py' parts
-                    modules["regular"].append(moduleName)
+    # def getServices(self):
+    #     # FIXME: Delete!
+    #     modulesFiles = os.listdir("/home/ftricas/usr/src/socialModules/src/socialModules")
+    #     modules = {"special": ["cache", "direct"], "regular": []}
+    #     # Initialized with some special services
+    #     name = "module"
+    #     for module in modulesFiles:
+    #         if module.startswith(name):
+    #             moduleName = module[len(name): -3].lower()
+    #             if not (moduleName in modules["special"]):
+    #                 # We drop the 'module' and the '.py' parts
+    #                 modules["regular"].append(moduleName)
 
-        return modules
+    #     return modules
 
-    def checkRules(self):
-        msgLog = "Checking rules"
-        logMsg(msgLog, 1, 2)
-        config = configparser.ConfigParser()
-        config.read(CONFIGDIR + "/.rssBlogs")
+    # def checkRules(self):
+    #     msgLog = "Checking rules"
+    #     logMsg(msgLog, 1, 2)
+    #     config = configparser.ConfigParser()
+    #     config.read(CONFIGDIR + "/.rssBlogs")
 
-        services = self.getServices()
-        services['regular'].append('cache')
-        indent = 3*"  "+4*" "
+    #     services = self.getServices()
+    #     services['regular'].append('cache')
+    #     indent = 3*"  "+4*" "
 
-        srcs = []
-        srcsA = []
-        more = []
-        dsts = []
-        ruls = {}
-        mor = {}
-        impRuls = []
-        for section in config.sections():
-            url = config.get(section, "url")
-            msgLog = f"Section: {section} Url: {url}"
-            logMsg(msgLog, 1, 1)
-            # Sources
-            moreS = dict(config.items(section))
-            moreSS = None
-            if "rss" in config.options(section):
-                rss = config.get(section, "rss")
-                msgLog = (f"Service: rss -> {rss}")
-                logMsg(msgLog, 2, 0)
-                toAppend = ("rss", "set", 
-                            urllib.parse.urljoin(url, rss), "posts")
-                srcs.append(toAppend)
-                more.append(moreS)
-            else:
-                msgLog = (f"url {url}")
-                logMsg(msgLog, 2, 0)
-                for service in services["regular"]:
-                    if (
-                        ("service" in config[section])
-                        and (service == config[section]["service"])
-                    ) or (url.find(service) >= 0):
-                        methods = self.hasSetMethods(service)
-                        logging.debug(f"Service: {service} ({section}) has "
-                                      f"set {methods}")
-                        for method in methods:
-                            msgLog = (f"Method: {method}")
-                            logMsg(msgLog, 2, 0)
-                            msgLog = (f"moreS: {moreS}")
-                            logMsg(msgLog, 2, 0)
-                            # If it has a method for setting, we can set
-                            # directly using this
-                            if service in config[section]:
-                                nick = config[section][service]
-                            else:
-                                nick = url
-                                if nick.find("slack") < 0:
-                                    nick = nick.split("/")[-1]
-                            if (service == 'imdb') or (service == 'imgur'):
-                                nick = url
-                            elif ('twitter' in url):
-                                nick = url.split("/")[-1]
+    #     srcs = []
+    #     srcsA = []
+    #     more = []
+    #     dsts = []
+    #     ruls = {}
+    #     mor = {}
+    #     impRuls = []
+    #     for section in config.sections():
+    #         url = config.get(section, "url")
+    #         msgLog = f"Section: {section} Url: {url}"
+    #         logMsg(msgLog, 1, 1)
+    #         # Sources
+    #         moreS = dict(config.items(section))
+    #         moreSS = None
+    #         if "rss" in config.options(section):
+    #             rss = config.get(section, "rss")
+    #             msgLog = (f"Service: rss -> {rss}")
+    #             logMsg(msgLog, 2, 0)
+    #             toAppend = ("rss", "set", 
+    #                         urllib.parse.urljoin(url, rss), "posts")
+    #             srcs.append(toAppend)
+    #             more.append(moreS)
+    #         else:
+    #             msgLog = (f"url {url}")
+    #             logMsg(msgLog, 2, 0)
+    #             for service in services["regular"]:
+    #                 if (
+    #                     ("service" in config[section])
+    #                     and (service == config[section]["service"])
+    #                 ) or (url.find(service) >= 0):
+    #                     methods = self.hasSetMethods(service)
+    #                     logging.debug(f"Service: {service} ({section}) has "
+    #                                   f"set {methods}")
+    #                     for method in methods:
+    #                         msgLog = (f"Method: {method}")
+    #                         logMsg(msgLog, 2, 0)
+    #                         msgLog = (f"moreS: {moreS}")
+    #                         logMsg(msgLog, 2, 0)
+    #                         # If it has a method for setting, we can set
+    #                         # directly using this
+    #                         if service in config[section]:
+    #                             nick = config[section][service]
+    #                         else:
+    #                             nick = url
+    #                             if nick.find("slack") < 0:
+    #                                 nick = nick.split("/")[-1]
+    #                         if (service == 'imdb') or (service == 'imgur'):
+    #                             nick = url
+    #                         elif ('twitter' in url):
+    #                             nick = url.split("/")[-1]
 
-                            if 'posts' in moreS: 
-                                if moreS['posts'] == method[1]: 
-                                   toAppend = (service, "set", nick, method[1])
-                            else:
-                               toAppend = (service, "set", nick, method[1])
-                            msgLog = (f"toAppend: {toAppend}")
-                            logMsg(msgLog, 2, 0)
-                            if not (toAppend in srcs):
-                                if (('posts' in moreS) 
-                                    and (moreS['posts'] == method[1])):
-                                    srcs.append(toAppend)
-                                    more.append(moreS)
-                                else:
-                                    # Available, but with no rules
-                                    srcsA.append(toAppend)
-            fromSrv = toAppend
-            msgLog = (f"fromSrv toAppend: {toAppend}")
-            logMsg(msgLog, 2, 0)
-            msgLog = (f"fromSrv moreS: {moreS}")
-            logMsg(msgLog, 2, 0)
+    #                         if 'posts' in moreS: 
+    #                             if moreS['posts'] == method[1]: 
+    #                                toAppend = (service, "set", nick, method[1])
+    #                         else:
+    #                            toAppend = (service, "set", nick, method[1])
+    #                         msgLog = (f"toAppend: {toAppend}")
+    #                         logMsg(msgLog, 2, 0)
+    #                         if not (toAppend in srcs):
+    #                             if (('posts' in moreS) 
+    #                                 and (moreS['posts'] == method[1])):
+    #                                 srcs.append(toAppend)
+    #                                 more.append(moreS)
+    #                             else:
+    #                                 # Available, but with no rules
+    #                                 srcsA.append(toAppend)
+    #         fromSrv = toAppend
+    #         msgLog = (f"fromSrv toAppend: {toAppend}")
+    #         logMsg(msgLog, 2, 0)
+    #         msgLog = (f"fromSrv moreS: {moreS}")
+    #         logMsg(msgLog, 2, 0)
 
-            if "time" in config.options(section):
-                timeW = config.get(section, "time")
-            else:
-                timeW = 0
-            if "buffermax" in config.options(section):
-                bufferMax = config.get(section, "buffermax")
-            else:
-                bufferMax = 0
-            if "max" in config.options(section):
-                bufferMax = config.get(section, "max")
+    #         if "time" in config.options(section):
+    #             timeW = config.get(section, "time")
+    #         else:
+    #             timeW = 0
+    #         if "buffermax" in config.options(section):
+    #             bufferMax = config.get(section, "buffermax")
+    #         else:
+    #             bufferMax = 0
+    #         if "max" in config.options(section):
+    #             bufferMax = config.get(section, "max")
 
-            # Destinations
-            hasSpecial = False
-            if "posts" in config[section]:
-                postsType = config[section]["posts"]
-            else:
-                postsType = "posts"
-            if fromSrv:
-                fromSrv = ( fromSrv[0], fromSrv[1], fromSrv[2], postsType,)
-                for service in services["special"]:
-                    toAppend = ""
-                    msgLog = (f"Service: {service}")
-                    logMsg(msgLog, 2, 0)
-                    if service in config.options(section):
-                        valueE = config.get(section, service).split("\n")
-                        for val in valueE:
-                            nick = config.get(section, val)
-                            msgLog = (f"Service special: {service} "
-                                      f"({val}, {nick})")
-                            logMsg(msgLog, 2, 0)
-                            if service == "direct":
-                                url = "posts"
-                            toAppend = (service, url, val, nick, timeW, bufferMax)
-                            msgLog = (f"Service special toAppend: {toAppend} ")
-                            logMsg(msgLog, 2, 0)
-                            msgLog = (f"Service special from: {fromSrv} ")
-                            logMsg(msgLog, 2, 0)
-                            if toAppend not in dsts:
-                                dsts.append(toAppend)
-                            if toAppend:
-                                if fromSrv not in mor:
-                                    mor[fromSrv] = moreS
-                                if fromSrv in ruls:
-                                    if not toAppend in ruls[fromSrv]:
-                                        ruls[fromSrv].append(toAppend)
-                                        msgLog = (f"1 added: {toAppend} "
-                                                  f"in {fromSrv} ")
-                                        logMsg(msgLog, 2, 0)
-                                else:
-                                    ruls[fromSrv] = []
-                                    ruls[fromSrv].append(toAppend)
-                                    msgLog = (f"1.1 added: {toAppend} "
-                                              f"in {fromSrv} ")
-                                    logMsg(msgLog, 2, 0)
+    #         # Destinations
+    #         hasSpecial = False
+    #         if "posts" in config[section]:
+    #             postsType = config[section]["posts"]
+    #         else:
+    #             postsType = "posts"
+    #         if fromSrv:
+    #             fromSrv = ( fromSrv[0], fromSrv[1], fromSrv[2], postsType,)
+    #             for service in services["special"]:
+    #                 toAppend = ""
+    #                 msgLog = (f"Service: {service}")
+    #                 logMsg(msgLog, 2, 0)
+    #                 if service in config.options(section):
+    #                     valueE = config.get(section, service).split("\n")
+    #                     for val in valueE:
+    #                         nick = config.get(section, val)
+    #                         msgLog = (f"Service special: {service} "
+    #                                   f"({val}, {nick})")
+    #                         logMsg(msgLog, 2, 0)
+    #                         if service == "direct":
+    #                             url = "posts"
+    #                         toAppend = (service, url, val, nick, timeW, bufferMax)
+    #                         msgLog = (f"Service special toAppend: {toAppend} ")
+    #                         logMsg(msgLog, 2, 0)
+    #                         msgLog = (f"Service special from: {fromSrv} ")
+    #                         logMsg(msgLog, 2, 0)
+    #                         if toAppend not in dsts:
+    #                             dsts.append(toAppend)
+    #                         if toAppend:
+    #                             if fromSrv not in mor:
+    #                                 mor[fromSrv] = moreS
+    #                             if fromSrv in ruls:
+    #                                 if not toAppend in ruls[fromSrv]:
+    #                                     ruls[fromSrv].append(toAppend)
+    #                                     msgLog = (f"1 added: {toAppend} "
+    #                                               f"in {fromSrv} ")
+    #                                     logMsg(msgLog, 2, 0)
+    #                             else:
+    #                                 ruls[fromSrv] = []
+    #                                 ruls[fromSrv].append(toAppend)
+    #                                 msgLog = (f"1.1 added: {toAppend} "
+    #                                           f"in {fromSrv} ")
+    #                                 logMsg(msgLog, 2, 0)
 
-                                hasSpecial = True
+    #                             hasSpecial = True
 
-                for service in services["regular"]:
-                    if (service == 'cache'):
-                        continue
-                    toAppend = ""
-                    if service in config.options(section):
-                        methods = self.hasPublishMethod(service)
-                        msgLog = (f"Service: {service} ({section}) "
-                                  f"has {methods}")
-                        logMsg(msgLog, 2, 0)
-                        for method in methods:
-                            msgLog = (f"Method: {method}")
-                            logMsg(msgLog, 2, 0)
-                            # If it has a method for publishing, we can
-                            # publish directly using this
+    #             for service in services["regular"]:
+    #                 if (service == 'cache'):
+    #                     continue
+    #                 toAppend = ""
+    #                 if service in config.options(section):
+    #                     methods = self.hasPublishMethod(service)
+    #                     msgLog = (f"Service: {service} ({section}) "
+    #                               f"has {methods}")
+    #                     logMsg(msgLog, 2, 0)
+    #                     for method in methods:
+    #                         msgLog = (f"Method: {method}")
+    #                         logMsg(msgLog, 2, 0)
+    #                         # If it has a method for publishing, we can
+    #                         # publish directly using this
 
-                            if not method[1]:
-                                mmethod = 'post'
-                            else:
-                                mmethod = method[1]
-                            toAppend = (
-                                    "direct",
-                                    mmethod,
-                                    service,
-                                    config.get(section, service),
-                                    timeW,
-                                    bufferMax,
-                                    )
+    #                         if not method[1]:
+    #                             mmethod = 'post'
+    #                         else:
+    #                             mmethod = method[1]
+    #                         toAppend = (
+    #                                 "direct",
+    #                                 mmethod,
+    #                                 service,
+    #                                 config.get(section, service),
+    #                                 timeW,
+    #                                 bufferMax,
+    #                                 )
 
-                            if not (toAppend in dsts):
-                                dsts.append(toAppend)
-                            if toAppend:
-                                if hasSpecial: 
-                                    msgLog = (f"hasSpecial: {fromSrv}---")
-                                    logMsg(msgLog, 2, 0)
-                                    msgLog = (f"hasSpecial: {toAppend}---")
-                                    logMsg(msgLog, 2, 0)
-                                    nickSn = f"{toAppend[2]}@{toAppend[3]}"
-                                    fromSrvSp = (
-                                            "cache",
-                                            "set",
-                                            nickSn,
-                                            "posts",
-                                            )
-                                    impRuls.append((fromSrvSp, toAppend))
-                                    if fromSrvSp not in mor:
-                                        mor[fromSrvSp] = moreS
-                                    if fromSrvSp in ruls:
-                                        if not toAppend in ruls[fromSrvSp]:
-                                            ruls[fromSrvSp].append(toAppend)
-                                            msgLog = (f"2 added: {toAppend} "
-                                                      f"in {fromSrvSp} ")
-                                            logMsg(msgLog, 1, 0)
-                                    else:
-                                        ruls[fromSrvSp] = []
-                                        ruls[fromSrvSp].append(toAppend)
-                                        if url:
-                                            msgLog = (f"2.1 added: {toAppend} "
-                                                      f"in {fromSrvSp} "
-                                                      f"with {url}")
-                                        else:
-                                            msgLog = (f"2.1 added: {toAppend} "
-                                                      f"in {fromSrvSp} "
-                                                      f"with no url")
-                                        logMsg(msgLog, 1, 0)
-                                else:
-                                    msgLog = (f"From {fromSrv}")
-                                    logMsg(msgLog, 2, 0)
-                                    msgLog = (f"direct: {dsts}---")
-                                    logMsg(msgLog, 2, 0)
+    #                         if not (toAppend in dsts):
+    #                             dsts.append(toAppend)
+    #                         if toAppend:
+    #                             if hasSpecial: 
+    #                                 msgLog = (f"hasSpecial: {fromSrv}---")
+    #                                 logMsg(msgLog, 2, 0)
+    #                                 msgLog = (f"hasSpecial: {toAppend}---")
+    #                                 logMsg(msgLog, 2, 0)
+    #                                 nickSn = f"{toAppend[2]}@{toAppend[3]}"
+    #                                 fromSrvSp = (
+    #                                         "cache",
+    #                                         "set",
+    #                                         nickSn,
+    #                                         "posts",
+    #                                         )
+    #                                 impRuls.append((fromSrvSp, toAppend))
+    #                                 if fromSrvSp not in mor:
+    #                                     mor[fromSrvSp] = moreS
+    #                                 if fromSrvSp in ruls:
+    #                                     if not toAppend in ruls[fromSrvSp]:
+    #                                         ruls[fromSrvSp].append(toAppend)
+    #                                         msgLog = (f"2 added: {toAppend} "
+    #                                                   f"in {fromSrvSp} ")
+    #                                         logMsg(msgLog, 1, 0)
+    #                                 else:
+    #                                     ruls[fromSrvSp] = []
+    #                                     ruls[fromSrvSp].append(toAppend)
+    #                                     if url:
+    #                                         msgLog = (f"2.1 added: {toAppend} "
+    #                                                   f"in {fromSrvSp} "
+    #                                                   f"with {url}")
+    #                                     else:
+    #                                         msgLog = (f"2.1 added: {toAppend} "
+    #                                                   f"in {fromSrvSp} "
+    #                                                   f"with no url")
+    #                                     logMsg(msgLog, 1, 0)
+    #                             else:
+    #                                 msgLog = (f"From {fromSrv}")
+    #                                 logMsg(msgLog, 2, 0)
+    #                                 msgLog = (f"direct: {dsts}---")
+    #                                 logMsg(msgLog, 2, 0)
 
-                                    if fromSrv not in mor:
-                                        msgLog = (f"Adding {moreS}")
-                                        logMsg(msgLog, 2, 0)
-                                        mor[fromSrv] = moreS
-                                    if fromSrv in ruls:
-                                        if not toAppend in ruls[fromSrv]:
-                                            ruls[fromSrv].append(toAppend)
-                                            msgLog = (f"3 added: {toAppend} in "
-                                                      f"{fromSrv} ")
-                                            logMsg(msgLog, 2, 0)
-                                    else:
-                                        ruls[fromSrv] = []
-                                        ruls[fromSrv].append(toAppend)
-                                        msgLog = (f"3.1 added: {toAppend} in "
-                                                  f"{fromSrv} ")
-                                        logMsg(msgLog, 2, 0)
+    #                                 if fromSrv not in mor:
+    #                                     msgLog = (f"Adding {moreS}")
+    #                                     logMsg(msgLog, 2, 0)
+    #                                     mor[fromSrv] = moreS
+    #                                 if fromSrv in ruls:
+    #                                     if not toAppend in ruls[fromSrv]:
+    #                                         ruls[fromSrv].append(toAppend)
+    #                                         msgLog = (f"3 added: {toAppend} in "
+    #                                                   f"{fromSrv} ")
+    #                                         logMsg(msgLog, 2, 0)
+    #                                 else:
+    #                                     ruls[fromSrv] = []
+    #                                     ruls[fromSrv].append(toAppend)
+    #                                     msgLog = (f"3.1 added: {toAppend} in "
+    #                                               f"{fromSrv} ")
+    #                                     logMsg(msgLog, 2, 0)
 
-        # Now we can add the sources not added.
+    #     # Now we can add the sources not added.
 
-        for src in srcsA:
-            if not src in srcs: 
-                msgLog = (f"Adding implicit {src}")
-                logMsg(msgLog, 2, 0)
-                srcs.append(src)
-                more.append({})
+    #     for src in srcsA:
+    #         if not src in srcs: 
+    #             msgLog = (f"Adding implicit {src}")
+    #             logMsg(msgLog, 2, 0)
+    #             srcs.append(src)
+    #             more.append({})
 
-        # Now we can see which destinations can be also sources
-        for dst in dsts:
-            if dst[0] == "direct":
-                service = dst[2]
-                methods = self.hasSetMethods(service)
-                for method in methods:
-                    msgLog = (f"cache dst {dst}")
-                    logMsg(msgLog, 2, 0)
-                    toAppend = (service, "set", dst[3], method[1], dst[4])
-                    msgLog = (f"toAppend src {toAppend}")
-                    logMsg(msgLog, 2, 0)
-                    if not (toAppend[:4] in srcs):
-                        srcs.append(toAppend[:4])
-                        more.append({})
-            elif dst[0] == "cache":
-                if len(dst)>4 :
-                    toAppend = (dst[0], "set", (dst[1], (dst[2], dst[3])), 
-                                "posts", dst[4], 1)
-                else:
-                    toAppend = (dst[0], "set", (dst[1], (dst[2], dst[3])), 
-                                "posts", 0, 1)
-                if not (toAppend[:4] in srcs):
-                        srcs.append(toAppend[:4])
-                        more.append({})
+    #     # Now we can see which destinations can be also sources
+    #     for dst in dsts:
+    #         if dst[0] == "direct":
+    #             service = dst[2]
+    #             methods = self.hasSetMethods(service)
+    #             for method in methods:
+    #                 msgLog = (f"cache dst {dst}")
+    #                 logMsg(msgLog, 2, 0)
+    #                 toAppend = (service, "set", dst[3], method[1], dst[4])
+    #                 msgLog = (f"toAppend src {toAppend}")
+    #                 logMsg(msgLog, 2, 0)
+    #                 if not (toAppend[:4] in srcs):
+    #                     srcs.append(toAppend[:4])
+    #                     more.append({})
+    #         elif dst[0] == "cache":
+    #             if len(dst)>4 :
+    #                 toAppend = (dst[0], "set", (dst[1], (dst[2], dst[3])), 
+    #                             "posts", dst[4], 1)
+    #             else:
+    #                 toAppend = (dst[0], "set", (dst[1], (dst[2], dst[3])), 
+    #                             "posts", 0, 1)
+    #             if not (toAppend[:4] in srcs):
+    #                     srcs.append(toAppend[:4])
+    #                     more.append({})
 
-        available = {}
-        myKeys = {}
-        myIniKeys = []
-        for i, src in enumerate(srcs):
-            if not src:
-                continue
-            iniK, nameK = self.getIniKey(src[0], myKeys, myIniKeys)
-            if not (iniK in available):
-                available[iniK] = {"name": src[0], "data": [], "social": []}
-                available[iniK]["data"] = [{'src': src[1:], 'more': more[i]}]
-            else:
-                available[iniK]["data"].append({'src': src[1:], 
-                                                'more': more[i]})
-            # srcC = (src[0], "set", src[1], src[2])
-            # if srcC not in ruls:
-            #     ruls[srcC] = 
+    #     available = {}
+    #     myKeys = {}
+    #     myIniKeys = []
+    #     for i, src in enumerate(srcs):
+    #         if not src:
+    #             continue
+    #         iniK, nameK = self.getIniKey(src[0], myKeys, myIniKeys)
+    #         if not (iniK in available):
+    #             available[iniK] = {"name": src[0], "data": [], "social": []}
+    #             available[iniK]["data"] = [{'src': src[1:], 'more': more[i]}]
+    #         else:
+    #             available[iniK]["data"].append({'src': src[1:], 
+    #                                             'more': more[i]})
+    #         # srcC = (src[0], "set", src[1], src[2])
+    #         # if srcC not in ruls:
+    #         #     ruls[srcC] = 
 
-        myList = []
-        for elem in available:
-            component = (
-                f"{elem}) "
-                f"{available[elem]['name']}: "
-                f"{len(available[elem]['data'])}"
-            )
-            myList.append(component)
+    #     myList = []
+    #     for elem in available:
+    #         component = (
+    #             f"{elem}) "
+    #             f"{available[elem]['name']}: "
+    #             f"{len(available[elem]['data'])}"
+    #         )
+    #         myList.append(component)
 
-        if myList:
-            availableList = myList
-        else:
-            availableList = []
+    #     if myList:
+    #         availableList = myList
+    #     else:
+    #         availableList = []
 
-        self.available = available
-        self.availableList = availableList
+    #     self.available = available
+    #     self.availableList = availableList
 
-        msgLog = (f"Avail: {self.available}")
-        logMsg(msgLog, 2, 0)
-        msgLog = (f"Ruls: {ruls}")
-        logMsg(msgLog, 2, 0)
-        self.rules = ruls
-        self.more = mor
+    #     msgLog = (f"Avail: {self.available}")
+    #     logMsg(msgLog, 2, 0)
+    #     msgLog = (f"Ruls: {ruls}")
+    #     logMsg(msgLog, 2, 0)
+    #     self.rules = ruls
+    #     self.more = mor
 
-        return (srcs, dsts, ruls, impRuls)
+    #     return (srcs, dsts, ruls, impRuls)
 
 
-    def checkRules2(self):
-        config = configparser.ConfigParser()
-        config.read(CONFIGDIR + "/.rssBlogs")
+    # def checkRules2(self):
+    #     config = configparser.ConfigParser()
+    #     config.read(CONFIGDIR + "/.rssBlogs")
 
-        services = self.getServices()
+    #     services = self.getServices()
 
-        srcs = []
-        dsts = []
-        ruls = {}
-        impRuls = []
-        for section in config.sections():
-            url = config.get(section, "url")
-            logging.info(f"Url: {url}")
-            # Sources
-            if "rss" in config.options(section):
-                rss = config.get(section, "rss")
-                logging.info(f"Service: rss -> {rss}")
-                toAppend = ("rss", "set", 
-                            urllib.parse.urljoin(url, rss), "posts")
-                srcs.append(toAppend)
-            else:
-                logging.debug(f"url {url}")
-                for service in services["regular"]:
-                    if (
-                        ("service" in config[section])
-                        and (service == config[section]["service"])
-                    ) or (url.find(service) >= 0):
-                        methods = self.hasSetMethods(service)
-                        print(f"Has set {methods}")
-                        for method in methods:
-                            # If it has a method for setting, we can set
-                            # directly using this
-                            if service in config[section]:
-                                nick = config[section][service]
-                            else:
-                                nick = url
-                                if nick.find("slack") < 0:
-                                    nick = nick.split("/")[-1]
-                            if service == 'imdb':
-                                nick = url
+    #     srcs = []
+    #     dsts = []
+    #     ruls = {}
+    #     impRuls = []
+    #     for section in config.sections():
+    #         url = config.get(section, "url")
+    #         logging.info(f"Url: {url}")
+    #         # Sources
+    #         if "rss" in config.options(section):
+    #             rss = config.get(section, "rss")
+    #             logging.info(f"Service: rss -> {rss}")
+    #             toAppend = ("rss", "set", 
+    #                         urllib.parse.urljoin(url, rss), "posts")
+    #             srcs.append(toAppend)
+    #         else:
+    #             logging.debug(f"url {url}")
+    #             for service in services["regular"]:
+    #                 if (
+    #                     ("service" in config[section])
+    #                     and (service == config[section]["service"])
+    #                 ) or (url.find(service) >= 0):
+    #                     methods = self.hasSetMethods(service)
+    #                     print(f"Has set {methods}")
+    #                     for method in methods:
+    #                         # If it has a method for setting, we can set
+    #                         # directly using this
+    #                         if service in config[section]:
+    #                             nick = config[section][service]
+    #                         else:
+    #                             nick = url
+    #                             if nick.find("slack") < 0:
+    #                                 nick = nick.split("/")[-1]
+    #                         if service == 'imdb':
+    #                             nick = url
 
-                            toAppend = (service, "set", nick, method[1])
-                            if not (toAppend in srcs):
-                                srcs.append(toAppend)
-            fromSrv = toAppend
+    #                         toAppend = (service, "set", nick, method[1])
+    #                         if not (toAppend in srcs):
+    #                             srcs.append(toAppend)
+    #         fromSrv = toAppend
 
-            # Destinations
-            hasSpecial = False
-            for service in services["special"]:
-                toAppend = ""
-                print(f"Service: {service}")
-                if service in config.options(section):
-                    valueE = config.get(section, service).split("\n")
-                    for val in valueE:
-                        nick = config.get(section, val)
-                        logging.info(f"Service special: {service} "
-                                     f"({val}, {nick})")
-                        if service == "direct":
-                            url = "posts"
-                            if "posts" in config[section]:
-                                fromSrv = (
-                                    fromSrv[0],
-                                    fromSrv[1],
-                                    fromSrv[2],
-                                    config[section]["posts"],
-                                )
-                            # else:
-                            #    url = ""
-                        toAppend = (service, url, val, nick)
-                        logging.info(f"Service special toAppend: {toAppend} ")
-                        logging.info(f"Service special from: {fromSrv} ")
-                        if toAppend not in dsts:
-                            dsts.append(toAppend)
-                        if toAppend:
-                            if fromSrv in ruls:
-                                ruls[fromSrv].append(toAppend)
-                            else:
-                                ruls[fromSrv] = []
-                                ruls[fromSrv].append(toAppend)
+    #         # Destinations
+    #         hasSpecial = False
+    #         for service in services["special"]:
+    #             toAppend = ""
+    #             print(f"Service: {service}")
+    #             if service in config.options(section):
+    #                 valueE = config.get(section, service).split("\n")
+    #                 for val in valueE:
+    #                     nick = config.get(section, val)
+    #                     logging.info(f"Service special: {service} "
+    #                                  f"({val}, {nick})")
+    #                     if service == "direct":
+    #                         url = "posts"
+    #                         if "posts" in config[section]:
+    #                             fromSrv = (
+    #                                 fromSrv[0],
+    #                                 fromSrv[1],
+    #                                 fromSrv[2],
+    #                                 config[section]["posts"],
+    #                             )
+    #                         # else:
+    #                         #    url = ""
+    #                     toAppend = (service, url, val, nick)
+    #                     logging.info(f"Service special toAppend: {toAppend} ")
+    #                     logging.info(f"Service special from: {fromSrv} ")
+    #                     if toAppend not in dsts:
+    #                         dsts.append(toAppend)
+    #                     if toAppend:
+    #                         if fromSrv in ruls:
+    #                             ruls[fromSrv].append(toAppend)
+    #                         else:
+    #                             ruls[fromSrv] = []
+    #                             ruls[fromSrv].append(toAppend)
 
-                            hasSpecial = True
+    #                         hasSpecial = True
 
-            for service in services["regular"]:
-                toAppend = ""
-                if service in config.options(section):
-                    methods = self.hasPublishMethod(service)
-                    logging.info(f"Service: {service} has {methods}")
-                    logging.info(f"Methods: {methods}")
-                    for method in methods:
-                        # If it has a method for publishing, we can publish
-                        # directly using this
+    #         for service in services["regular"]:
+    #             toAppend = ""
+    #             if service in config.options(section):
+    #                 methods = self.hasPublishMethod(service)
+    #                 logging.info(f"Service: {service} has {methods}")
+    #                 logging.info(f"Methods: {methods}")
+    #                 for method in methods:
+    #                     # If it has a method for publishing, we can publish
+    #                     # directly using this
 
-                        toAppend = (
-                            "direct",
-                            method[1],
-                            service,
-                            config.get(section, service),
-                        )
-                        if not (toAppend in dsts):
-                            dsts.append(toAppend)
-                        if toAppend:
-                            if hasSpecial:
-                                fromSrvSp = (
-                                    "cache",
-                                    "set",
-                                    (fromSrv[2], (toAppend[2], toAppend[3])),
-                                    "posts",
-                                )
-                                impRuls.append((fromSrvSp, toAppend))
+    #                     toAppend = (
+    #                         "direct",
+    #                         method[1],
+    #                         service,
+    #                         config.get(section, service),
+    #                     )
+    #                     if not (toAppend in dsts):
+    #                         dsts.append(toAppend)
+    #                     if toAppend:
+    #                         if hasSpecial:
+    #                             fromSrvSp = (
+    #                                 "cache",
+    #                                 "set",
+    #                                 (fromSrv[2], (toAppend[2], toAppend[3])),
+    #                                 "posts",
+    #                             )
+    #                             impRuls.append((fromSrvSp, toAppend))
 
-                                if fromSrvSp in ruls:
-                                    ruls[fromSrvSp].append(toAppend)
-                                else:
-                                    ruls[fromSrvSp] = []
-                                    ruls[fromSrvSp].append(toAppend)
+    #                             if fromSrvSp in ruls:
+    #                                 ruls[fromSrvSp].append(toAppend)
+    #                             else:
+    #                                 ruls[fromSrvSp] = []
+    #                                 ruls[fromSrvSp].append(toAppend)
 
-                            else:
-                                if fromSrv in ruls:
-                                    ruls[fromSrv].append(toAppend)
-                                else:
-                                    ruls[fromSrv] = []
-                                    ruls[fromSrv].append(toAppend)
+    #                         else:
+    #                             if fromSrv in ruls:
+    #                                 ruls[fromSrv].append(toAppend)
+    #                             else:
+    #                                 ruls[fromSrv] = []
+    #                                 ruls[fromSrv].append(toAppend)
 
-        # Now we can see which destinations can be also sources
-        for dst in dsts:
-            if dst[0] == "direct":
-                service = dst[2]
-                methods = self.hasSetMethods(service)
-                for method in methods:
-                    logging.debug(f"cache dst {dst}")
-                    toAppend = (service, "set", dst[3], method[1])
-                    if not (toAppend in srcs):
-                        srcs.append(toAppend)
-            elif dst[0] == "cache":
-                toAppend = (dst[0], "set", (dst[1], (dst[2], dst[3])), "posts")
-                if not (toAppend in srcs):
-                    srcs.append(toAppend)
+    #     # Now we can see which destinations can be also sources
+    #     for dst in dsts:
+    #         if dst[0] == "direct":
+    #             service = dst[2]
+    #             methods = self.hasSetMethods(service)
+    #             for method in methods:
+    #                 logging.debug(f"cache dst {dst}")
+    #                 toAppend = (service, "set", dst[3], method[1])
+    #                 if not (toAppend in srcs):
+    #                     srcs.append(toAppend)
+    #         elif dst[0] == "cache":
+    #             toAppend = (dst[0], "set", (dst[1], (dst[2], dst[3])), "posts")
+    #             if not (toAppend in srcs):
+    #                 srcs.append(toAppend)
 
-        available = {}
-        myKeys = {}
-        myIniKeys = []
-        for src in srcs:
-            iniK, nameK = self.getIniKey(src[0], myKeys, myIniKeys)
-            if not (iniK in available):
-                available[iniK] = {"name": src[0], "data": [], "social": []}
-                available[iniK]["data"] = [src[1:]]
-            else:
-                available[iniK]["data"].append(src[1:])
+    #     available = {}
+    #     myKeys = {}
+    #     myIniKeys = []
+    #     for src in srcs:
+    #         iniK, nameK = self.getIniKey(src[0], myKeys, myIniKeys)
+    #         if not (iniK in available):
+    #             available[iniK] = {"name": src[0], "data": [], "social": []}
+    #             available[iniK]["data"] = [src[1:]]
+    #         else:
+    #             available[iniK]["data"].append(src[1:])
 
-        myList = []
-        for elem in available:
-            component = (
-                f"{elem}) "
-                f"{available[elem]['name']}: "
-                f"{len(available[elem]['data'])}"
-            )
-            myList.append(component)
+    #     myList = []
+    #     for elem in available:
+    #         component = (
+    #             f"{elem}) "
+    #             f"{available[elem]['name']}: "
+    #             f"{len(available[elem]['data'])}"
+    #         )
+    #         myList.append(component)
 
-        if myList:
-            availableList = myList
-        else:
-            availableList = []
+    #     if myList:
+    #         availableList = myList
+    #     else:
+    #         availableList = []
 
-        self.available = available
-        self.availableList = availableList
+    #     self.available = available
+    #     self.availableList = availableList
 
-        self.rules = ruls
+    #     self.rules = ruls
 
-        return (srcs, dsts, ruls, impRuls)
+    #     return (srcs, dsts, ruls, impRuls)
 
     def printList(self, myList, title):
         print(f"{title}:")
@@ -661,20 +661,25 @@ class Buffer(BotPlugin):
             if (element.find("last") > 0) and (element.find("Next") > 0):
                 continue
             if element.find("Next") > 0:
-                # yield element
                 if element.find("__") > 0:
                     res = element[:-len('.timeNext')]
                     res = res.split("__")
                     src = res[0].split('_')
                     dst = res[1].split('_')
+                    if isinstance(res, str):
+                        res = res.split("__")
 
                     url = f"{src[0]} ({src[2]} {src[1]})"
                     url = url.replace('https', '').replace('http','')
                     url = url.replace('---','').replace('.com','')
                     url = url.replace('-(','(').replace('- ',' ')
 
-                    dest = f"{dst[0]}({dst[1]}){dst[2]}"
-                    nick = f"{dst[2]}-{dst[1]}"
+                    if len(dst)>2:
+                        dest = f"{dst[0]}({dst[1]}){dst[2]}"
+                        nick = f"{dst[2]}-{dst[1]}"
+                    else:
+                        dest = f"{dst[0]}({dst[1]})"
+                        nick = f"{dst[1]}"
                     dest = f"{dst[0]}"
                     nick = nick.replace('https', '').replace('http','')
                     nick = nick.replace('---','').replace('.com','')
@@ -753,25 +758,30 @@ class Buffer(BotPlugin):
             yield "None"
         yield end()
 
-    @botcmd
-    def list_all(self, mess, args):
-        """List available services"""
-        if not self.available:
-            self.checkRules()
-        logging.info("Available: %s" % str(self.available))
-        myList = {}
-        theKey = ("A0")
-        myList[theKey] = []
-        for key in self.available:
-            for i, elem in enumerate(self.available[key]["data"]):
-                if (args and (key == args)) or not args:
-                    myList[theKey].append((elem[1], key, f"{key}-{i}"))
-        logging.info("myList: %s" % str(myList))
+    # @botcmd
+    # def list_all(self, mess, args):
+    #     """List available services"""
+    #     if not self.available:
+    #         rules = socialModules.moduleRules.moduleRules()
+    #         rules.checkRules()
+    #         self.available = rules.available
+    #         self.rules = rules
 
-        response = self.sendReply("", "", myList, ["sent", "pending"])
-        for rep in response:
-            yield (rep)
-        return end
+    #     logging.info("Available: %s" % str(self.available))
+    #     myList = {}
+    #     theKey = ("A0")
+    #     myList[theKey] = []
+    #     for key in self.available:
+    #         for i, elem in enumerate(self.available[key]["data"]):
+    #             if (args and (key == args)) or not args:
+    #                 yield f"Elem: {elem}"
+    #                 myList[theKey].append((elem[1], key, f"{key}-{i}"))
+    #     logging.info("myList: %s" % str(myList))
+
+    #     response = self.sendReply("", "", myList, ["sent", "pending"])
+    #     for rep in response:
+    #         yield (rep)
+    #     return end
 
     def appendMyList(self, arg, myList):
         logging.debug("Args... {}".format(str(arg)))
@@ -916,6 +926,7 @@ class Buffer(BotPlugin):
             rules = socialModules.moduleRules.moduleRules()
             rules.checkRules()
             self.available = rules.available
+            self.rules = rules
 
             # for key in self.available.keys():
             #     #yield f"Key: {key} - {rules.available[key]}"
@@ -947,7 +958,6 @@ class Buffer(BotPlugin):
 
 
         logging.debug("myList %s" % str(myList))
-        yield (f"myList: {myList}")
 
         self.lastList = myList
         clients = self.clients
@@ -962,17 +972,20 @@ class Buffer(BotPlugin):
                 name = profile["name"]
                 myElem = profile["data"][int(element[1:])]
                 logging.debug(f"myElem {myElem}")
-                yield f"Elem: {myElem}"
+                src = (self.rules.available[element[0].lower()]['name'], )
+                src = src + myElem['src']
+                more = self.rules.more[src]
+
                 try:
                     clients[element].setPosts()
                 except:
-                    api = getApi(profile['name'], profile["data"][int(element[1:])]['src'][1])
-                    yield f"Api: {api}"
-                    api = getApi(name.capitalize(), myElem['src'][1])
+                    # api = getApi(profile['name'], profile["data"][int(element[1:])]['src'][1])
+                    api = self.rules.readConfigSrc('', src, more)
                     # if name == 'cache':
                     #     # FIXME
                     #     api.socialNetwork=myElem['src'][1][1][0]
                     #     api.nick=myElem['src'][1][1][1]
+                    # api = getApi(name.capitalize(), myElem['src'][1])
                     clients[element] = api
                     clients[element].setPostsType(myElem['src'][2])
                     clients[element].setPosts()
