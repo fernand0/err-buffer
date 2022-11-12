@@ -10,8 +10,10 @@ from errbot.templating import tenv
 
 # Needs to set $PYTHONPATH to the dir where this modules are located
 
-from configMod import *
-import moduleBuffer
+from socialModules.configMod import *
+import socialModules
+import socialModules.moduleRules
+# import socialModules.moduleBuffer
 
 
 def end(msg=""):
@@ -94,7 +96,8 @@ class Buffer(BotPlugin):
         return methods
 
     def getServices(self):
-        modulesFiles = os.listdir("/home/ftricas/usr/src/socialModules")
+        # FIXME: Delete!
+        modulesFiles = os.listdir("/home/ftricas/usr/src/socialModules/src/socialModules")
         modules = {"special": ["cache", "direct"], "regular": []}
         # Initialized with some special services
         name = "module"
@@ -838,7 +841,9 @@ class Buffer(BotPlugin):
     def list_add(self, msg, args):
         """Add list of services to the quick list"""
         if not self.available:
-            self.checkRules()
+            rules = socialModules.moduleRules.moduleRules()
+            rules.checkRules()
+            self.available = rules.available
 
         myList = []
 
@@ -854,9 +859,11 @@ class Buffer(BotPlugin):
     @botcmd
     def list_list(self, msg, args):
         if not self.available:
-            self.checkRules()
+            rules = socialModules.moduleRules.moduleRules()
+            rules.checkRules()
+            self.available = rules.available
 
-        response = [self.availableList]
+        response = self.config
         yield response
         yield end()
 
@@ -906,7 +913,17 @@ class Buffer(BotPlugin):
         response = []
         self.posts = {}
         if not self.available:
-            self.checkRules()
+            rules = socialModules.moduleRules.moduleRules()
+            rules.checkRules()
+            self.available = rules.available
+
+            # for key in self.available.keys():
+            #     #yield f"Key: {key} - {rules.available[key]}"
+            #     # available -> {"name": src[0], "data": [], "social": []}
+            #     # 'data' -> [{'src': src[1:], 'more': more[i]}]
+            #     for i, element in enumerate(self.available[key]['data']):
+            #         "yield (f"     {key}{i}) {element}")
+            #     time.sleep(0.2)
 
         available = self.available
 
@@ -928,7 +945,10 @@ class Buffer(BotPlugin):
             self.appendMyList(args[0].upper(), myList)
             pos = 0
 
+
         logging.debug("myList %s" % str(myList))
+        yield (f"myList: {myList}")
+
         self.lastList = myList
         clients = self.clients
 
@@ -942,19 +962,20 @@ class Buffer(BotPlugin):
                 name = profile["name"]
                 myElem = profile["data"][int(element[1:])]
                 logging.debug(f"myElem {myElem}")
+                yield f"Elem: {myElem}"
                 try:
                     clients[element].setPosts()
                 except:
+                    api = getApi(profile['name'], profile["data"][int(element[1:])]['src'][1])
+                    yield f"Api: {api}"
                     api = getApi(name.capitalize(), myElem['src'][1])
-                    if name == 'cache':
-                        # FIXME
-                        api.socialNetwork=myElem['src'][1][1][0]
-                        api.nick=myElem['src'][1][1][1]
+                    # if name == 'cache':
+                    #     # FIXME
+                    #     api.socialNetwork=myElem['src'][1][1][0]
+                    #     api.nick=myElem['src'][1][1][1]
                     clients[element] = api
                     clients[element].setPostsType(myElem['src'][2])
                     clients[element].setPosts()
-
-                self.log.debug("posts", clients[element].getPosts())
 
                 postsTmp = []
                 posts = []
