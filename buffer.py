@@ -234,9 +234,9 @@ class Buffer(BotPlugin):
             for i, elem in enumerate(self.available[key]["data"]):
                 if (args and (key == args)) or not args:
                     logging.info(f"Elem: {elem}")
-                    myList[theKey].append((self.available[key]['name'], key, f"{key}-{i}"))
+                    myList[theKey].append((elem['src'][1], key, f"{key}-{i}"))
         logging.info("myList: %s" % str(myList))
-        yield("myList: %s" % str(myList))
+        # yield("myList: %s" % str(myList))
 
         response = self.sendReply("", "", myList, ["sent", "pending"])
         for rep in response:
@@ -565,6 +565,9 @@ class Buffer(BotPlugin):
         for i, action in enumerate(myActions):
             logging.info(f"Action {i}: {action}")
             yield(f"Action {i}: {action}")
+            yield(f"Rule: {rules.more[myRule]}")
+            if 'hold' in rules.more[myRule]:
+                rules.more[myRule]['hold'] = 'no'
             rules.executeAction(myRule, rules.more[myRule], action,
                                 noWait=True, timeSlots=0, simmulate=False,
                                 name=f"{name} {action[1]}",
