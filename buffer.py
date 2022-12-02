@@ -219,28 +219,31 @@ class Buffer(BotPlugin):
     @botcmd
     def list_all(self, mess, args):
         """List available services"""
+        yield f"Args: {args}"
         if not self.available:
             rules = socialModules.moduleRules.moduleRules()
             rules.checkRules()
             self.available = rules.available
             self.rules = rules
 
-        logging.info("Available: %s" % str(self.available))
+        logging.debug("Available: %s" % str(self.available))
         # yield("Available: %s" % str(self.available))
         myList = {}
-        theKey = ("A0")
+        theKey = ("L0")
         myList[theKey] = []
         for key in self.available:
             for i, elem in enumerate(self.available[key]["data"]):
-                if (args and (key == args)) or not args:
+                if (args and (key == args.lower())) or not args:
                     logging.info(f"Elem: {elem}")
-                    myList[theKey].append((elem['src'][1], key, f"{key}-{i}"))
+                    myList[theKey].append((elem['src'][1], key, f"{key}{i}"))
         logging.info("myList: %s" % str(myList))
         # yield("myList: %s" % str(myList))
 
         response = self.sendReply("", "", myList, ["sent", "pending"])
         for rep in response:
-            yield (rep)
+            # Discard the first, fake, result
+            yield ('\n'.join(rep.split('\n')[3:]))
+
         return end
 
     def appendMyList(self, arg, myList):
