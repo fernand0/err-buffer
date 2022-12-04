@@ -231,12 +231,16 @@ class Buffer(BotPlugin):
         myList = {}
         theKey = ("L0")
         myList[theKey] = []
+        keys = []
         for key in self.available:
             for i, elem in enumerate(self.available[key]["data"]):
                 if (args and (key == args.lower())) or not args:
                     logging.info(f"Elem: {elem}")
                     myList[theKey].append((elem['src'][1], key, f"{key}{i}"))
+            keys.append(f"{key}{i}")
         logging.info("myList: %s" % str(myList))
+        keys = ','.join(keys)
+        myList[theKey].append((keys, "", "I"))
         # yield("myList: %s" % str(myList))
 
         response = self.sendReply("", "", myList, ["sent", "pending"])
