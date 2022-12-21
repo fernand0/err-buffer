@@ -480,20 +480,46 @@ class Buffer(BotPlugin):
                         # logging.debug("I: %s %s %d"%(title,link,i))
 
                 self.posts[element] = posts
-                logging.info("Posts posts %s" % (self.posts))
+                logging.debug("Posts posts %s" % (self.posts))
                 response = self.sendReply(mess, args, self.posts,
                                           ["sent", "pending"])
                 logging.debug("Response %s End" % str(response))
 
         if response:
             for resp in response:
-                logging.info(f"Resp: {resp}")
+                logging.debug(f"Resp: {resp}")
                 yield (resp)
         else:
             yield (self.addMore())
 
         self.clients = clients
         yield end()
+
+    @botcmd
+    def last(self, command, args):
+        clients = self.clients
+        logging.debug(f"Clients: {clients}")
+        available = self.available
+        rules = self.rules
+        yield (f"Last in {args}")
+
+        name = available[args[0].lower()]["name"]
+        src = available[args[0].lower()]["data"][int(args[1])]['src']
+        yield (f"Src {src}")
+        dest = src[1]
+        myRule = rules.selectRule(name,  dest)[0]
+        myActions = rules.rules[myRule]
+        apiSrc = clients[args[:2].upper()]
+        for i, action in enumerate(myActions):
+            yield(f"Action {i}. {rules.getNick(action)}@"
+                  f"{rules.getProfile(action)}"
+                  f"({rules.getMode(action)}-"
+                  f"{rules.getType(action)})")
+            apiDst = rules.readConfigDst('', action, rules.more[myRule], apiSrc)
+            apiSrc.fileName = ''
+            apiSrc.setLastLink(apiDst)
+            lastLink = apiSrc.getLastLinkPublished()
+            yield(f"Last link: {lastLink}")
 
     def execute(self, command, args):
         """Execute a command """
@@ -569,15 +595,18 @@ class Buffer(BotPlugin):
         logging.debug(f"Actions: {myActions}")
 
         published = False
+
+        if 'hold' in rules.more[myRule]:
+            rules.more[myRule]['hold'] = 'no'
         for i, action in enumerate(myActions):
-            logging.info(f"Action {i}: {action}")
-            yield(f"Action {i}: {action}")
-            yield(f"Rule: {rules.more[myRule]}")
-            if 'hold' in rules.more[myRule]:
-                rules.more[myRule]['hold'] = 'no'
+            logging.info(f"Action {i}: {action} {rules.getMode(action)}")
+            yield(f"Action {i}. {rules.getNick(action)}@"
+                  f"{rules.getProfile(action)}"
+                  f"({rules.getMode(action)}-"
+                  f"{rules.getType(action)})")
             rules.executeAction(myRule, rules.more[myRule], action,
                                 noWait=True, timeSlots=0, simmulate=False,
-                                name=f"{name} {action[1]}",
+                                name=f"{name} {rules.getType(action)}",
                                 nextPost=False, pos=pos, delete=False)
         yield (f"Finished actions!")
 
@@ -682,7 +711,7 @@ class Buffer(BotPlugin):
             for update in updates[socialNetwork]:
                 if update:
                     if len(update) > 0:
-                        logging.info(f"Update {update} ")
+                        logging.debug(f"Update {update} ")
                         if update[0]:
                             theUpdatetxt = str(update[0]).replace("_", r"\_")
                             if theUpdatetxt.find("> ") >= 0:
@@ -713,10 +742,7 @@ class Buffer(BotPlugin):
             name = data["name"]
             logging.info(f"Name ... {name}")
             pos = int(socialNetwork[1])
-            logging.info(f"Soc ... {data['data']}")
-            logging.info(f"Soc ... {data['data'][pos]['src'][1]}")
             myType = data['data'][pos]['src'][2]
-            logging.info(f"Type ... {myType}")
             social = socialNetwork
             if isinstance(data["data"][pos]['src'][1], str):
                 socNick = f"{data['data'][pos]['src'][1]}"
@@ -725,8 +751,8 @@ class Buffer(BotPlugin):
                     f"{data['data'][pos]['src'][1][1][0].capitalize()} "
                     f"{data['data'][pos]['src'][1][1][1]}"
                 )
-            logging.info(f"Nick ... {social}")
-            logging.info(f"Nick ... {socNick}")
+            logging.debug(f"Social ... {social}")
+            logging.debug(f"Nick ... {socNick}")
             socialNetworktxt = (
                 f"{social.capitalize()} " f"({name.capitalize()} - {socNick})"
             )
@@ -774,7 +800,7 @@ class Buffer(BotPlugin):
 
     def sendReply(self, mess, args, updates, types):
         reps = self.prepareReply(updates, types)
-        logging.info(f"Reps: {reps}")
+        logging.debug(f"Reps: {reps}")
         for rep in reps:
             response = (
                 tenv()
