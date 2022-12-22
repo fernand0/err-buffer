@@ -495,21 +495,27 @@ class Buffer(BotPlugin):
         self.clients = clients
         yield end()
 
-    @botcmd
+    @botcmd(split_args_with=' ')
     def last(self, command, args):
+        #FIXME. Problems if the clients have not been set. Improve.
         clients = self.clients
         logging.debug(f"Clients: {clients}")
         available = self.available
         rules = self.rules
         yield (f"Last in {args}")
 
-        name = available[args[0].lower()]["name"]
-        src = available[args[0].lower()]["data"][int(args[1])]['src']
+        first = args[0]
+        lastLink = ''
+        if len(args)>1:
+            lastLink =  args[1]
+            yield f"Url: {lastLink}"
+        name = available[first[0].lower()]["name"]
+        src = available[first[0].lower()]["data"][int(first[1])]['src']
         yield (f"Src {src}")
         dest = src[1]
         myRule = rules.selectRule(name,  dest)[0]
         myActions = rules.rules[myRule]
-        apiSrc = clients[args[:2].upper()]
+        apiSrc = clients[first[:2].upper()]
         for i, action in enumerate(myActions):
             yield(f"Action {i}. {rules.getNick(action)}@"
                   f"{rules.getProfile(action)}"
@@ -518,7 +524,12 @@ class Buffer(BotPlugin):
             apiDst = rules.readConfigDst('', action, rules.more[myRule], apiSrc)
             apiSrc.fileName = ''
             apiSrc.setLastLink(apiDst)
-            lastLink = apiSrc.getLastLinkPublished()
+            if lastLink:
+                #FIXME: we should have a method?
+                apiSrc.updateLastLink(apiDst, lastLink)
+                lastLink = apiSrc.getLastLinkPublished()
+            else:
+                lastLink = apiSrc.getLastLinkPublished()
             yield(f"Last link: {lastLink}")
 
     def execute(self, command, args):
