@@ -47,6 +47,26 @@ class Buffer(BotPlugin):
         for i, element in enumerate(myList):
             print(f"  {i}) {element}")
 
+    def setAvailable(self):
+        logging.debug(f"Checking available")
+        if not self.available:
+            rules = socialModules.moduleRules.moduleRules()
+            rules.checkRules()
+            self.available = rules.available
+            self.rules = rules
+
+    def getId(self, arg):
+        res = ""
+        if arg and len(arg)>0:
+            res = arg[0].upper()
+        return res
+
+    def getSel(self, arg):
+        res = ""
+        if arg and len(arg)>1:
+            res = int(arg[1])
+        return res
+
     def getIniKey(self, key, myKeys, myIniKeys):
         if key not in myKeys:
             if key[0] not in myIniKeys:
@@ -220,11 +240,9 @@ class Buffer(BotPlugin):
     def list_all(self, mess, args):
         """List available services"""
         yield f"Args: {args}"
-        if not self.available:
-            rules = socialModules.moduleRules.moduleRules()
-            rules.checkRules()
-            self.available = rules.available
-            self.rules = rules
+        self.setAvailable()
+
+        rules = self.rules
 
         logging.debug("Available: %s" % str(self.available))
         # yield("Available: %s" % str(self.available))
@@ -236,7 +254,13 @@ class Buffer(BotPlugin):
             for i, elem in enumerate(self.available[key]["data"]):
                 if (args and (key == args.lower())) or not args:
                     logging.info(f"Elem: {elem}")
-                    myList[theKey].append((elem['src'][1], key, f"{key}{i}"))
+                    logging.info(f"Elem 1: {elem['src'][1]}")
+                    name = rules.getNameR(elem['src'])
+                    profile = rules.getProfile(elem['src'])
+                    nick = rules.getNick(elem['src'])
+                    logging.info(f"Elem 1: {name}")
+                    myList[theKey].append((f"{name} {profile}@{nick}", 
+                                           key, f"{key}{i}"))
             keys.append(f"{key}{i}")
         logging.info("myList: %s" % str(myList))
         keys = ','.join(keys)
@@ -251,13 +275,22 @@ class Buffer(BotPlugin):
         return end
 
     def appendMyList(self, arg, myList):
-        logging.debug("Args... {}".format(str(arg)))
-        for key in self.available:
-            if arg[0].capitalize() == key.capitalize():
-                if arg[1:].isdigit():
-                    pos = int(arg[1:])
-                if pos < len(self.available[key]["data"]):
-                    myList.append(arg.capitalize())
+        logging.info(f"Args... {arg}")
+        self.setAvailable()
+
+        if self.getId(arg) in self.available:
+            pos = self.getSel(arg)
+            if pos < len(self.available[self.getId(arg)]["data"]):
+                myList.append(arg.capitalize())
+            
+        # for key in self.available:
+        #     if self.getId(arg) == key.capitalize():
+        #         if self.getSel(arg):
+        #             pos = int(self.getSel(arg))
+        #         if pos < len(self.available[key]["data"]):
+        #             myList.append(arg.capitalize())
+        logging.info(f"myList: {myList}")
+        # logging.info(f"myList key: {self.available[self.getId(arg)]}")
         logging.debug("mylist... %s" % str(myList))
 
     @botcmd(split_args_with=None, template="buffer")
@@ -267,10 +300,10 @@ class Buffer(BotPlugin):
         pos = 0
         clients = self.clients
         if args:
-            if args[0].isdigit():
-                pos = int(args[0])
-            yield (args[0])
-            self.appendMyList(args[0], myList)
+            if self.getId(args).isdigit():
+                pos = int(self.getId(args))
+            yield (self.getId(args))
+            self.appendMyList(self.getId(args), myList)
         else:
             if self.lastList:
                 myList = self.lastList
@@ -301,9 +334,9 @@ class Buffer(BotPlugin):
 
         pos = 0
         if args:
-            if args[0].isdigit():
-                pos = int(args[0])
-            yield (args[0])
+            if self.getId(args).isdigit():
+                pos = int(self.getId(args))
+            yield (self.getId(args))
 
         if pos < len(self.config):
             self.config = self.config[:pos] + self.config[pos + 1:]
@@ -317,12 +350,6 @@ class Buffer(BotPlugin):
     @botcmd(split_args_with=None)
     def list_add(self, msg, args):
         """Add list of services to the quick list"""
-        if not self.available:
-            rules = socialModules.moduleRules.moduleRules()
-            rules.checkRules()
-            self.available = rules.available
-            self.rules = rules
-
         myList = []
 
         for arg in args:
@@ -336,12 +363,14 @@ class Buffer(BotPlugin):
 
     @botcmd
     def list_list(self, msg, args):
-        if not self.available:
-            rules = socialModules.moduleRules.moduleRules()
-            rules.checkRules()
-            self.available = rules.available
+
+        self.setAvailable()
+
+        rules = self.rules
 
         response = self.config
+        if not response:
+            response = f"Empty list, you can add items with list add"
         yield response
         yield end()
 
@@ -390,107 +419,93 @@ class Buffer(BotPlugin):
         myList = []
         response = []
         self.posts = {}
-        if not self.available:
-            rules = socialModules.moduleRules.moduleRules()
-            rules.checkRules()
-            self.available = rules.available
-            self.rules = rules
-
-            # for key in self.available.keys():
-            #     #yield f"Key: {key} - {rules.available[key]}"
-            #     # available -> {"name": src[0], "data": [], "social": []}
-            #     # 'data' -> [{'src': src[1:], 'more': more[i]}]
-            #     for i, element in enumerate(self.available[key]['data']):
-            #         "yield (f"     {key}{i}) {element}")
-            #     time.sleep(0.2)
+        self.setAvailable()
 
         available = self.available
 
-        pos = -1
-        if args:
-            if args[0].isdigit():
-                pos = int(args[0])
-        else:
-            pos = 0
+        if not args:
+            # If no args, we asume we want the first one
+            args = ['0']
+        
+        for arg in args:
+            pos = -1
+            if arg:
+                if self.getId(arg).isdigit():
+                    pos = int(self.getId(arg))
+            else:
+                pos = 0
 
-        if (len(self.config) == 0) and (not args):
-            yield ("There are not lists defined")
-            yield ("Add some elements with list add")
-            return
-        elif (pos >= 0) and (pos < len(self.config)):
-            if len(self.config) > 0:
-                myList = self.config[pos]
-        else:
-            self.appendMyList(args[0].upper(), myList)
-            pos = 0
+            if (len(self.config) == 0) and (not arg):
+                yield ("There are not lists defined")
+                yield ("Add some elements with list add")
+                return
+            elif (pos >= 0) and (pos < len(self.config)):
+                if len(self.config) > 0:
+                    myList = myList + self.config[pos]
+            else:
+                self.appendMyList(arg, myList)
+                pos = 0
 
 
-        logging.debug("myList %s" % str(myList))
+            logging.debug("myList %s" % str(myList))
 
         self.lastList = myList
         clients = self.clients
 
-        if pos >= 0:
-            for element in myList:
-                logging.debug("Clients %s" % str(clients))
-                logging.debug("Element %s" % str(element))
-                logging.debug(f"Available {available}")
-                profile = available[element[0].lower()]
-                logging.debug(f"Profile {profile}")
-                name = profile["name"]
-                myElem = profile["data"][int(element[1:])]
-                logging.debug(f"myElem {myElem}")
-                src = (self.rules.available[element[0].lower()]['name'], )
-                src = src + myElem['src']
-                more = self.rules.more[src]
-
-                try:
-                    clients[element].setPosts()
-                except:
-                    # api = getApi(profile['name'], profile["data"][int(element[1:])]['src'][1])
-                    api = self.rules.readConfigSrc('', src, more)
-                    # if name == 'cache':
-                    #     # FIXME
-                    #     api.socialNetwork=myElem['src'][1][1][0]
-                    #     api.nick=myElem['src'][1][1][1]
-                    # api = getApi(name.capitalize(), myElem['src'][1])
-                    clients[element] = api
-                    clients[element].setPostsType(myElem['src'][2])
-                    clients[element].setPosts()
-
-                postsTmp = []
-                posts = []
-
-                if hasattr(clients[element], "getPostsType"):
-                    if clients[element].getPostsType() == "drafts":
-                        postsTmp = clients[element].getDrafts()
-                    else:
-                        postsTmp = clients[element].getPosts()
-                else:
-                    postsTmp = clients[element].getPosts
-                if postsTmp:
-                    for (i, post) in enumerate(postsTmp):
-                        if hasattr(clients[element], "getPostLine"):
-                            title = clients[element].getPostLine(post)
-                            link = ""
-                        else:
-                            title = clients[element].getPostTitle(post)
-                            link = clients[element].getPostLink(post)
-                        posts.append((title, link, "{:2}".format(i)))
-                        # logging.debug("I: %s %s %d"%(title,link,i))
-
-                self.posts[element] = posts
-                logging.debug("Posts posts %s" % (self.posts))
-                response = self.sendReply(mess, args, self.posts,
-                                          ["sent", "pending"])
-                logging.debug("Response %s End" % str(response))
-
-        if response:
-            for resp in response:
-                logging.debug(f"Resp: {resp}")
-                yield (resp)
-        else:
+        if not myList: 
             yield (self.addMore())
+
+        for element in myList:
+            logging.debug("Clients %s" % str(clients))
+            logging.debug("Element %s" % str(element))
+            logging.debug(f"Available {available}")
+            profile = available[self.getId(element)]
+            name = profile["name"]
+            myElem = profile["data"][self.getSel(element)]
+            logging.debug(f"myElem {myElem}")
+            src = myElem['src']
+            logging.debug(f"src {src}")
+            more = self.rules.more[src]
+            logging.debug(f"more {more}")
+
+            try:
+                clients[element].setPosts()
+            except:
+                api = self.rules.readConfigSrc('', src, more)
+                clients[element] = api
+                clients[element].setPostsType(myElem['src'][3])
+                clients[element].setPosts()
+
+            postsTmp = []
+            posts = []
+
+            if hasattr(clients[element], "getPostsType"):
+                if clients[element].getPostsType() == "drafts":
+                    postsTmp = clients[element].getDrafts()
+                else:
+                    postsTmp = clients[element].getPosts()
+            else:
+                postsTmp = clients[element].getPosts
+            if postsTmp:
+                for (i, post) in enumerate(postsTmp):
+                    if hasattr(clients[element], "getPostLine"):
+                        title = clients[element].getPostLine(post)
+                        link = ""
+                    else:
+                        title = clients[element].getPostTitle(post)
+                        link = clients[element].getPostLink(post)
+                    posts.append((title, link, "{:2}".format(i)))
+                    # logging.debug("I: %s %s %d"%(title,link,i))
+
+            self.posts[element] = posts
+            logging.debug("Posts posts %s" % (self.posts))
+
+        response = self.sendReply("", "", self.posts, ["sent", "pending"])
+        logging.debug("Response %s End" % str(response))
+
+        for resp in response:
+            logging.debug(f"Resp: {resp}")
+            yield (resp)
 
         self.clients = clients
         yield end()
@@ -500,21 +515,22 @@ class Buffer(BotPlugin):
         #FIXME. Problems if the clients have not been set. Improve.
         clients = self.clients
         logging.debug(f"Clients: {clients}")
+        self.setAvailable()
         available = self.available
         rules = self.rules
         yield (f"Last in {args}")
 
-        first = args[0]
+        first = self.getId(args)
         lastLink = ''
         if len(args)>1:
-            lastLink =  args[1]
+            lastLink =  self.getSel(args)
             yield f"Url: {lastLink}"
         name = available[first[0].lower()]["name"]
         src = available[first[0].lower()]["data"][int(first[1])]['src']
         yield (f"Src {src}")
         dest = src[1]
         myRule = rules.selectRule(name,  dest)[0]
-        myActions = rules.rules[myRule]
+        myActions = rules.rules[src]
         apiSrc = clients[first[:2].upper()]
         for i, action in enumerate(myActions):
             yield(f"Action {i}. {rules.getNick(action)}@"
@@ -525,7 +541,6 @@ class Buffer(BotPlugin):
             apiSrc.fileName = ''
             apiSrc.setLastLink(apiDst)
             if lastLink:
-                #FIXME: we should have a method?
                 apiSrc.updateLastLink(apiDst, lastLink)
                 lastLink = apiSrc.getLastLinkPublished()
             else:
@@ -547,8 +562,8 @@ class Buffer(BotPlugin):
             theProfile = profile[:2]
             if (
                 (theProfile.upper() == args[: len(theProfile)].upper())
-                or (args[0] == "*")
-                or (("*" in args) and (args[:1] == profile[0][:1]))
+                or (self.getId(args) == "*")
+                or (("*" in args) and (self.getId(args) == profile[0][:1]))
             ):
                 # We need to do something for '*' commands
                 logging.info(f"I'll {command} in {profile}")
@@ -575,76 +590,84 @@ class Buffer(BotPlugin):
     def publish(self, mess, args):
         """A command to publish some update"""
 
-        clients = self.clients
-        logging.debug(f"Clients: {clients}")
-        available = self.available
-        rules = self.rules
+        if self.available:
+            clients = self.clients
+            logging.debug(f"Clients: {clients}")
+            available = self.available
+            rules = self.rules
 
-        logging.info(f"Publishing {args}")
-        yield (f"Publishing {args}")
-        res = ""
+            logging.info(f"Publishing {args}")
+            yield (f"Publishing {args}")
+            res = ""
 
-        # # yield(f"Avail: {available}")
-        name = available[args[0].lower()]["name"]
-        src = available[args[0].lower()]["data"][int(args[1])]['src']
-        dest = src[1]
-        logging.debug(f"Clients: {clients}")
-        logging.debug(f"Rules rules: {rules.rules}")
-        myRule = rules.selectRule(name,  dest)[0]
-        logging.debug(f"My rule: {myRule}")
-        myActions = rules.rules[myRule]
-        logging.debug(f"My actions: {myActions}")
-        apiSrc = clients[args[:2].upper()]
-        apiSrc.setPosts()
-        pos = int(args[2:])
-        post = apiSrc.getPost(pos)
-        title = apiSrc.getPostTitle(post)
-        link = apiSrc.getPostLink(post)
-        logging.debug(f"Title: {title}")
-        yield(f"Will publish: {title} - {link}")
-        logging.debug(f"Link: {link}")
-        logging.debug(f"Actions: {myActions}")
+            # # yield(f"Avail: {available}")
+            name = available[self.getId(args)]["name"]
+            src = available[self.getId(args)]["data"][int(self.getSel(args))]['src']
+            logging.debug(f"Src: {src}")
+            dest = str(src)
+            logging.debug(f"Clients: {clients}")
+            logging.debug(f"Rules rules: {rules.rules}")
+            logging.debug(f"Name {name} dest: {dest}")
+            # myRule = rules.selectRule(name,  dest)[0]
+            # logging.debug(f"My rule: {myRule}")
+            logging.debug(f"It is: {dest in rules.rules}")
+            for i in rules.rules:
+                logging.debug(f"Rule: {i}")
+            myActions = rules.rules[src]
+            logging.debug(f"My actions: {myActions}")
+            apiSrc = clients[args[:2].upper()]
+            apiSrc.setPosts()
+            pos = int(args[2:])
+            post = apiSrc.getPost(pos)
+            title = apiSrc.getPostTitle(post)
+            link = apiSrc.getPostLink(post)
+            logging.debug(f"Title: {title}")
+            yield(f"Will publish: {title} - {link}")
+            logging.debug(f"Link: {link}")
+            logging.debug(f"Actions: {myActions}")
 
-        published = False
+            published = False
 
-        if 'hold' in rules.more[myRule]:
-            rules.more[myRule]['hold'] = 'no'
-        for i, action in enumerate(myActions):
-            logging.info(f"Action {i}: {action} {rules.getMode(action)}")
-            yield(f"Action {i}. {rules.getNick(action)}@"
-                  f"{rules.getProfile(action)}"
-                  f"({rules.getMode(action)}-"
-                  f"{rules.getType(action)})")
-            rules.executeAction(myRule, rules.more[myRule], action,
-                                noWait=True, timeSlots=0, simmulate=False,
-                                name=f"{name} {rules.getType(action)}",
-                                nextPost=False, pos=pos, delete=False)
-        yield (f"Finished actions!")
+            if 'hold' in rules.more[src]:
+                rules.more[src]['hold'] = 'no'
+            for i, action in enumerate(myActions):
+                logging.info(f"Action {i}: {action} {rules.getMode(action)}")
+                yield(f"Action {i}. {rules.getNick(action)}@"
+                      f"{rules.getProfile(action)}"
+                      f"({rules.getMode(action)}-"
+                      f"{rules.getType(action)})")
+                rules.executeAction(src, rules.more[src], action,
+                                    noWait=True, timeSlots=0, simmulate=False,
+                                    name=f"{name} {rules.getType(action)}",
+                                    nextPost=False, pos=pos, delete=False)
+            yield (f"Finished actions!")
 
-        postaction = apiSrc.getPostAction()
-        logging.debug(f"Postaction: {postaction}")
-        logging.debug(f"Src: {src}")
-        logging.debug(f'{available[args[0].lower()]["data"][int(args[1])]}')
-        if (not postaction) and ((src[0] in ["cache","slack"])
-                                 or('slack' in src[1])):
-            # Different from batch process because we do not want the item
-            # to reappear in scheduled sending. There can be problems if
-            # the link is in some cache.
-            postaction = "delete"
-            logging.debug(f"Post Action {postaction}")
-            try:
-                cmdPost = getattr(apiSrc, postaction)
-                logging.debug(f"Post Action cmd: {cmdPost}")
-                res = cmdPost(pos)
-                logging.debug(f"End {postaction}, reply: {res}")
-                ok = res.get('ok')
-                if ok: 
-                    res = "Deleted!"
-                else:
-                    res = "Something went wrong"
-            except:
-                res = "No postaction or wrong one"
-            yield (res)
+            postaction = apiSrc.getPostAction()
+            logging.debug(f"Postaction: {postaction}")
+            logging.debug(f"Src: {src}")
+            logging.debug(f'{available[self.getId(args)]["data"][int(self.getSel(args))]}')
+            if (not postaction) and ((src[0] in ["cache","slack"])
+                                     or('slack' in src[1])):
+                # Different from batch process because we do not want the item
+                # to reappear in scheduled sending. There can be problems if
+                # the link is in some cache.
+                postaction = "delete"
+                logging.debug(f"Post Action {postaction}")
+                try:
+                    cmdPost = getattr(apiSrc, postaction)
+                    logging.debug(f"Post Action cmd: {cmdPost}")
+                    res = cmdPost(pos)
+                    logging.debug(f"End {postaction}, reply: {res}")
+                    ok = res.get('ok')
+                    if ok: 
+                        res = "Deleted!"
+                    else:
+                        res = "Something went wrong"
+                except:
+                    res = "No postaction or wrong one"
+                yield (res)
+        else:
+            yield(f"We have no data, you should use 'list {args[:2]}'")
         yield end()
 
     @botcmd
@@ -749,7 +772,7 @@ class Buffer(BotPlugin):
 
             logging.debug(f"self.available ... {self.available}")
             logging.info(f"socialNetwork ... {socialNetwork}")
-            data = self.available[socialNetwork[0].lower()]
+            data = self.available[self.getId(socialNetwork)]
             name = data["name"]
             logging.info(f"Name ... {name}")
             pos = int(socialNetwork[1])
@@ -882,6 +905,6 @@ class Buffer(BotPlugin):
         """A command to copy some update"""
         pp = pprint.PrettyPrinter(indent=4)
         moduleBuffer.copyPost(self.api, logging, pp,
-                              self.profiles, args[0], args[1])
+                              self.profiles, self.getId(args), self.getSel(args))
         yield "Copied"
         yield end()
