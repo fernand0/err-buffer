@@ -600,36 +600,36 @@ class Buffer(BotPlugin):
             profile = self.getId(args)
             logging.debug(f"Executing in profile: {profile} with "
                           f"args {args}")
-            name = available[self.getId(args)]["name"]
-            src = available[self.getId(args)]["data"][int(self.getSel(args))]['src']
+            idArg = self.getId(args)
+            name = available[idArg]["name"]
+            selArg = int(self.getSel(args))
+            src = available[idArg]["data"][selArg]['src']
             logging.debug(f"Src: {src}")
             dest = str(src)
 
-            logging.info(f"Src: {src}")
-            logging.info(f"Clients: {clients}")
-            logging.info(f"Rules rules: {rules.rules}")
-            logging.info(f"Name {name} dest: {dest}")
-            logging.info(f"It is: {dest in rules.rules}")
+            logging.debug(f"Clients: {clients}")
+            logging.debug(f"Rules rules: {rules.rules}")
+            logging.debug(f"Name {name} dest: {dest}")
+            logging.debug(f"It is: {dest in rules.rules}")
             for i in rules.rules:
-                logging.info(f"Rule: {i}")
+                logging.debug(f"Rule: {i}")
+
             myActions = rules.rules[src]
-            logging.info(f"My actions: {myActions}")
-            apiSrc = clients[args[:2].upper()]
+            logging.debug(f"My actions: {myActions}")
+            myClient = f"{idArg}{selArg}".upper()
+            apiSrc = clients[myClient]
             apiSrc.setPosts()
             pos = self.getPos(args)
-            logging.info(f"Pos: {pos}")
+            logging.debug(f"Pos: {pos}")
             argCont = self.getCont(args)
-            logging.info(f"Cont: {argCont}")
+            logging.debug(f"Cont: {argCont}")
             post = apiSrc.getPost(pos)
 
-            theProfile = profile[:2]
-            logging.info(f"theProfile: {theProfile}")
-
-            logging.info(f"Selecting {command} with {args} " 
+            logging.debug(f"Selecting {command} with {args} " 
                          f"in {apiSrc.getService()}")
             logging.debug(f"Posts: {apiSrc.getPosts()}")
             cmd = getattr(apiSrc, command)
-            logging.info(f"Command: {command} is {cmd}")
+            logging.debug(f"Command: {command} is {cmd}")
             if argCont: 
                 if argCont.capitalize() in clients:
                     argCont = clients[argCont.capitalize()]
@@ -678,26 +678,29 @@ class Buffer(BotPlugin):
             yield (f"Publishing {args}")
             res = ""
 
-            # # yield(f"Avail: {available}")
-            name = available[self.getId(args)]["name"]
-            src = available[self.getId(args)]["data"][int(self.getSel(args))]['src']
+            idArg = self.getId(args)
+            name = available[idArg]["name"]
+            selArg = int(self.getSel(args))
+            src = available[idArg]["data"][selArg]['src']
             logging.debug(f"Src: {src}")
             dest = str(src)
+
             logging.debug(f"Clients: {clients}")
             logging.debug(f"Rules rules: {rules.rules}")
             logging.debug(f"Name {name} dest: {dest}")
-            # myRule = rules.selectRule(name,  dest)[0]
-            # logging.debug(f"My rule: {myRule}")
             logging.debug(f"It is: {dest in rules.rules}")
             for i in rules.rules:
                 logging.debug(f"Rule: {i}")
+
             myActions = rules.rules[src]
             logging.debug(f"My actions: {myActions}")
-            apiSrc = clients[args[:2].upper()]
+            myClient = f"{idArg}{selArg}".upper()
+            apiSrc = clients[myClient]
             apiSrc.setPosts()
             pos = self.getPos(args)
             logging.debug(f"Pos: {pos}")
             post = apiSrc.getPost(pos)
+
             title = apiSrc.getPostTitle(post)
             link = apiSrc.getPostLink(post)
             logging.debug(f"Title: {title}")
