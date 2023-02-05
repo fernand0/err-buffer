@@ -13,7 +13,6 @@ from errbot.templating import tenv
 from socialModules.configMod import *
 import socialModules
 import socialModules.moduleRules
-# import socialModules.moduleBuffer
 
 
 def end(msg=""):
@@ -632,6 +631,8 @@ class Buffer(BotPlugin):
             cmd = getattr(apiSrc, command)
             logging.info(f"Command: {command} is {cmd}")
             if argCont: 
+                if argCont.capitalize() in clients:
+                    argCont = clients[argCont.capitalize()]
                 update = cmd(pos, argCont)
             else:
                 update = cmd(pos)
@@ -808,6 +809,14 @@ class Buffer(BotPlugin):
         """A command to delete some update"""
         res = self.execute("delete", args)
         yield (res)
+        yield end()
+
+    @botcmd #(split_args_with=None)
+    def copy(self, mess, args):
+        """A command to copy some update"""
+        res = self.execute("copy", args)
+        yield "Copied"
+        yield res
         yield end()
 
     def prepareReply(self, updates, types):
@@ -987,15 +996,6 @@ class Buffer(BotPlugin):
                     numS,
                 )
         yield (end())
-
-    @botcmd(split_args_with=None)
-    def copy(self, mess, args):
-        """A command to copy some update"""
-        pp = pprint.PrettyPrinter(indent=4)
-        moduleBuffer.copyPost(self.api, logging, pp,
-                              self.profiles, self.getId(args), self.getSel(args))
-        yield "Copied"
-        yield end()
 
     # def selectAndExecute(self, command, args):
     #     # FIXME Does this belong here?
