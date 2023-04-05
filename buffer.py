@@ -113,38 +113,90 @@ class Buffer(BotPlugin):
 
     def fileNameBase2(self, rule, action):
         nick = self.rules.getNickRule(rule)
-        if 'http' in nick:
+        if (('blogalia' in nick) 
+            or ('wordpress' in nick)
+            or ('github.com' in nick)
+            or ('feed.xml' in nick)):
             nick = urllib.parse.urlparse(nick).netloc
+        else:
+            nick = nick.replace('/','-').replace(':','-')
         return (f"{self.rules.getNameRule(rule).capitalize()}_"
                 f"{self.rules.getTypeRule(rule)}_"
                 f"{nick}_" 
                 # f"{self.rules.getIdRule(rule).capitalize()}_"
                 f"{self.rules.getSecondNameRule(rule).capitalize()}_"
                 f"_{self.rules.getNameAction(action).capitalize()}"
-                f"_{self.rules.getTypeAction(action)}"
+                f"_{self.rules.getTypeAction(action)}s"
                 f"_{self.rules.getNickAction(action)}"
-                f"_{self.rules.getProfileAction(action)}"
+                f"_{self.rules.getProfileAction(action).capitalize()}"
                )
 
+    def cleanLine(self, line):
+        line = line.split('_')
+        line = f"{line[0]} ({line[2]} {line[1]})"
+        line = line.replace('https', '').replace('http','')
+        line = line.replace('---','').replace('.com','')
+        line = line.replace('- ',' ')
+        return line
+
     @botcmd(split_args_with=None, template="buffer")
-    def list_next2(self, mess, args):
+    def list_next(self, mess, args):
         self.setAvailable()
+        textW = []
+        textF = []
         for src in self.rules.rules:
             hold = self.rules.more[src].get('hold','')
             if (not hold or (not hold == 'yes')):
                 msg =  (f"Rule: {src}\n"
                    f"Actions: {self.rules.rules[src]}"
                    f"More: {self.rules.more[src]}")
-                yield msg
+                # yield msg
                 logging.info(msg)
                 for action in self.rules.rules[src]:
                     actionF = self.fileNameBase2(src, action)
-                    yield actionF
-                    logging.info(f"Nameeee: {actionF}")
+                    actionF = actionF.replace('caches', 'posts')
+                    actionF = actionF.replace('cache', 'posts')
+                    # yield f"Action: {actionF}"
+                    if os.path.exists(f"{DATADIR}/{actionF}.timeNext"):
+                        with open(f"{DATADIR}/{actionF}.timeNext", "rb") as f:
+                            try:
+                                t1, t2 = pickle.load(f)
+                            except:
+                                t1, t2 = (0,0)
+                        if time.time() < t1 + t2:
+                            msg = "[W]: "
+                        else:
+                            msg = "[F]: "
+                        theTime = time.strftime("%H:%M:%S",
+                                                time.localtime(t1 + t2))
+
+                    if t1:
+                        orig, dest = actionF.split('__')
+                        orig = self.cleanLine(orig)
+                        dest = self.cleanLine(dest)
+                        textElement = (f"{t1 + t2}|{theTime} {orig} -> {dest}")
+                        if msg.find("[W]") >= 0:
+                            textW.append(textElement)
+                        else:
+                            textF.append(textElement)
+                        logging.debug(f"Element text {textElement}")
+        textF = sorted(textF)
+        textW = sorted(textW)
+        textP = self.formatList(textF, "finished")
+        textP = textP + self.formatList(textW, "waiting")
+        yield ("\n".join(textP))
+        yield (end())
+        if False:
+            if not os.path.exists(f"{DATADIR}/{actionF}.timeNext"):
+                        yield f"Action: {action}"
+                        yield f"File: {actionF}"
+                        yield "No"
+                        logging.info(f"Actionnnn: {actionF}. No")
+
 
 
     @botcmd(split_args_with=None, template="buffer")
-    def list_next(self, mess, args):
+    def list_next2(self, mess, args):
         self.setAvailable()
         myList = os.listdir(DATADIR)
         textW = []
@@ -863,14 +915,16 @@ class Buffer(BotPlugin):
             src = data['data'][pos]['src']
             actions = self.rules.rules[src]
             myDest = ""
-            for action in actions:
-                myDest = (f"{myDest}\n"
-                          #f" {self.rules.getNameAction(action)} "
-                          f"        ⟶ "
-                          f"{self.rules.getNameAction(action).capitalize()} "
-                          f"({self.rules.getNickAction(action)}@"
-                          f"{self.rules.getProfileAction(action)} "
-                          f"{self.rules.getTypeAction(action)})")
+            if not (('hold' in self.rules.more[src])
+                    and (self.rules.more[src]['hold'] == 'yes')):
+                for action in actions:
+                    myDest = (f"{myDest}\n"
+                              #f" {self.rules.getNameAction(action)} "
+                              f"        ⟶ "
+                              f"{self.rules.getNameAction(action).capitalize()} "
+                              f"({self.rules.getNickAction(action)}@"
+                              f"{self.rules.getProfileAction(action)} "
+                              f"{self.rules.getTypeAction(action)})")
             logging.debug(f"myDest: {myDest}")
             logging.debug(f"Actions: {actions}")
             logging.debug(f"Social ... {social}")
