@@ -478,24 +478,13 @@ class Buffer(BotPlugin):
         # yield f"First: {first}"
         name = available[self.getId(first)]["name"]
         src = available[self.getId(first)]["data"][self.getSel(first)]['src']
-        # yield f"Src: {src}"
-        # yield (f"Name: {name} - {rules.getNickRule(src)} - "
-        #        f"{rules.getProfileRule(src)}")
         yield (f"Name: {rules.getIdRule(src)}")
-        # yield (f"Src: {src}")
-        # myRule = rules.rules[src]
-        # yield(f"myRule: {myRule}")
-        # dest = src[1]
-        # myRule = rules.selectRule(name,  dest)[0]
-        # yield(f"myRule: {myRule}")
         myActions = rules.rules[src]
-        # yield(f"myActions: {myActions}")
         selectClient = f"{self.getId(firstArg)}{self.getSel(firstArg)}"
         if not selectClient in clients:
             yield f"You should execute 'list {selectClient}' first"
             return 
         apiSrc = clients[selectClient]
-        # yield(f"apiSrc: {apiSrc}")
         for i, action in enumerate(myActions):
             yield(f"Action {i}. {rules.getNickAction(action)}@"
                   f"{rules.getProfileAction(action)}"
@@ -571,17 +560,6 @@ class Buffer(BotPlugin):
                 update = cmd(pos)
             
             updates = f"{updates}* {update} ({profile[0]})\n"
-            # if (
-            #     (theProfile.upper() == args[: len(theProfile)].upper())
-            #     or (self.getId(args) == "*")
-            #     or (("*" in args) and (self.getId(args) == profile[0][:1]))
-            # ):
-            #     # We need to do something for '*' commands
-            #     logging.debug(f"I'll {command} in {profile}")
-            #     update = self.clients[profile].selectAndExecute(command, args)
-            #     if update:
-            #         updates = f"{updates}* {update} ({profile[0]})\n"
-            #         update = None
 
             if updates:
                 resTxt = f"{resTxt}\n{updates}"
@@ -901,86 +879,4 @@ class Buffer(BotPlugin):
                     numS,
                 )
         yield (end())
-
-    # def selectAndExecute(self, command, args):
-    #     # FIXME Does this belong here?
-    #     logging.info(f"Selecting {command} with {args} "
-    #                  f"in {self.getService()}")
-    #     argsCont = ''
-    #     if not isinstance(args, str):
-    #         logging.info(f"Aaaaargs: {args}")
-    #         args,argsCont = args
-
-    #     pos = args.find(' ')
-    #     j = -1
-    #     if pos > 0: 
-    #         argsIni = args[:pos]
-    #         if isinstance(argsCont, str):
-    #             argsCont = args[pos+1:]
-    #             logging.debug(f"Args {argsIni}-{argsCont}")
-    #             if (argsCont and len(argsCont)>1): 
-    #                 if argsCont[0].isdigit() and (argsCont[1] == ' '): 
-    #                     j = int(argsCont[0])
-    #                     argsCont = argsCont[2:]
-    #     else: 
-    #         argsIni = args
-    #         logging.info(f"Args {argsIni}")
-
-    #     pos = argsIni.find('*')
-    #     if pos == 0: 
-    #         """ If the first character of the argument is a '*' the
-    #         following ones are the number. But we are supposing that they
-    #         start at the third character, so we move the string one
-    #         character to the right
-    #         """
-    #         argsIni=' {}'.format(argsIni)
-
-    #     reply = ""
-
-    #     if len(argsIni) > 2:
-    #         j = int(argsIni[2:]) 
-    #     logging.debug(f"Argscont {argsCont} j {j}")
-    #     logging.debug(f"Self: {self}")
-    #     cmd = getattr(self, command)
-    #     logging.debug(f"Cmd: {cmd}")
-    #     if (j>=0):
-    #         logging.info("Command %s %d"% (command, j))
-    #         if argsCont:
-    #             reply = reply + str(cmd(j, argsCont))
-    #         else: 
-    #             reply = reply + str(cmd(j))
-    #     else:
-    #         logging.info("Missing argument %s %d"% (command, j))
-    #         reply = "Missing argument"
-
-    #     logging.info(f"Reply: {reply}")
-    #     return(reply)
-
-    # def getIniKey(self, key, myKeys, myIniKeys):
-    #     if key not in myKeys:
-    #         if key[0] not in myIniKeys:
-    #             iniK = key[0]
-    #         else:
-    #             i = 1
-    #             while (i < len(key)) and (key[i] in myIniKeys):
-    #                 i = i + 1
-    #             if i < len(key):
-    #                 iniK = key[i]
-    #             else:
-    #                 iniK = "j"
-    #                 while iniK in myIniKeys:
-    #                     iniK = chr(ord(iniK) + 1)
-    #         myKeys[key] = iniK
-    #     else:
-    #         iniK = myKeys[key]
-    #     myIniKeys.append(iniK)
-    #     pos = key.find(iniK)
-    #     if pos >= 0:
-    #         nKey = key[:pos] + iniK.upper() + key[pos + 1:]
-    #     else:
-    #         nKey = iniK + key
-    #     nKey = key + "-{}".format(iniK)
-
-    #     return iniK, nKey
-
 
