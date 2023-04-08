@@ -358,30 +358,6 @@ class Buffer(BotPlugin):
         profile = self.available[key]["name"]
         return profile
 
-    def getSocialProfile(self, element):
-        key = element[0].lower()
-        logging.debug("Key: %s", str(key))
-        pos = int(element[1:])
-        profile = self.getProfile(key)
-        logging.debug(f"Profile: {profile}")
-        selected = self.getSelectedProfile(key, pos)
-        logging.debug(f"Selected: {selected}")
-        url = self.getUrlSelected(selected)
-        logging.debug(f"Url: {url}")
-        nick = selected[0]
-        logging.debug(f"Nick: {nick}")
-        socialNetworks = [nick[1]]
-        name = nick
-        # if key[0] == 's':
-        #     name = nick[0][0]
-        # el
-        if type(nick) == tuple:
-            name = nick[0]
-        elif nick.find("@") >= 0:
-            nick, profile = nick.split("@")
-            name = nick
-        return (name, profile, socialNetworks)
-
     @botcmd(split_args_with=None, template="buffer")
     def list(self, mess, args):
         """A command to show available posts in a list of available sites"""
