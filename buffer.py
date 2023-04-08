@@ -942,43 +942,6 @@ class Buffer(BotPlugin):
                     f"{social.capitalize()} " 
                     f"{self.rules.getNameRule(src).capitalize()} ")
             if theUpdates:
-                # if len(socialNetwork) > 2:
-                #     # Unused code?
-                #     logging.info("socialNetwork > 2")
-                #     socialNetworktxt = (
-                #         socialNetwork[2][1][0].capitalize()
-                #         + " ("
-                #         + socialNetwork[2][1][1]
-                #         + " "
-                #         + socialNetwork[0]
-                #         + ")"
-                #     )
-                #     logging.debug(f"socialNetwortxt: {socialNetworktxt}")
-                #     if len(socialNetworktxt) + 3 > maxLen:
-                #         maxLen = len(socialNetworktxt) + 3
-                #     if (1 + len(theUpdates)) * maxLen > 1024:
-                #         numEle = 1024 / maxLen
-                #         import math
-
-                #         iniPos = 0
-                #         maxPos = math.trunc(numEle)
-                #         if self.schedules:
-                #             maxPos = self.schedules
-                #             numEle = self.schedules
-                #         while iniPos <= len(theUpdates):
-                #             compResponse.append((tt,
-                #                                  socialNetworktxt,
-                #                                  myDest,
-                #                                  theUpdates[iniPos:maxPos]
-                #                                  )
-                #                                 )
-                #             iniPos = maxPos
-                #             maxPos = maxPos + math.trunc(numEle)
-                #     else:
-
-                #         compResponse.append((tt, socialNetworktxt, 
-                #             myDest, theUpdates))
-                # else:
                 logging.info("not socialNetwork > 2")
                 compResponse.append((tt, socialNetworktxt, myDest, theUpdates))
             else:
