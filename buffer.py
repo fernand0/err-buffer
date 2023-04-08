@@ -131,9 +131,12 @@ class Buffer(BotPlugin):
                 f"_{self.rules.getProfileAction(action).capitalize()}"
                )
 
-    def cleanLine(self, line):
+    def cleanLine(self, line, key="", i=None):
         line = line.split('_')
-        line = f"{line[0]} ({line[2]} {line[1]})"
+        if key:
+            line = f"{key}{i} {line[0]} ({line[2]} {line[1]})"
+        else:
+            line = f"{line[0]} ({line[2]} {line[1]})"
         line = line.replace('https', '').replace('http','')
         line = line.replace('---','').replace('.com','')
         line = line.replace('- ',' ')
@@ -144,55 +147,51 @@ class Buffer(BotPlugin):
         self.setAvailable()
         textW = []
         textF = []
-        for src in self.rules.rules:
-            hold = self.rules.more[src].get('hold','')
-            if (not hold or (not hold == 'yes')):
-                msg =  (f"Rule: {src}\n"
-                   f"Actions: {self.rules.rules[src]}"
-                   f"More: {self.rules.more[src]}")
-                # yield msg
-                logging.info(msg)
-                for action in self.rules.rules[src]:
-                    actionF = self.fileNameBase2(src, action)
-                    actionF = actionF.replace('caches', 'posts')
-                    actionF = actionF.replace('cache', 'posts')
-                    # yield f"Action: {actionF}"
-                    if os.path.exists(f"{DATADIR}/{actionF}.timeNext"):
-                        with open(f"{DATADIR}/{actionF}.timeNext", "rb") as f:
-                            try:
-                                t1, t2 = pickle.load(f)
-                            except:
-                                t1, t2 = (0,0)
-                        if time.time() < t1 + t2:
-                            msg = "[W]: "
-                        else:
-                            msg = "[F]: "
-                        theTime = time.strftime("%H:%M:%S",
-                                                time.localtime(t1 + t2))
+        for key in self.available:
+            for i, elem in enumerate(self.available[key]["data"]):
+                src = elem['src']
+        #for src in self.rules.rules:
+                hold = self.rules.more[src].get('hold','')
+                if (not hold or (not hold == 'yes')):
+                    msg =  (f"Rule: {src}\n"
+                       f"Actions: {self.rules.rules[src]}"
+                       f"More: {self.rules.more[src]}")
+                    # yield msg
+                    logging.info(msg)
+                    for action in self.rules.rules[src]:
+                        actionF = self.fileNameBase2(src, action)
+                        actionF = actionF.replace('caches', 'posts')
+                        actionF = actionF.replace('cache', 'posts')
+                        # yield f"Action: {actionF}"
+                        if os.path.exists(f"{DATADIR}/{actionF}.timeNext"):
+                            with open(f"{DATADIR}/{actionF}.timeNext", "rb") as f:
+                                try:
+                                    t1, t2 = pickle.load(f)
+                                except:
+                                    t1, t2 = (0,0)
+                            if time.time() < t1 + t2:
+                                msg = "[W]: "
+                            else:
+                                msg = "[F]: "
+                            theTime = time.strftime("%H:%M:%S",
+                                                    time.localtime(t1 + t2))
 
-                    if t1:
-                        orig, dest = actionF.split('__')
-                        orig = self.cleanLine(orig)
-                        dest = self.cleanLine(dest)
-                        textElement = (f"{t1 + t2}|{theTime} {orig} -> {dest}")
-                        if msg.find("[W]") >= 0:
-                            textW.append(textElement)
-                        else:
-                            textF.append(textElement)
-                        logging.debug(f"Element text {textElement}")
+                        if t1:
+                            orig, dest = actionF.split('__')
+                            orig = f"{self.cleanLine(orig, key, i)}"
+                            dest = self.cleanLine(dest)
+                            textElement = (f"{t1 + t2}|{theTime} {orig} -> {dest}")
+                            if msg.find("[W]") >= 0:
+                                textW.append(textElement)
+                            else:
+                                textF.append(textElement)
+                            logging.debug(f"Element text {textElement}")
         textF = sorted(textF)
         textW = sorted(textW)
         textP = self.formatList(textF, "finished")
         textP = textP + self.formatList(textW, "waiting")
         yield ("\n".join(textP))
         yield (end())
-        if False:
-            if not os.path.exists(f"{DATADIR}/{actionF}.timeNext"):
-                        yield f"Action: {action}"
-                        yield f"File: {actionF}"
-                        yield "No"
-                        logging.info(f"Actionnnn: {actionF}. No")
-
 
 
     @botcmd(split_args_with=None, template="buffer")
@@ -904,8 +903,8 @@ class Buffer(BotPlugin):
                             # This should not happen
                             theUpdatetxt = ""
                         theUpdates.append((theUpdatetxt, update[1], update[2]))
-            logging.info(f"self.available ... {self.available}")
-            logging.info(f"socialNetwork ... {socialNetwork}")
+            logging.debug(f"self.available ... {self.available}")
+            logging.debug(f"socialNetwork ... {socialNetwork}")
             data = self.available[self.getId(socialNetwork)]
             name = data["name"]
             logging.debug(f"Name ... {name}")
@@ -919,7 +918,7 @@ class Buffer(BotPlugin):
                     and (self.rules.more[src]['hold'] == 'yes')):
                 for action in actions:
                     myDest = (f"{myDest}\n"
-                              #f" {self.rules.getNameAction(action)} "
+                              # f" {self.rules.getNameAction(action)} "
                               f"        ⟶ "
                               f"{self.rules.getNameAction(action).capitalize()} "
                               f"({self.rules.getNickAction(action)}@"
@@ -943,45 +942,49 @@ class Buffer(BotPlugin):
                     f"{social.capitalize()} " 
                     f"{self.rules.getNameRule(src).capitalize()} ")
             if theUpdates:
-                if len(socialNetwork) > 2:
-                    socialNetworktxt = (
-                        socialNetwork[2][1][0].capitalize()
-                        + " ("
-                        + socialNetwork[2][1][1]
-                        + " "
-                        + socialNetwork[0]
-                        + ")"
-                    )
-                    logging.debug(f"socialNetwortxt: {socialNetworktxt}")
-                    if len(socialNetworktxt) + 3 > maxLen:
-                        maxLen = len(socialNetworktxt) + 3
-                    if (1 + len(theUpdates)) * maxLen > 1024:
-                        numEle = 1024 / maxLen
-                        import math
+                # if len(socialNetwork) > 2:
+                #     # Unused code?
+                #     logging.info("socialNetwork > 2")
+                #     socialNetworktxt = (
+                #         socialNetwork[2][1][0].capitalize()
+                #         + " ("
+                #         + socialNetwork[2][1][1]
+                #         + " "
+                #         + socialNetwork[0]
+                #         + ")"
+                #     )
+                #     logging.debug(f"socialNetwortxt: {socialNetworktxt}")
+                #     if len(socialNetworktxt) + 3 > maxLen:
+                #         maxLen = len(socialNetworktxt) + 3
+                #     if (1 + len(theUpdates)) * maxLen > 1024:
+                #         numEle = 1024 / maxLen
+                #         import math
 
-                        iniPos = 0
-                        maxPos = math.trunc(numEle)
-                        if self.schedules:
-                            maxPos = self.schedules
-                            numEle = self.schedules
-                        while iniPos <= len(theUpdates):
-                            compResponse.append((tt,
-                                                 socialNetworktxt,
-                                                 myDest,
-                                                 theUpdates[iniPos:maxPos]
-                                                 )
-                                                )
-                            iniPos = maxPos
-                            maxPos = maxPos + math.trunc(numEle)
-                    else:
-                        compResponse.append((tt, socialNetworktxt, 
-                            myDest, theUpdates))
-                else:
-                    compResponse.append((tt, socialNetworktxt, 
-                        myDest, theUpdates))
+                #         iniPos = 0
+                #         maxPos = math.trunc(numEle)
+                #         if self.schedules:
+                #             maxPos = self.schedules
+                #             numEle = self.schedules
+                #         while iniPos <= len(theUpdates):
+                #             compResponse.append((tt,
+                #                                  socialNetworktxt,
+                #                                  myDest,
+                #                                  theUpdates[iniPos:maxPos]
+                #                                  )
+                #                                 )
+                #             iniPos = maxPos
+                #             maxPos = maxPos + math.trunc(numEle)
+                #     else:
+
+                #         compResponse.append((tt, socialNetworktxt, 
+                #             myDest, theUpdates))
+                # else:
+                logging.info("not socialNetwork > 2")
+                compResponse.append((tt, socialNetworktxt, myDest, theUpdates))
             else:
-                compResponse.append((tt, socialNetworktxt,
-                                     myDest, theUpdates,))
+                logging.info("no updates")
+                compResponse.append((tt, socialNetworktxt, myDest, theUpdates,))
+
 
         return compResponse
 
