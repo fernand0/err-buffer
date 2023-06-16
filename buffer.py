@@ -624,15 +624,16 @@ class Buffer(BotPlugin):
             if 'hold' in rules.more[src]:
                 rules.more[src]['hold'] = 'no'
             for i, action in enumerate(myActions):
-                logging.debug(f"Action {i}: {action} {rules.getNameAction(action)}")
+                nameAction = rules.getNameAction(action)
+                typeAction = rules.getTypeAction(action)
+                logging.debug(f"Action {i}: {action} {nameAction}")
                 yield(f"Action {i}. {rules.getNickAction(action)}@"
                       f"{rules.getProfileAction(action)}"
-                      f"({rules.getNameAction(action)}-"
-                      f"{rules.getTypeAction(action)})")
-                rules.executeAction(src, rules.more[src], action,
+                      f"({nameAction}-{typeAction})")
+                yield (rules.executeAction(src, rules.more[src], action,
                                     noWait=True, timeSlots=0, simmulate=False,
-                                    name=f"{name} {rules.getTypeAction(action)}",
-                                    nextPost=False, pos=pos, delete=False)
+                                    name=f"{name} {typeAction}",
+                                    nextPost=False, pos=pos, delete=False))
             yield (f"Finished actions!")
 
             postaction = apiSrc.getPostAction()
