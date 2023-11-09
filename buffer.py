@@ -872,6 +872,10 @@ class Buffer(BotPlugin):
     @botcmd(split_args_with=None, template="buffer")
     def prog_show(self, mess, args):
         """A command to show scheduled times"""
+        self.setAvailable()
+        if not self.clients:
+            yield(f"You have not selected any service to show. "
+                  f"You need to list at least one service")
         for profile in self.clients:
             self.log.debug("Profile: %s" % str(profile))
             if "setSchedules" in dir(self.clients[profile]):
