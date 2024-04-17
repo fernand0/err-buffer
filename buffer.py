@@ -61,9 +61,12 @@ class Buffer(BotPlugin):
         return res
 
     def getPos(self, arg):
-        res = ""
+        res = -1
         if arg and len(arg)>2:
-            res = int(arg[2:].split(' ')[0])
+            try:
+                res = int(arg[2:].split(' ')[0])
+            except:
+                logging.debug("It is not a position")
         return res
 
     def getCont(self, arg):
@@ -213,6 +216,69 @@ class Buffer(BotPlugin):
             yield "None"
         yield end()
 
+    @botcmd(split_args_with=None)
+    def list_actions(self, msg, args):
+        """Add all available actions"""
+        self.setAvailable()
+
+        rules = self.rules
+        available = {}
+        myKeys = {}
+        myIniKeys = []
+        actions = {}
+        logging.debug(f"Rules: {rules.rules}")
+        rules.indent = ''
+        for rule in rules.rules:
+            for action in rules.rules[rule]:
+                service = rules.getProfileAction(action)
+                if rules.hasPublishMethod(service):
+                    #FIXME: publishPost is in modulecontent
+                    iniK, nameK = rules.getIniKey(service.upper(), 
+                                                  myKeys, myIniKeys)
+                    more = rules.more[rule]
+                    if not (iniK in available):
+                        available[iniK] = {"name": service, 
+                                           "data": [], "social": [], 
+                                           "actions": []} 
+                        available[iniK]["data"] = []
+                    available[iniK]["data"].append({'src': action,
+                                                    'more': more})
+                    logging.debug(f"Action: {action}")
+                    logging.debug(f"Service: {service}")
+                    if service not in actions:
+                        actions[service] = [action, ]
+                    else:
+                        actions[service].append(action)
+                    if action not in available[iniK]["actions"]:
+                        available[iniK]["actions"].append(action)
+
+        logging.debug(f"Actions: {actions}")
+        logging.debug(f"Available: {available}")
+
+        myList = {}
+        theKey = ("M0")
+        myList[theKey] = []
+        keys = []
+        for key in available:
+            #yield f"- Key: {key} {available[key]['name']}"
+            for i,action in enumerate(available[key]['actions']):
+                service = rules.getProfileAction(action)
+                myList[theKey].append((f"{service.capitalize()} "
+                                       f"{rules.getNickAction(action)}@"
+                                       f"{service}"
+                                       f"{rules.getTypeAction(action)}",
+                                       key, f"{key}{i}"))
+                # yield f"{key}{i}) {service} {rules.getNickAction(action)}"
+            keys.append(f"{key}{i}")
+        self.log.debug("list actions (myList): {str(myList)}")
+        keys = ','.join(keys)
+        myList[theKey].append((keys, "", "I"))
+
+        response = self.sendReply("", "", myList, ["sent", "pending"])
+        for rep in response:
+            # Discard the first, fake, result
+            yield ('\n'.join(rep.split('\n')[3:]))
+
     @botcmd
     def list_all(self, mess, args):
         """List available services"""
@@ -319,6 +385,7 @@ class Buffer(BotPlugin):
 
         yield (response)
         yield (end())
+
 
     @botcmd(split_args_with=None)
     def list_add(self, msg, args):
@@ -602,9 +669,10 @@ class Buffer(BotPlugin):
             self.log.debug(f"Rules rules: {rules.rules}")
             self.log.debug(f"Name {name} dest: {dest}")
             self.log.debug(f"It is: {dest in rules.rules}")
-            for i in rules.rules:
-                self.log.debug(f"Rule: {i}")
+            # for i in rules.rules:
+            #     self.log.debug(f"Rule: {i}")
 
+            post = None
             myActions = rules.rules[src]
             self.log.debug(f"My actions: {myActions}")
             myClient = f"{idArg}{selArg}".upper()
@@ -612,32 +680,53 @@ class Buffer(BotPlugin):
             apiSrc.setPosts()
             pos = self.getPos(args)
             self.log.debug(f"Pos: {pos}")
-            post = apiSrc.getPost(pos)
+            if pos>=0:
+                post = apiSrc.getPost(pos)
+                title = apiSrc.getPostTitle(post)
+                link = apiSrc.getPostLink(post)
+                self.log.debug(f"Title: {title}")
+                yield(f"Will publish: {title} - {link}")
+                self.log.debug(f"Link: {link}")
+                self.log.debug(f"Actions: {myActions}")
 
-            title = apiSrc.getPostTitle(post)
-            link = apiSrc.getPostLink(post)
-            self.log.debug(f"Title: {title}")
-            yield(f"Will publish: {title} - {link}")
-            self.log.debug(f"Link: {link}")
-            self.log.debug(f"Actions: {myActions}")
+                published = False
 
-            published = False
-
-            if 'hold' in rules.more[src]:
-                rules.more[src]['hold'] = 'no'
-            for i, action in enumerate(myActions):
-                nameAction = rules.getNameAction(action)
-                typeAction = rules.getTypeAction(action)
-                self.log.debug(f"Action {i}: {action} {nameAction}")
-                yield(f"Action {i}. {rules.getNickAction(action)}@"
-                      f"{rules.getProfileAction(action)}"
-                      f"({nameAction}-{typeAction})")
-                resExecute = rules.executeAction(src, rules.more[src], action,
-                                    noWait=True, timeSlots=0, simmulate=False,
-                                    name=f"{name} {typeAction}",
-                                    nextPost=False, pos=pos, delete=False)
-                self.log.info(f"Res execute: {resExecute}")
-                yield f"{resExecute}"
+                if 'hold' in rules.more[src]:
+                    rules.more[src]['hold'] = 'no'
+                for i, action in enumerate(myActions):
+                    nameAction = rules.getNameAction(action)
+                    typeAction = rules.getTypeAction(action)
+                    self.log.debug(f"Action {i}: {action} {nameAction}")
+                    yield(f"Action {i}. {rules.getNickAction(action)}@"
+                          f"{rules.getProfileAction(action)}"
+                          f"({nameAction}-{typeAction})")
+                    resExecute = rules.executeAction(src, rules.more[src], 
+                                                     action, noWait=True, 
+                                                     timeSlots=0, 
+                                                     simmulate=False, 
+                                                     name=(f"{name} " 
+                                                           f"{typeAction}",
+                                                     nextPost=False, 
+                                                     pos=pos, delete=False)
+                    self.log.info(f"Res execute: {resExecute}")
+                    yield f"{resExecute}"
+            else: 
+                argSplit = args.split(' ')
+                if len(argSplit)>1:
+                    post = ' '.join(argSplit[1:])
+                    for i, action in enumerate(myActions): 
+                        nameAction = rules.getNameAction(action)
+                        typeAction = rules.getTypeAction(action)
+                        self.log.debug(f"Action {i}: {action} {nameAction}")
+                        yield(f"Action {i}. {rules.getNickAction(action)}@"
+                          f"{rules.getProfileAction(action)}"
+                          f"({nameAction}-{typeAction})") 
+                        apiDst = rules.readConfigDst('', action, 
+                                                rules.more[src], None) 
+                        apiDst.publishPost(post, '', '')
+                yield f"We need some position or something to publish"
+                yield f"Args: {args}"
+                yield f"Post: {post}"
 
             yield (f"Finished actions!")
 
