@@ -480,7 +480,10 @@ class Buffer(BotPlugin):
             self.log.debug(f"myElem {myElem}")
             src = myElem['src']
             self.log.debug(f"src {src}")
-            more = self.rules.more[src]
+            if src in self.rules.more:
+                more = self.rules.more[src]
+            else:
+                more = []
             self.log.debug(f"more {more}")
 
             try:
@@ -705,7 +708,7 @@ class Buffer(BotPlugin):
                                                      timeSlots=0, 
                                                      simmulate=False, 
                                                      name=(f"{name} " 
-                                                           f"{typeAction}",
+                                                           f"{typeAction}"),
                                                      nextPost=False, 
                                                      pos=pos, delete=False)
                     self.log.info(f"Res execute: {resExecute}")
@@ -876,8 +879,9 @@ class Buffer(BotPlugin):
             src = data['data'][pos]['src']
             actions = self.rules.rules[src]
             myDest = ""
-            if not (('hold' in self.rules.more[src])
-                    and (self.rules.more[src]['hold'] == 'yes')):
+            if (src in self.rules.more 
+                and not (('hold' in self.rules.more[src])
+                    and (self.rules.more[src]['hold'] == 'yes'))):
                 for action in actions:
                     myDest = (f"{myDest}\n"
                               # f" {self.rules.getNameAction(action)} "
@@ -913,6 +917,7 @@ class Buffer(BotPlugin):
         return compResponse
 
     def sendReply(self, mess, args, updates, types):
+        self.log.info(f"Updates: {updates}")
         reps = self.prepareReply(updates, types)
         self.log.debug(f"Reps: {reps}")
         for rep in reps:
