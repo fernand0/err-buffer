@@ -359,9 +359,11 @@ class Buffer(BotPlugin):
                 if element in clients:
                     thePosts = clients[element].getPosts()
                     if thePosts:
-                        link = thePosts[-1][1]
+                        lenPosts = len(clients[element].getPosts())
+                        link = clients[element].getClient().getLink(lenPosts-1)
+                        #link = thePosts[-1][1]
                         service = clients[element].getService().upper()
-                        if service == "Forum".upper():
+                        if service.lower() in ["forum", "reddit"]:
                             name = clients[element].getUrl()
                             updateLastLink(name, link)
                         yield ("Marked read {}".format(element))
