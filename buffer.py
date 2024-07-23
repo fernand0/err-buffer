@@ -359,10 +359,10 @@ class Buffer(BotPlugin):
                 if element in clients:
                     thePosts = clients[element].getPosts()
                     if thePosts:
-                        lenPosts = len(clients[element].getPosts())
-                        link = clients[element].getClient().getLink(lenPosts-1)
+                        lenPosts = len(thePosts)
+                        link = clients[element].getLink(lenPosts-1)
                         #link = thePosts[-1][1]
-                        service = clients[element].getService().upper()
+                        service = clients[element].getService()
                         if service.lower() in ["forum", "reddit"]:
                             name = clients[element].getUrl()
                             updateLastLink(name, link)
