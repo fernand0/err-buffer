@@ -1,6 +1,6 @@
 {% if type == 'pending' %} 
 {% if updates %} 
-*{{nameSocialNetwork}}* {{post}} 
+*{{nameSocialNetwork}}* {{post}} |>
 {% for text, link, pos in updates %} {{ pos}}) {{ text | truncate(50, True)}}
 {% endfor %} {% else %} *{{nameSocialNetwork}}* ({{post}}){% endif %} {% else %} 
 {% if type == 'longer' %}
