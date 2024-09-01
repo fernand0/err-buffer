@@ -927,7 +927,13 @@ class Buffer(BotPlugin):
             # self.log.debug(f"Data: {data['data'][pos]}")
             social = socialNetwork
             src = data['data'][pos]['src']
-            actions = self.rules.rules[src]
+            try:
+                actions = self.rules.rules[src]
+            except:
+                # Experimental. We will try with the rule associated to a
+                # similar src
+                altSrc = src[:-1]+ ('posts', )
+                actions = self.rules.rules[altSrc]
             myDest = ""
             if (src in self.rules.more 
                 and not (('hold' in self.rules.more[src])
