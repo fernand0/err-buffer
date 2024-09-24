@@ -315,8 +315,8 @@ class Buffer(BotPlugin):
         myList[theKey] = []
         keys = []
         for key in self.available:
-            for i, elem in enumerate(self.available[key]["data"]):
-                if (args and (key == args.lower())) or not args:
+            if (args and (key.lower() == args.lower())) or not args:
+                for i, elem in enumerate(self.available[key]["data"]):
                     self.log.debug(f"Elem: {elem}")
                     name = rules.getNameRule(elem['src'])
                     profile = rules.getSecondNameRule(elem['src'])
@@ -330,7 +330,7 @@ class Buffer(BotPlugin):
                                                f"({nick}@{profile} "
                                                f"{self.rules.getTypeRule(src)})", 
                                                key, f"{key}{i}"))
-            keys.append(f"{key}{i}")
+                keys.append(f"{key}{i}")
         self.log.debug("myList: %s" % str(myList))
         keys = ','.join(keys)
         myList[theKey].append((keys, "", "I"))
@@ -432,7 +432,9 @@ class Buffer(BotPlugin):
 
         rules = self.rules
 
-        response = self.config
+        response = ""
+        for i,ll in enumerate(self.config):
+            response = f"{response}{i}: {ll}\n" 
         if not response:
             response = f"Empty list, you can add items with list add"
         yield response
