@@ -411,6 +411,14 @@ class Buffer(BotPlugin):
         yield (end())
 
 
+    def show_config(self):
+        response = ""
+        for i,ll in enumerate(self.config):
+            response = f"{response}{i}: {ll}\n" 
+        if not response:
+            response = f"Empty list, you can add items with list add"
+        return response
+
     @botcmd(split_args_with=None)
     def list_add(self, msg, args):
         """Add list of services to the quick list"""
@@ -422,7 +430,9 @@ class Buffer(BotPlugin):
         if myList:
             self.config.append(myList)
 
-        yield (self.config)
+        response = self.show_config()
+        yield response
+
         yield (end())
 
     @botcmd
@@ -432,11 +442,7 @@ class Buffer(BotPlugin):
 
         rules = self.rules
 
-        response = ""
-        for i,ll in enumerate(self.config):
-            response = f"{response}{i}: {ll}\n" 
-        if not response:
-            response = f"Empty list, you can add items with list add"
+        response = self.show_config()
         yield response
         yield end()
 
