@@ -3,6 +3,7 @@ import os
 import pickle
 import pprint
 import time
+import urllib.parse
 
 from errbot import BotPlugin, botcmd
 from errbot.templating import tenv
@@ -65,34 +66,36 @@ class Buffer(BotPlugin):
             self.available = self.availableN
 
     def getId(self, arg):
-        res = ""
-        if arg and len(arg)>0:
-            res = arg[0].upper()
-        return res
+        result = None
+        if arg and len(arg) > 0:
+            result = arg[0].upper()
+        return result
 
     def getSel(self, arg):
-        res = ""
-        if arg and len(arg)>1:
-            res = int(arg[1])
-        return res
+        result = None
+        if arg and len(arg) > 1:
+            try:
+                result = int(arg[1])
+            except ValueError:
+                self.log.debug(f"getSel: Could not convert '{arg[1]}' to int.")
+        return result
 
     def getPos(self, arg):
-        res = -1
-        if arg and len(arg)>2:
+        result = None
+        if arg and len(arg) > 2:
             try:
-                res = int(arg[2:].split(' ')[0])
-            except:
-                logging.debug("It is not a position")
-        return res
+                part = arg[2:].split(' ')[0]
+                result = int(part)
+            except ValueError:
+                self.log.debug(f"getPos: Could not convert '{arg[2:]}' to int.")
+        return result
 
     def getCont(self, arg):
-        res = None
+        result = None
         if arg and ' ' in arg:
             pos = arg.find(' ')
-            res = arg[pos+1:]
-            if res.isdigit():
-                res = int(res)
-        return res
+            result = arg[pos+1:]
+        return result
 
     def addMore(self):
         response = (
@@ -246,7 +249,7 @@ class Buffer(BotPlugin):
         myKeys = {}
         myIniKeys = []
         actions = {}
-        logging.debug(f"Rules: {rules.rules}")
+        self.log.debug(f"Rules: {rules.rules}")
         rules.indent = ''
         for rule in rules.rules:
             for action in rules.rules[rule]:
@@ -263,8 +266,8 @@ class Buffer(BotPlugin):
                         available[iniK]["data"] = []
                     available[iniK]["data"].append({'src': action,
                                                     'more': more})
-                    logging.debug(f"Action: {action}")
-                    logging.debug(f"Service: {service}")
+                    self.log.debug(f"Action: {action}")
+                    self.log.debug(f"Service: {service}")
                     if service not in actions:
                         actions[service] = [action, ]
                     else:
@@ -272,8 +275,8 @@ class Buffer(BotPlugin):
                     if action not in available[iniK]["actions"]:
                         available[iniK]["actions"].append(action)
 
-        logging.debug(f"Actions: {actions}")
-        logging.debug(f"Available: {available}")
+        self.log.debug(f"Actions: {actions}")
+        self.log.debug(f"Available: {available}")
 
         myList = {}
         theKey = ("M0")
@@ -308,7 +311,7 @@ class Buffer(BotPlugin):
 
         rules = self.rules
 
-        self.log.debug("Available: %s" % str(self.available))
+        self.log.debug("Available all: %s" % str(self.available))
         # yield("Available: %s" % str(self.available))
         myList = {}
         theKey = ("L0")
@@ -458,6 +461,21 @@ class Buffer(BotPlugin):
         profile = self.available[key]["name"]
         return profile
 
+    def _init_client_and_set_posts(self, element):
+        """Initializes a client if it doesn't exist and calls setPosts."""
+        if element not in self.clients:
+            self.log.debug(f"Client {element} not found, creating a new one.")
+            profile = self.available[self.getId(element)]
+            myElem = profile["data"][self.getSel(element)]
+            src = myElem['src']
+            more = self.rules.more.get(src, [])
+            
+            api = self.rules.readConfigSrc(f"{element} ", src, more)
+            api.setPostsType(myElem['src'][3])
+            self.clients[element] = api
+
+        self.clients[element].setPosts()
+
     @botcmd(split_args_with=None, template="buffer")
     def list(self, mess, args):
         """A command to show available posts in a list of available sites"""
@@ -507,44 +525,27 @@ class Buffer(BotPlugin):
         self.log.debug(f"Available {available}")
         for element in myList:
             self.log.debug("Element %s" % str(element))
-            profile = available[self.getId(element)]
-            name = profile["name"]
-            myElem = profile["data"][self.getSel(element)]
-            self.log.debug(f"myElem {myElem}")
-            src = myElem['src']
-            # self.log.debug(f"src {src}")
-            if src in self.rules.more:
-                more = self.rules.more[src]
-            else:
-                more = []
-            self.log.debug(f"more {more}")
-
-            try:
-                clients[element].setPosts()
-            except:
-                api = self.rules.readConfigSrc(f"{element} ", src, more)
-                clients[element] = api
-                clients[element].setPostsType(myElem['src'][3])
-                clients[element].setPosts()
+            self._init_client_and_set_posts(element)
+            client = self.clients[element]
 
             postsTmp = []
             posts = []
 
-            if hasattr(clients[element], "getPostsType"):
-                if clients[element].getPostsType() == "drafts":
-                    postsTmp = clients[element].getDrafts()
+            if hasattr(client, "getPostsType"):
+                if client.getPostsType() == "drafts":
+                    postsTmp = client.getDrafts()
                 else:
-                    postsTmp = clients[element].getPosts()
+                    postsTmp = client.getPosts()
             else:
-                postsTmp = clients[element].getPosts
+                postsTmp = client.getPosts
             if postsTmp:
                 for (i, post) in enumerate(postsTmp):
-                    if hasattr(clients[element], "getPostLine"):
-                        title = clients[element].getPostLine(post)
+                    if hasattr(client, "getPostLine"):
+                        title = client.getPostLine(post)
                         link = ""
                     else:
-                        title = clients[element].getPostTitle(post)
-                        link = clients[element].getPostLink(post)
+                        title = client.getPostTitle(post)
+                        link = client.getPostLink(post)
                     posts.append((title, link, "{:2}".format(i)))
                     # self.log.debug("I: %s %s %d"%(title,link,i))
 
@@ -681,11 +682,9 @@ class Buffer(BotPlugin):
 
     # Passing split_args_with=None will cause arguments to be split on any kind
     # of whitespace, just like Python's split() does
-    @botcmd
-    def publish(self, mess, args):
-        """A command to publish some update"""
-
-        yield f"Args: {args}"
+    def _parse_publish_args(self, args):
+        """Parses arguments for the publish command."""
+        self.log.debug(f"Parsing publish args: {args}")
         if ' ' in args:
             pos = args.find(' ')
             dst = args[:pos]
@@ -695,16 +694,24 @@ class Buffer(BotPlugin):
             mes = ""
 
         myList = []
-        yield (f"Dst: {dst}")
-        yield (f"Mes: {mes}")
         if dst.isdigit():
             pos = int(dst)
             if (pos >= 0) and (pos < len(self.config)):
-                if len(self.config) > 0:
-                    myList = myList + self.config[pos]
+                myList.extend(self.config[pos])
         else:
-            myList = [dst,]
+            myList.append(dst)
+        
+        return myList, mes
+
+    @botcmd
+    def publish(self, mess, args):
+        """A command to publish some update"""
+
+        myList, mes = self._parse_publish_args(args)
+
+        yield f"Args: {args}"
         yield f"Dst list: {myList}"
+        yield f"Mes: {mes}"
 
         if self.available:
             for element in myList:
