@@ -531,6 +531,7 @@ class Buffer(BotPlugin):
         """Initializes a client if it doesn't exist and calls setPosts."""
         if element not in self.clients:
             self.log.debug(f"Client {element} not found, creating a new one.")
+            profile = self.available[self.getId(element)] # Reintroduced this line
             sel = self.getSel(element)
             if sel is not None and sel < len(profile["data"]):
                 myElem = profile["data"][sel]
