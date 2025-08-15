@@ -88,18 +88,20 @@ class Buffer(BotPlugin):
     def getSel(self, arg):
         """
         Extracts the selection from the argument.
+        Returns None if conversion to int fails.
         """
         result = None
         if arg and len(arg) > 1:
             try:
                 result = int(arg[1])
             except ValueError:
-                self.log.debug(f"getSel: Could not convert '{arg[1]}' to int.")
+                pass # Do nothing, result remains None
         return result
 
     def getPos(self, arg):
         """
         Extracts the position from the argument.
+        Returns None if conversion to int fails.
         """
         result = None
         if arg and len(arg) > 2:
@@ -107,7 +109,7 @@ class Buffer(BotPlugin):
                 part = arg[2:].split(' ')[0]
                 result = int(part)
             except ValueError:
-                self.log.debug(f"getPos: Could not convert '{arg[2:]}' to int.")
+                pass # Do nothing, result remains None
         return result
 
     def getCont(self, arg):
@@ -396,9 +398,10 @@ class Buffer(BotPlugin):
         self.log.debug(f"Args... {arg}")
         self.setAvailable()
 
-        if self.getId(arg) in self.available:
+        id_arg = self.getId(arg)
+        if id_arg in self.available:
             pos = self.getSel(arg)
-            if pos < len(self.available[self.getId(arg)]["data"]):
+            if pos is not None and pos < len(self.available[id_arg]["data"]):
                 myList.append(arg.capitalize())
             
         self.log.debug(f"myList: {myList}")
@@ -528,14 +531,18 @@ class Buffer(BotPlugin):
         """Initializes a client if it doesn't exist and calls setPosts."""
         if element not in self.clients:
             self.log.debug(f"Client {element} not found, creating a new one.")
-            profile = self.available[self.getId(element)]
-            myElem = profile["data"][self.getSel(element)]
-            src = myElem['src']
-            more = self.rules.more.get(src, [])
-            
-            api = self.rules.readConfigSrc(f"{element} ", src, more)
-            api.setPostsType(myElem['src'][3])
-            self.clients[element] = api
+            sel = self.getSel(element)
+            if sel is not None and sel < len(profile["data"]):
+                myElem = profile["data"][sel]
+                src = myElem['src']
+                more = self.rules.more.get(src, [])
+                
+                api = self.rules.readConfigSrc(f"{element} ", src, more)
+                api.setPostsType(myElem['src'][3])
+                self.clients[element] = api
+            else:
+                self.log.warning(f"Could not initialize client for element {element} due to invalid selection.")
+                return # Exit if client cannot be initialized
 
         self.clients[element].setPosts()
 
@@ -643,12 +650,24 @@ class Buffer(BotPlugin):
             firstArg = args
         first = firstArg
         lastLink = ''
-        if len(args)>1:
-            lastLink =  self.getSel(args)
+        sel_arg = self.getSel(args)
+        if len(args)>1 and sel_arg is not None:
+            lastLink = sel_arg
             yield f"Url: {lastLink}"
         # yield f"First: {first}"
-        name = available[self.getId(first)]["name"]
-        src = available[self.getId(first)]["data"][self.getSel(first)]['src']
+        
+        id_first = self.getId(first)
+        if id_first not in available:
+            yield f"Invalid first argument: {first}"
+            return
+
+        sel_first = self.getSel(first)
+        if sel_first is None or sel_first >= len(available[id_first]["data"]):
+            yield f"Invalid selection for first argument: {first}"
+            return
+
+        name = available[id_first]["name"]
+        src = available[id_first]["data"][sel_first]['src']
         yield (f"Name: {rules.getIdRule(src)}")
         myActions = rules.rules[src]
         selectClient = f"{self.getId(firstArg)}{self.getSel(firstArg)}"
@@ -696,7 +715,11 @@ class Buffer(BotPlugin):
                             "{profile} with args {args}")
             idArg = self.getId(args)
             name = available[idArg]["name"]
-            selArg = int(self.getSel(args))
+            selArg = self.getSel(args)
+            if selArg is None or selArg >= len(available[idArg]["data"]):
+                self.log.warning(f"Invalid selection argument: {args}")
+                return "Error: Invalid selection argument."
+
             src = available[idArg]["data"][selArg]['src']
             # self.log.debug(f"Src: {src}")
             dest = str(src)
@@ -814,7 +837,12 @@ class Buffer(BotPlugin):
 
         idArg = self.getId(element)
         name = available[idArg]["name"]
-        selArg = int(self.getSel(element))
+        selArg = self.getSel(element)
+        if selArg is None or selArg >= len(available[idArg]["data"]):
+            self.log.warning(f"Invalid selection for element: {element}")
+            yield "Error: Invalid selection for element."
+            return
+
         src = available[idArg]["data"][selArg]['src']
         self.log.debug(f"Src: {src}")
 
