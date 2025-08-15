@@ -109,12 +109,12 @@ class Buffer(BotPlugin):
         linePrev = ''
         if text:
             textR.append("=======")
-            textR.append("{}:".format(status.capitalize()))
+            textR.append(f"{status.capitalize()}:")
             textR.append("=======")
             for line in text:
                 lineS = line.split("|")[1]
                 line1, line2 = lineS.split("->")
-                self.log.debug("line 1 {}".format(line1))
+                self.log.debug(f"line 1 {line1}")
                 if line[:8] == linePrev[:8]:
                     # FIXME: dirty trick to avoid duplicate content while the
                     # old and the new approach to file names coexists
@@ -123,11 +123,11 @@ class Buffer(BotPlugin):
                         textR[-1] = f"      ⟶{line2}"
                 else:
                     textR.append(line1)
-                    textR.append("      ⟶{}".format(line2))
+                    textR.append(f"      ⟶{line2}")
                 linePrev = line
         else:
             textR.append("===========")
-            textR.append("None {}".format(status))
+            textR.append(f"None {status}")
             textR.append("===========")
 
         return textR
@@ -225,7 +225,7 @@ class Buffer(BotPlugin):
     @botcmd(split_args_with=None, template="buffer")
     def list_last(self, mess, args):
         if self.lastList:
-            yield "Last list: {}".format(str(self.lastList))
+            yield f"Last list: {str(self.lastList)}"
         else:
             yield "No lists"
         yield end()
@@ -311,7 +311,7 @@ class Buffer(BotPlugin):
 
         rules = self.rules
 
-        self.log.debug("Available all: %s" % str(self.available))
+        self.log.debug(f"Available all: {str(self.available)}")
         # yield("Available: %s" % str(self.available))
         myList = {}
         theKey = ("L0")
@@ -334,7 +334,7 @@ class Buffer(BotPlugin):
                                                f"{self.rules.getTypeRule(src)})", 
                                                key, f"{key}{i}"))
                 keys.append(f"{key}{i}")
-        self.log.debug("myList: %s" % str(myList))
+        self.log.debug(f"myList: {str(myList)}")
         keys = ','.join(keys)
         myList[theKey].append((keys, "", "I"))
         # yield("myList: %s" % str(myList))
@@ -379,8 +379,8 @@ class Buffer(BotPlugin):
 
         if pos >= 0:
             for element in myList:
-                self.log.debug("Element %s" % str(element))
-                self.log.debug("Clients %s" % str(clients))
+                self.log.debug(f"Element {str(element)}")
+                self.log.debug(f"Clients {str(clients)}")
                 if element in clients:
                     thePosts = clients[element].getPosts()
                     if thePosts:
@@ -391,7 +391,7 @@ class Buffer(BotPlugin):
                         if service.lower() in ["forum", "reddit"]:
                             name = clients[element].getUrl()
                             updateLastLink(name, link)
-                        yield ("Marked read {}".format(element))
+                        yield (f"Marked read {element}")
         yield end()
 
     @botcmd
@@ -479,8 +479,8 @@ class Buffer(BotPlugin):
     @botcmd(split_args_with=None, template="buffer")
     def list(self, mess, args):
         """A command to show available posts in a list of available sites"""
-        self.log.debug("Posts posts %s" % (self.posts))
-        self.log.debug("args %s" % str(args))
+        self.log.debug(f"Posts posts {self.posts}")
+        self.log.debug(f"args {str(args)}")
 
         myList = []
         response = []
@@ -513,7 +513,7 @@ class Buffer(BotPlugin):
                 self.appendMyList(arg, myList)
                 pos = 0
 
-            self.log.debug("myList %s" % str(myList))
+            self.log.debug(f"myList {str(myList)}")
 
         self.lastList = myList
         clients = self.clients
@@ -521,10 +521,10 @@ class Buffer(BotPlugin):
         if not myList: 
             yield (self.addMore())
 
-        self.log.debug("Clients %s" % str(clients))
+        self.log.debug(f"Clients {str(clients)}")
         self.log.debug(f"Available {available}")
         for element in myList:
-            self.log.debug("Element %s" % str(element))
+            self.log.debug(f"Element {str(element)}")
             self._init_client_and_set_posts(element)
             client = self.clients[element]
 
@@ -546,14 +546,14 @@ class Buffer(BotPlugin):
                     else:
                         title = client.getPostTitle(post)
                         link = client.getPostLink(post)
-                    posts.append((title, link, "{:2}".format(i)))
+                    posts.append((title, link, f"{i:2}"))
                     # self.log.debug("I: %s %s %d"%(title,link,i))
 
             self.posts[element] = posts
             # self.log.debug("Posts posts %s" % (self.posts))
 
         response = self.sendReply("", "", self.posts, ["sent", "pending"])
-        self.log.debug("Response %s End" % str(response))
+        self.log.debug(f"Response {str(response)} End")
 
         for resp in response:
             # self.log.debug(f"Resp: {resp}")
@@ -798,7 +798,7 @@ class Buffer(BotPlugin):
     def edit_show(self, mess, args):
         """Show the last edit commands"""
         for arg in self.argsArchive[-5:]:
-            yield ("- %s" % arg)
+            yield (f"- {arg}")
         yield end()
 
     @botcmd
@@ -806,7 +806,7 @@ class Buffer(BotPlugin):
         """A command to edit the link of some update"""
         if " " not in args:
             if self.lastLink:
-                args = "{} {}".format(args, self.lastLink)
+                args = f"{args} {self.lastLink}"
         res = self.execute("editl", args)
         self.lastLink = args.split(" ", 1)[1:][0]
         yield res
@@ -824,7 +824,7 @@ class Buffer(BotPlugin):
         """A command to edit some update"""
         if " " not in args:
             if self.lastEdit:
-                args = "{} {}".format(args, self.lastEdit)
+                args = f"{args} {self.lastEdit}"
         res = self.execute("edit", args)
         self.addEditsCache(args)
         self.lastEdit = args.split(" ", 1)[1:][0]
@@ -970,29 +970,21 @@ class Buffer(BotPlugin):
     def prog_del(self, mess, args):
         """A command to delete some schedule"""
 
-        yield "Adding %s" % args
+        yield f"Adding {args}"
         for profile in self.clients:
             if "delSchedules" in dir(self.clients[profile]):
                 self.clients[profile].delSchedules(args)
-                yield "%s: (%s) %s" % (
-                    profile[0],
-                    profile[1],
-                    self.clients[profile].getHoursSchedules(),
-                )
+                yield f"{profile[0]}: ({profile[1]}) {self.clients[profile].getHoursSchedules()}"
         yield end()
 
     @botcmd(split_args_with=None, template="buffer")
     def prog_add(self, mess, args):
         """A command to add a publishing time in the schedule"""
-        yield "Adding %s" % args
+        yield f"Adding {args}"
         for profile in self.clients:
             if "addSchedules" in dir(self.clients[profile]):
                 self.clients[profile].addSchedules(args)
-                yield "%s: (%s) %s" % (
-                    profile[0],
-                    profile[1],
-                    self.clients[profile].getHoursSchedules(),
-                )
+                yield f"{profile[0]}: ({profile[1]}) {self.clients[profile].getHoursSchedules()}"
         yield end()
 
     @botcmd(split_args_with=None, template="buffer")
@@ -1003,7 +995,7 @@ class Buffer(BotPlugin):
             yield(f"You have not selected any service to show. "
                   f"You need to list at least one service")
         for profile in self.clients:
-            self.log.debug("Profile: %s" % str(profile))
+            self.log.debug(f"Profile: {str(profile)}")
             if "setSchedules" in dir(self.clients[profile]):
                 self.clients[profile].setSchedules("rssToSocial")
                 schedules = self.clients[profile].getHoursSchedules()
@@ -1014,11 +1006,6 @@ class Buffer(BotPlugin):
 
                 if numS:
                     self.schedules = numS
-                yield "%s: (%s) %s Number: %s" % (
-                    profile[0],
-                    profile[1],
-                    schedules,
-                    numS,
-                )
+                yield f"{profile[0]}: ({profile[1]}) {schedules} Number: {numS}"
         yield (end())
 
