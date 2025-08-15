@@ -703,6 +703,35 @@ class Buffer(BotPlugin):
         
         return myList, mes
 
+    def _publish_content(self, post_content, myActions, src, name, apiSrc, pos=None):
+        if 'hold' in self.rules.more[src]:
+            self.rules.more[src]['hold'] = 'no'
+
+        for i, action in enumerate(myActions):
+            nameAction = self.rules.getNameAction(action)
+            typeAction = self.rules.getTypeAction(action)
+            msgAction = (f"Action {i}. {self.rules.getNickAction(action)}@"
+                          f"{self.rules.getProfileAction(action)}"
+                          f"({nameAction}-{typeAction})")
+            yield msgAction
+
+            if pos is not None and pos >= 0:
+                resExecute = self.rules.executeAction(src, self.rules.more[src],
+                                                     action, msgAction,
+                                                     apiSrc,
+                                                     noWait=True, timeSlots=0,
+                                                     simmulate=False,
+                                                     name=(f"{name} "
+                                                           f"{typeAction}"),
+                                                     nextPost=False,
+                                                     pos=pos, delete=False)
+                self.log.info(f"Res execute: {resExecute}")
+                yield f"{resExecute}"
+            else:
+                apiDst = self.rules.readConfigDst('', action,
+                                                self.rules.more[src], None)
+                apiDst.publishPost(post_content, '', '')
+
     def _publish_post(self, element, mes):
         clients = self.clients
         available = self.available
@@ -710,75 +739,34 @@ class Buffer(BotPlugin):
 
         self.log.debug(f"Publishing {element}")
         yield (f"Publishing {element}")
-        res = ""
 
         idArg = self.getId(element)
         name = available[idArg]["name"]
         selArg = int(self.getSel(element))
         src = available[idArg]["data"][selArg]['src']
         self.log.debug(f"Src: {src}")
-        dest = str(src)
 
-        self.log.debug(f"Clients: {clients}")
-        self.log.debug(f"Rules rules: {rules.rules}")
-        self.log.debug(f"Name {name} dest: {dest}")
-
-        post = None
         myActions = rules.rules[src]
-        self.log.debug(f"My actions: {myActions}")
         myClient = f"{idArg}{selArg}".upper()
         apiSrc = clients[myClient]
         apiSrc.setPosts()
-.       pos = self.getPos(element)
-        yield(f"Pos: {pos}")
-        self.log.debug(f"Pos: {pos}")
+        pos = self.getPos(element)
+
+        post_content = None
         if pos is not None and pos >= 0:
             post = apiSrc.getPost(pos)
             title = apiSrc.getPostTitle(post)
             link = apiSrc.getPostLink(post)
-            self.log.debug(f"Title: {title}")
-            yield(f"Will publish: {title} - {link}")
-            self.log.debug(f"Link: {link}")
-            self.log.debug(f"Actions: {myActions}")
-
-            if 'hold' in rules.more[src]:
-                rules.more[src]['hold'] = 'no'
-            for i, action in enumerate(myActions):
-                nameAction = rules.getNameAction(action)
-                typeAction = rules.getTypeAction(action)
-                self.log.debug(f"Action {i}: {action} {nameAction}")
-                msgAction = (f"Action {i}. {rules.getNickAction(action)}@"
-                      f"{rules.getProfileAction(action)}"
-                      f"({nameAction}-{typeAction})")
-                yield msgAction
-                resExecute = rules.executeAction(src, rules.more[src],
-                                                 action, msgAction,
-                                                 apiSrc,
-                                                 noWait=True, timeSlots=0,
-                                                 simmulate=False,
-                                                 name=(f"{name} "
-                                                       f"{typeAction}"),
-                                                 nextPost=False,
-                                                 pos=pos, delete=False)
-                self.log.info(f"Res execute: {resExecute}")
-                yield f"{resExecute}"
+            post_content = f"{title} {link}"
+            yield(f"Will publish: {post_content}")
         else:
-            if mes:
-                post = mes
-                for i, action in enumerate(myActions):
-                    nameAction = rules.getNameAction(action)
-                    typeAction = rules.getTypeAction(action)
-                    self.log.debug(f"Action {i}: {action} {nameAction}")
-                    yield(f"Action {i}. {rules.getNickAction(action)}@"
-                      f"{rules.getProfileAction(action)}"
-                      f"({nameAction}-{typeAction})")
-                    apiDst = rules.readConfigDst('', action,
-                                            rules.more[src], None)
-                    apiDst.publishPost(post, '', '')
-            yield f"We need some position or something to publish"
-            if mes:
-                yield f"Mes: {mes}"
-            yield f"Post: {post}"
+            post_content = mes
+
+        if not post_content:
+            yield "We need some position or something to publish"
+            return
+        
+        yield from self._publish_content(post_content, myActions, src, name, apiSrc, pos)
 
     @botcmd
     def publish(self, mess, args):
