@@ -41,7 +41,27 @@ class Buffer(BotPlugin):
         self.lastLink = None
         self.argsArchive = []
 
+    def _split_available_data(self, key, rules, myKeys, myIniKeys, available_item):
+        """
+        Splits the available data if its length is greater than 9.
+        """
+        if len(available_item['data']) > 9:
+            iniK, nKey = rules.getIniKey(available_item['name'].upper(),
+                                           myKeys,
+                                           myIniKeys)
+            self.availableN[key] = {'name': 'rss',
+                                    'data': available_item['data'][:10],
+                                    'social': []}
+            self.availableN[iniK] = {'name': 'rss',
+                                    'data': available_item['data'][10:],
+                                    'social': []}
+        else:
+            self.availableN[key] = available_item
+
     def setAvailable(self):
+        """
+        Checks and sets the available social media rules.
+        """
         self.log.debug(f"Checking available")
         if not self.available:
             rules = socialModules.moduleRules.moduleRules()
@@ -51,27 +71,24 @@ class Buffer(BotPlugin):
             myIniKeys = list(self.available.keys())
             self.availableN = dict(self.available)
             for key in self.available:
-                if len(self.available[key]['data'])>9:
-                   iniK, nKey = rules.getIniKey(self.available[key]['name'].upper(),
-                                   myKeys,
-                                   myIniKeys)
-                   self.availableN[key] = {'name': 'rss', 
-                                           'data': self.available[key]['data'][:10],
-                                           'social': []}
-                   self.availableN[iniK] = {'name': 'rss', 
-                                           'data': self.available[key]['data'][10:],
-                                           'social': []}
+                self._split_available_data(key, rules, myKeys, myIniKeys, self.available[key])
 
             self.rules = rules
             self.available = self.availableN
 
     def getId(self, arg):
+        """
+        Extracts the ID from the argument.
+        """
         result = None
         if arg and len(arg) > 0:
             result = arg[0].upper()
         return result
 
     def getSel(self, arg):
+        """
+        Extracts the selection from the argument.
+        """
         result = None
         if arg and len(arg) > 1:
             try:
@@ -81,6 +98,9 @@ class Buffer(BotPlugin):
         return result
 
     def getPos(self, arg):
+        """
+        Extracts the position from the argument.
+        """
         result = None
         if arg and len(arg) > 2:
             try:
@@ -91,6 +111,9 @@ class Buffer(BotPlugin):
         return result
 
     def getCont(self, arg):
+        """
+        Extracts the content from the argument.
+        """
         result = None
         if arg and ' ' in arg:
             pos = arg.find(' ')
@@ -98,6 +121,9 @@ class Buffer(BotPlugin):
         return result
 
     def addMore(self):
+        """
+        Returns a message indicating how to add more lists.
+        """
         response = (
             f"There are {len(self.config)} lists. "
             f"You can add more with command list add"
@@ -105,6 +131,9 @@ class Buffer(BotPlugin):
         return response
 
     def formatList(self, text, status):
+        """
+        Formats a list of text elements with a given status.
+        """
         textR = []
         linePrev = ''
         if text:
@@ -133,6 +162,9 @@ class Buffer(BotPlugin):
         return textR
 
     def fileNameBase2(self, rule, action):
+        """
+        Generates a file name based on the rule and action.
+        """
         nick = self.rules.getNickRule(rule)
         if (('blogalia' in nick) 
             or ('wordpress' in nick)
@@ -153,6 +185,9 @@ class Buffer(BotPlugin):
                )
 
     def cleanLine(self, line, key="", i=None):
+        """
+        Cleans a given line of text.
+        """
         line = line.split('_')
         if key:
             line = f"{key}{i} {line[0]} ({line[2]} {line[1]})"
@@ -163,6 +198,49 @@ class Buffer(BotPlugin):
         line = line.replace('- ',' ')
         return line
 
+    def _get_next_list_element(self, key, i, elem):
+        """
+        Processes a single element for the list_next command.
+        """
+        src = elem['src']
+        try:
+            hold = self.rules.more[src].get('hold', '')
+        except:
+            hold = None
+        
+        if hold and hold == 'yes':
+            return None, None
+
+        if src not in self.rules.rules:
+            return None, None
+
+        for action in self.rules.rules[src]:
+            actionF = self.fileNameBase2(src, action)
+            actionF = actionF.replace('caches', 'posts')
+            actionF = actionF.replace('cache', 'posts')
+            
+            if os.path.exists(f"{DATADIR}/{actionF}.timeNext"):
+                fileNext = f"{DATADIR}/{actionF}.timeNext"
+                with open(fileNext, "rb") as f:
+                    try:
+                        t1, t2 = pickle.load(f)
+                    except:
+                        t1, t2 = (0, 0)
+                
+                if t1:
+                    theTime = time.strftime("%H:%M:%S", time.localtime(t1 + t2))
+                    orig, dest = actionF.split('__')
+                    orig = f"{self.cleanLine(orig, key, i)}"
+                    dest = self.cleanLine(dest)
+                    textElement = (f"{theTime} | {theTime} {orig} -> {dest}")
+                    
+                    if time.time() < t1 + t2:
+                        return textElement, "waiting"
+                    else:
+                        return textElement, "finished"
+
+        return None, None
+
     @botcmd(split_args_with=None, template="buffer")
     def list_next(self, mess, args):
         self.setAvailable()
@@ -170,51 +248,13 @@ class Buffer(BotPlugin):
         textF = []
         for key in self.available:
             for i, elem in enumerate(self.available[key]["data"]):
-                src = elem['src']
-                try:
-                    hold = self.rules.more[src].get('hold','')
-                except:
-                    hold = None
-                if (not hold or (not hold == 'yes')):
-                    msg =  f"Rule: {src}"
-                    self.log.debug(msg)
-                    if src in self.rules.rules:
-                        msg =  f"Actions: {self.rules.rules[src]}"
-                        self.log.debug(msg)
-                        if src in self.rules.more:
-                            msg =  f"More: {self.rules.more[src]}"
-                            self.log.debug(msg)
-                        for action in self.rules.rules[src]:
-                            actionF = self.fileNameBase2(src, action)
-                            actionF = actionF.replace('caches', 'posts')
-                            actionF = actionF.replace('cache', 'posts')
-                            self.log.debug(f"Action file: {actionF}")
-                            # yield f"Action: {actionF}"
-                            if os.path.exists(f"{DATADIR}/{actionF}.timeNext"):
-                                fileNext = f"{DATADIR}/{actionF}.timeNext"
-                                self.log.debug(f"File next: {fileNext}")
-                                with open(fileNext, "rb") as f:
-                                    try:
-                                        t1, t2 = pickle.load(f)
-                                    except:
-                                        t1, t2 = (0,0)
-                                if time.time() < t1 + t2:
-                                    msg = "[W]: "
-                                else:
-                                    msg = "[F]: "
-                                theTime = time.strftime("%H:%M:%S",
-                                                        time.localtime(t1 + t2))
+                textElement, status = self._get_next_list_element(key, i, elem)
+                if textElement:
+                    if status == "waiting":
+                        textW.append(textElement)
+                    else:
+                        textF.append(textElement)
 
-                            if t1:
-                                orig, dest = actionF.split('__')
-                                orig = f"{self.cleanLine(orig, key, i)}"
-                                dest = self.cleanLine(dest)
-                                textElement = (f"{theTime} | {theTime} {orig} -> {dest}")
-                                if msg.find("[W]") >= 0:
-                                    textW.append(textElement)
-                                else:
-                                    textF.append(textElement)
-                                self.log.debug(f"Element text {textElement}")
         textF = sorted(textF)
         textW = sorted(textW)
         textP = self.formatList(textF, "finished")
@@ -224,6 +264,9 @@ class Buffer(BotPlugin):
 
     @botcmd(split_args_with=None, template="buffer")
     def list_last(self, mess, args):
+        """
+        Shows the last listed items.
+        """
         if self.lastList:
             yield f"Last list: {str(self.lastList)}"
         else:
@@ -347,6 +390,9 @@ class Buffer(BotPlugin):
         return end
 
     def appendMyList(self, arg, myList):
+        """
+        Appends an element to myList if it exists in available.
+        """
         self.log.debug(f"Args... {arg}")
         self.setAvailable()
 
@@ -359,6 +405,9 @@ class Buffer(BotPlugin):
 
     @botcmd(split_args_with=None, template="buffer")
     def list_read(self, mess, args):
+        """
+        Marks selected items as read.
+        """
         # Maybe define a flow?
         myList = []
         pos = 0
@@ -415,6 +464,9 @@ class Buffer(BotPlugin):
 
 
     def show_config(self):
+        """
+        Returns a formatted string of the current configuration.
+        """
         response = ""
         for i,ll in enumerate(self.config):
             response = f"{response}{i}: {ll}\n" 
@@ -440,7 +492,9 @@ class Buffer(BotPlugin):
 
     @botcmd
     def list_list(self, msg, args):
-
+        """
+        Lists the current configuration.
+        """
         self.setAvailable()
 
         rules = self.rules
@@ -450,14 +504,23 @@ class Buffer(BotPlugin):
         yield end()
 
     def getUrlSelected(self, selected):
+        """
+        Extracts the URL from the selected item.
+        """
         url = selected[0][0][0]
         return url
 
     def getSelectedProfile(self, key, pos):
+        """
+        Returns the selected profile from available data.
+        """
         selected = self.available[key]["data"][pos]
         return selected
 
     def getProfile(self, key):
+        """
+        Returns the profile name for a given key.
+        """
         profile = self.available[key]["name"]
         return profile
 
@@ -564,6 +627,9 @@ class Buffer(BotPlugin):
 
     @botcmd(split_args_with=' ')
     def last(self, command, args):
+        """
+        Handles the 'last' command to get the last published link.
+        """
         clients = self.clients
         self.log.debug(f"Clients: {clients}")
         self.setAvailable()
@@ -704,6 +770,9 @@ class Buffer(BotPlugin):
         return myList, mes
 
     def _publish_content(self, post_content, myActions, src, name, apiSrc, pos=None):
+        """
+        Publishes the given content to various social media platforms.
+        """
         if 'hold' in self.rules.more[src]:
             self.rules.more[src]['hold'] = 'no'
 
@@ -733,6 +802,9 @@ class Buffer(BotPlugin):
                 apiDst.publishPost(post_content, '', '')
 
     def _publish_post(self, element, mes):
+        """
+        Prepares and publishes a post based on element or message.
+        """
         clients = self.clients
         available = self.available
         rules = self.rules
@@ -832,6 +904,9 @@ class Buffer(BotPlugin):
         yield end()
 
     def addEditsCache(self, args):
+        """
+        Adds edit arguments to the archive.
+        """
         argsArchive = self.argsArchive   # ????
         self.argsArchive.append(args)
 
@@ -858,7 +933,9 @@ class Buffer(BotPlugin):
 
     @botcmd #(split_args_with=None)
     def copy(self, mess, args):
-        """A command to copy some update"""
+        """
+        A command to copy some update.
+        """
         res = self.execute("copy", args)
         yield "Copied"
         yield res
@@ -949,6 +1026,9 @@ class Buffer(BotPlugin):
         return compResponse
 
     def sendReply(self, mess, args, updates, types):
+        """
+        Sends the prepared reply to the user.
+        """
         self.log.debug(f"Updates: {updates}")
         reps = self.prepareReply(updates, types)
         self.log.debug(f"Reps: {reps}")
