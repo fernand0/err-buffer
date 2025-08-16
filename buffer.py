@@ -18,6 +18,55 @@ import socialModules.moduleRules
 def end(msg=""):
     return "END" + msg
 
+class CommandArgs:
+    """
+    Parses command arguments from a string, preserving the original logic
+    from getId, getSel, getPos, and getCont.
+    """
+    def __init__(self, arg_str):
+        self.arg = arg_str if arg_str else ""
+
+    @property
+    def id(self):
+        """Extracts the ID from the argument."""
+        if self.arg and len(self.arg) > 0:
+            return self.arg[0].upper()
+        return None
+
+    @property
+    def selection(self):
+        """
+        Extracts the selection from the argument.
+        Returns None if conversion to int fails.
+        """
+        if self.arg and len(self.arg) > 1:
+            try:
+                return int(self.arg[1])
+            except ValueError:
+                pass  # Do nothing, result remains None
+        return None
+
+    @property
+    def position(self):
+        """
+        Extracts the position from the argument.
+        Returns None if conversion to int fails.
+        """
+        if self.arg and len(self.arg) > 2:
+            try:
+                part = self.arg[2:].split(' ')[0]
+                return int(part)
+            except ValueError:
+                pass  # Do nothing, result remains None
+        return None
+
+    @property
+    def content(self):
+        """Extracts the content from the argument."""
+        if self.arg and ' ' in self.arg:
+            pos = self.arg.find(' ')
+            return self.arg[pos+1:]
+        return None
 
 class Buffer(BotPlugin):
     """
@@ -75,52 +124,6 @@ class Buffer(BotPlugin):
 
             self.rules = rules
             self.available = self.availableN
-
-    def getId(self, arg):
-        """
-        Extracts the ID from the argument.
-        """
-        result = None
-        if arg and len(arg) > 0:
-            result = arg[0].upper()
-        return result
-
-    def getSel(self, arg):
-        """
-        Extracts the selection from the argument.
-        Returns None if conversion to int fails.
-        """
-        result = None
-        if arg and len(arg) > 1:
-            try:
-                result = int(arg[1])
-            except ValueError:
-                pass # Do nothing, result remains None
-        return result
-
-    def getPos(self, arg):
-        """
-        Extracts the position from the argument.
-        Returns None if conversion to int fails.
-        """
-        result = None
-        if arg and len(arg) > 2:
-            try:
-                part = arg[2:].split(' ')[0]
-                result = int(part)
-            except ValueError:
-                pass # Do nothing, result remains None
-        return result
-
-    def getCont(self, arg):
-        """
-        Extracts the content from the argument.
-        """
-        result = None
-        if arg and ' ' in arg:
-            pos = arg.find(' ')
-            result = arg[pos+1:]
-        return result
 
     def addMore(self):
         """
@@ -398,9 +401,10 @@ class Buffer(BotPlugin):
         self.log.debug(f"Args... {arg}")
         self.setAvailable()
 
-        id_arg = self.getId(arg)
+        parsed_args = CommandArgs(arg)
+        id_arg = parsed_args.id
         if id_arg in self.available:
-            pos = self.getSel(arg)
+            pos = parsed_args.selection
             if pos is not None and pos < len(self.available[id_arg]["data"]):
                 myList.append(arg.capitalize())
             
@@ -416,10 +420,11 @@ class Buffer(BotPlugin):
         pos = 0
         clients = self.clients
         if args:
-            if self.getId(args).isdigit():
-                pos = int(self.getId(args))
-            yield (self.getId(args))
-            self.appendMyList(self.getId(args), myList)
+            parsed_args = CommandArgs(args)
+            if parsed_args.id.isdigit():
+                pos = int(parsed_args.id)
+            yield (parsed_args.id)
+            self.appendMyList(parsed_args.id, myList)
         else:
             if self.lastList:
                 myList = self.lastList
@@ -452,9 +457,10 @@ class Buffer(BotPlugin):
 
         pos = 0
         if args:
-            if self.getId(args).isdigit():
-                pos = int(self.getId(args))
-            yield (self.getId(args))
+            parsed_args = CommandArgs(args)
+            if parsed_args.id.isdigit():
+                pos = int(parsed_args.id)
+            yield (parsed_args.id)
 
         if pos < len(self.config):
             self.config = self.config[:pos] + self.config[pos + 1:]
@@ -531,8 +537,9 @@ class Buffer(BotPlugin):
         """Initializes a client if it doesn't exist and calls setPosts."""
         if element not in self.clients:
             self.log.debug(f"Client {element} not found, creating a new one.")
-            profile = self.available[self.getId(element)] # Reintroduced this line
-            sel = self.getSel(element)
+            parsed_element = CommandArgs(element)
+            profile = self.available[parsed_element.id] # Reintroduced this line
+            sel = parsed_element.selection
             if sel is not None and sel < len(profile["data"]):
                 myElem = profile["data"][sel]
                 src = myElem['src']
@@ -567,7 +574,8 @@ class Buffer(BotPlugin):
         for arg in args:
             pos = -1
             if arg:
-                canBeAPos = self.getId(arg)
+                parsed_arg = CommandArgs(arg)
+                canBeAPos = parsed_arg.id
                 if canBeAPos.isdigit():
                     pos = int(canBeAPos)
             else:
@@ -651,18 +659,22 @@ class Buffer(BotPlugin):
             firstArg = args
         first = firstArg
         lastLink = ''
-        sel_arg = self.getSel(args)
+
+        parsed_args = CommandArgs(" ".join(args))
+        sel_arg = parsed_args.selection
+
         if len(args)>1 and sel_arg is not None:
             lastLink = sel_arg
             yield f"Url: {lastLink}"
         # yield f"First: {first}"
         
-        id_first = self.getId(first)
+        parsed_first = CommandArgs(first)
+        id_first = parsed_first.id
         if id_first not in available:
             yield f"Invalid first argument: {first}"
             return
 
-        sel_first = self.getSel(first)
+        sel_first = parsed_first.selection
         if sel_first is None or sel_first >= len(available[id_first]["data"]):
             yield f"Invalid selection for first argument: {first}"
             return
@@ -671,7 +683,9 @@ class Buffer(BotPlugin):
         src = available[id_first]["data"][sel_first]['src']
         yield (f"Name: {rules.getIdRule(src)}")
         myActions = rules.rules[src]
-        selectClient = f"{self.getId(firstArg)}{self.getSel(firstArg)}"
+
+        parsed_first_arg = CommandArgs(firstArg)
+        selectClient = f"{parsed_first_arg.id}{parsed_first_arg.selection}"
         if not selectClient in clients:
             yield f"You should execute 'list {selectClient}' first"
             return 
@@ -711,12 +725,13 @@ class Buffer(BotPlugin):
             rules = self.rules
             res = ""
             #for profile in self.clients:
-            profile = self.getId(args)
+            parsed_args = CommandArgs(args)
+            profile = parsed_args.id
             self.log.debug(f"Executing {command} in profile: "
-                            "{profile} with args {args}")
-            idArg = self.getId(args)
+                            f"{profile} with args {args}")
+            idArg = parsed_args.id
             name = available[idArg]["name"]
-            selArg = self.getSel(args)
+            selArg = parsed_args.selection
             if selArg is None or selArg >= len(available[idArg]["data"]):
                 self.log.warning(f"Invalid selection argument: {args}")
                 return "Error: Invalid selection argument."
@@ -736,9 +751,9 @@ class Buffer(BotPlugin):
             myClient = f"{idArg}{selArg}".upper()
             apiSrc = clients[myClient]
             apiSrc.setPosts()
-            pos = self.getPos(args)
+            pos = parsed_args.position
             self.log.debug(f"Pos: {pos}")
-            argCont = self.getCont(args)
+            argCont = parsed_args.content
             if argCont:
                 self.log.debug(f"Cont: {argCont}")
             post = apiSrc.getPost(pos)
@@ -836,9 +851,10 @@ class Buffer(BotPlugin):
         self.log.debug(f"Publishing {element}")
         yield (f"Publishing {element}")
 
-        idArg = self.getId(element)
+        parsed_element = CommandArgs(element)
+        idArg = parsed_element.id
         name = available[idArg]["name"]
-        selArg = self.getSel(element)
+        selArg = parsed_element.selection
         if selArg is None or selArg >= len(available[idArg]["data"]):
             self.log.warning(f"Invalid selection for element: {element}")
             yield "Error: Invalid selection for element."
@@ -851,7 +867,7 @@ class Buffer(BotPlugin):
         myClient = f"{idArg}{selArg}".upper()
         apiSrc = clients[myClient]
         apiSrc.setPosts()
-        pos = self.getPos(element)
+        pos = parsed_element.position
 
         post_content = None
         if pos is not None and pos >= 0:
@@ -1002,7 +1018,7 @@ class Buffer(BotPlugin):
                         theUpdates.append((theUpdatetxt, update[1], update[2]))
             # self.log.debug(f"self.available ... {self.available}")
             # self.log.debug(f"socialNetwork ... {socialNetwork}")
-            data = self.available[self.getId(socialNetwork)]
+            data = self.available[CommandArgs(socialNetwork).id]
             name = data["name"]
             # self.log.debug(f"Name ... {name}")
             pos = int(socialNetwork[1])
@@ -1117,4 +1133,3 @@ class Buffer(BotPlugin):
                     self.schedules = numS
                 yield f"{profile[0]}: ({profile[1]}) {schedules} Number: {numS}"
         yield (end())
-
