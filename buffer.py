@@ -708,75 +708,68 @@ class Buffer(BotPlugin):
             yield(f"Last link: {myLlastLink}")
         yield end()
 
-    def execute(self, command, args):
-        """Execute a command """
-        resTxt = f"Executing: {command}\n"
-        self.log.debug(resTxt)
-        if args:
-            resTxt = f"{resTxt} with args: {args}"
-        self.log.debug(resTxt)
-        updates = ""
-        update = None
-        res = None
-        if self.available:
-            clients = self.clients
-            # self.log.debug("Clients {}".format(clients))
-            available = self.available
-            rules = self.rules
-            res = ""
-            #for profile in self.clients:
-            parsed_args = CommandArgs(args)
-            profile = parsed_args.id
-            self.log.debug(f"Executing {command} in profile: "
-                            f"{profile} with args {args}")
-            idArg = parsed_args.id
-            name = available[idArg]["name"]
-            selArg = parsed_args.selection
-            if selArg is None or selArg >= len(available[idArg]["data"]):
-                self.log.warning(f"Invalid selection argument: {args}")
-                return "Error: Invalid selection argument."
+    def _get_client_for_command(self, args):
+        """
+        Parses args, validates them, and retrieves the client.
+        Returns a tuple of (client, parsed_args, error_message).
+        """
+        if not self.available:
+            return None, None, "Error: No available services found."
 
-            src = available[idArg]["data"][selArg]['src']
-            # self.log.debug(f"Src: {src}")
-            dest = str(src)
+        parsed_args = CommandArgs(args)
+        idArg = parsed_args.id
+        selArg = parsed_args.selection
 
-            # self.log.debug(f"Clients: {clients}")
-            # self.log.debug(f"Rules rules: {rules.rules}")
-            # self.log.debug(f"Name {name} dest: {dest}")
-            # for i in rules.rules:
-            #     self.log.debug(f"Rule: {i}")
+        if idArg not in self.available or selArg is None or selArg >= len(self.available[idArg]["data"]):
+            return None, None, f"Error: Invalid selection argument: {args}"
 
-            myActions = rules.rules[src]
-            # self.log.debug(f"My actions: {myActions}")
-            myClient = f"{idArg}{selArg}".upper()
-            apiSrc = clients[myClient]
-            apiSrc.setPosts()
-            pos = parsed_args.position
-            self.log.debug(f"Pos: {pos}")
-            argCont = parsed_args.content
-            if argCont:
-                self.log.debug(f"Cont: {argCont}")
-            post = apiSrc.getPost(pos)
+        myClient = f"{idArg}{selArg}".upper()
+        if myClient not in self.clients:
+            return None, None, f"You should execute 'list {myClient}' first"
 
-            self.log.debug(f"Selecting {command} with {args} " 
-                           f"in {apiSrc.getService()}")
-            # self.log.debug(f"Posts: {apiSrc.getPosts()}")
-            cmd = getattr(apiSrc, command)
-            self.log.debug(f"Command: {command} is {cmd}")
-            if argCont is not None: 
-                self.log.debug(f"Argcont: {argCont}")
-                if isinstance(argCont, str) and argCont.capitalize() in clients:
-                    argCont = clients[argCont.capitalize()]
-                update = cmd(pos, argCont)
+        return self.clients[myClient], parsed_args, None
+
+    def _prepare_args_for_dispatch(self, parsed_args):
+        """Prepares the list of arguments for the dynamic command call."""
+        args_for_cmd = []
+        pos = parsed_args.position
+        argCont = parsed_args.content
+
+        if pos is not None:
+            args_for_cmd.append(pos)
+        
+        if argCont is not None:
+            if isinstance(argCont, str) and argCont.capitalize() in self.clients:
+                args_for_cmd.append(self.clients[argCont.capitalize()])
             else:
-                update = cmd(pos)
-            
-            updates = f"{updates}* {update} ({profile[0]})\n"
+                args_for_cmd.append(argCont)
+                
+        return args_for_cmd
 
-            if updates:
-                resTxt = f"{resTxt}\n{updates}"
+    def _format_success_response(self, command, original_args, update_result, profile_id):
+        """Formats the final string response for the user."""
+        resTxt = f"Executing: {command}\n with args: {original_args}"
+        updates = f"* {update_result} ({profile_id[0]})\n"
+        return f"{resTxt}\n{updates}"
 
-        return resTxt
+    def execute(self, command, args):
+        """Executes a command by coordinating helper methods."""
+        client, parsed_args, error = self._get_client_for_command(args)
+        if error:
+            self.log.warning(error)
+            return error
+
+        command_args = self._prepare_args_for_dispatch(parsed_args)
+
+        try:
+            client.setPosts()
+            command_method = getattr(client, command)
+            update_result = command_method(*command_args)
+        except Exception as e:
+            self.log.error(f"Error executing command '{command}': {e}")
+            return f"Error executing command '{command}'."
+
+        return self._format_success_response(command, args, update_result, parsed_args.id)
 
     @botcmd
     def insert(self, mess, args):
