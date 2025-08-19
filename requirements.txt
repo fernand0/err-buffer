@@ -1,1 +1,1 @@
-git+https://git@github.com/fernand0/socialModules@devel-cursor
+git+https://git@github.com/fernand0/socialModules
