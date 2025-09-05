@@ -135,6 +135,31 @@ class Buffer(BotPlugin):
         )
         return response
 
+    def formatListF(self, text, status):
+        """
+        Formats a list of text elements with a given status.
+        """
+        textR = []
+        linePrev = ''
+        if text:
+            textR.append("=======")
+            textR.append(f"{status.capitalize()}:")
+            textR.append("=======")
+            for line in text:
+                lineS = line.split("|")[1]
+                line1, line2 = lineS.split("->")
+                self.log.debug(f"line 1 {line1}")
+                textR.append(line1)
+                textR.append(f"      ⟶{line2}")
+                linePrev = line
+        else:
+            textR.append("===========")
+            textR.append(f"None {status}")
+            textR.append("===========")
+
+        return textR
+
+
     def formatList(self, text, status):
         """
         Formats a list of text elements with a given status.
@@ -194,7 +219,9 @@ class Buffer(BotPlugin):
         Cleans a given line of text.
         """
         line = line.split('_')
-        if key:
+        if 'key' in key:
+            line = f"{line[0]} ({line[2]} {line[1]})"
+        elif key:
             line = f"{key}{i} {line[0]} ({line[2]} {line[1]})"
         else:
             line = f"{line[0]} ({line[2]} {line[1]})"
@@ -245,6 +272,56 @@ class Buffer(BotPlugin):
                         return textElement, "finished"
 
         return None, None
+
+    @botcmd(split_args_with=None, template="buffer")
+    def list_nextF(self, mess, args):
+        import glob
+        from datetime import datetime
+        textW = []
+        textF = []
+        time_files_pattern = os.path.join(DATADIR, "*.timeNext")
+        time_files = glob.glob(time_files_pattern)
+        if not time_files:
+            yield("Time files not found.")
+        else:
+            for i, file_path in enumerate(time_files):
+                try:
+                    if not os.path.islink(file_path):
+                        with open(file_path, 'rb') as f: 
+                            # Cargar los datos del archivo pickle
+                            tNow, tSleep = pickle.load(f)
+
+                            # tNow es un timestamp, lo convertimos a formato legible 
+                            self.log.info(f"Time: {datetime.fromtimestamp(tNow)} Added: {tSleep/60}")
+                            next_publication_time = datetime.fromtimestamp(tNow + tSleep)
+                            self.log.info(f"Next Time: {next_publication_time}")
+                            theTime = next_publication_time.strftime("%H:%M:%S") #, next_publication_time)
+                            self.log.info(f"The Time: {theTime}")
+                            orig, dest = file_path.split('__')
+                            orig = orig.split('/')[-1]
+                            orig = f"{self.cleanLine(orig, 'key', i)}"
+                            dest = self.cleanLine(dest)
+                            textElement = (f"{next_publication_time} | {theTime} {orig} -> {dest}")
+                            self.log.info(f"Linei: {textElement}")
+                            #yield f"text: {textElement}"
+                            
+                            if time.time() < tNow + tSleep:
+                                textW.append(textElement)
+                            else:
+                                textF.append(textElement)
+
+                except (pickle.UnpicklingError, EOFError, TypeError) as e:
+                    self.log.error(f"Error al leer el archivo {os.path.basename(file_path)}: {e}")
+                except Exception as e:
+                    self.log.error(f"Ocurrió un error inesperado con el archivo {os.path.basename(file_path)}: {e}")
+
+        textF = sorted(textF)
+        textP = self.formatListF(textF, "finished")
+        textW = sorted(textW)
+        textP = textP + self.formatListF(textW, "waiting")
+        yield ("\n".join(textP))
+        yield (end())
+
 
     @botcmd(split_args_with=None, template="buffer")
     def list_next(self, mess, args):
