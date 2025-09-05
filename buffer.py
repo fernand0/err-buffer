@@ -4,6 +4,8 @@ import pickle
 import pprint
 import time
 import urllib.parse
+import glob
+from datetime import datetime
 
 from errbot import BotPlugin, botcmd
 from errbot.templating import tenv
@@ -273,54 +275,70 @@ class Buffer(BotPlugin):
 
         return None, None
 
+    def _format_publication_list(self, publications, status):
+        """Sorts and formats a list of publications."""
+        publications.sort()
+        return self.formatListF(publications, status)
+
+    def _process_time_file(self, file_path, i):
+        """
+        Processes a single .timeNext file and returns a dictionary with publication info.
+        """
+        publication_info = None
+        try:
+            if not os.path.islink(file_path):
+                with open(file_path, 'rb') as f:
+                    tNow, tSleep = pickle.load(f)
+
+                next_publication_time = datetime.fromtimestamp(tNow + tSleep)
+                theTime = next_publication_time.strftime("%H:%M:%S")
+                
+                orig, dest = os.path.basename(file_path).split('__')
+                orig = f"{self.cleanLine(orig, 'key', i)}"
+                dest = self.cleanLine(dest)
+                
+                textElement = f"{next_publication_time} | {theTime} {orig} -> {dest}"
+                
+                status = "waiting" if time.time() < tNow + tSleep else "finished"
+
+                publication_info = {
+                    "text": textElement,
+                    "status": status
+                }
+
+        except (pickle.UnpicklingError, EOFError, TypeError, ValueError) as e:
+            self.log.error(f"Error processing file {os.path.basename(file_path)}: {e}")
+        except Exception as e:
+            self.log.error(f"Unexpected error with file {os.path.basename(file_path)}: {e}")
+        
+        return publication_info
+
     @botcmd(split_args_with=None, template="buffer")
     def list_nextF(self, mess, args):
-        import glob
-        from datetime import datetime
-        textW = []
-        textF = []
+        waiting_publications = []
+        finished_publications = []
+        
         time_files_pattern = os.path.join(DATADIR, "*.timeNext")
         time_files = glob.glob(time_files_pattern)
+
         if not time_files:
             yield("Time files not found.")
         else:
             for i, file_path in enumerate(time_files):
-                try:
-                    if not os.path.islink(file_path):
-                        with open(file_path, 'rb') as f: 
-                            # Cargar los datos del archivo pickle
-                            tNow, tSleep = pickle.load(f)
+                publication_info = self._process_time_file(file_path, i)
+                if publication_info:
+                    if publication_info["status"] == "waiting":
+                        waiting_publications.append(publication_info["text"])
+                    else:
+                        finished_publications.append(publication_info["text"])
 
-                            # tNow es un timestamp, lo convertimos a formato legible 
-                            self.log.info(f"Time: {datetime.fromtimestamp(tNow)} Added: {tSleep/60}")
-                            next_publication_time = datetime.fromtimestamp(tNow + tSleep)
-                            self.log.info(f"Next Time: {next_publication_time}")
-                            theTime = next_publication_time.strftime("%H:%M:%S") #, next_publication_time)
-                            self.log.info(f"The Time: {theTime}")
-                            orig, dest = file_path.split('__')
-                            orig = orig.split('/')[-1]
-                            orig = f"{self.cleanLine(orig, 'key', i)}"
-                            dest = self.cleanLine(dest)
-                            textElement = (f"{next_publication_time} | {theTime} {orig} -> {dest}")
-                            self.log.info(f"Linei: {textElement}")
-                            #yield f"text: {textElement}"
-                            
-                            if time.time() < tNow + tSleep:
-                                textW.append(textElement)
-                            else:
-                                textF.append(textElement)
+            formatted_finished = self._format_publication_list(finished_publications, "finished")
+            formatted_waiting = self._format_publication_list(waiting_publications, "waiting")
+            
+            final_output = formatted_finished + formatted_waiting
+            yield "\n".join(final_output)
 
-                except (pickle.UnpicklingError, EOFError, TypeError) as e:
-                    self.log.error(f"Error al leer el archivo {os.path.basename(file_path)}: {e}")
-                except Exception as e:
-                    self.log.error(f"Ocurrió un error inesperado con el archivo {os.path.basename(file_path)}: {e}")
-
-        textF = sorted(textF)
-        textP = self.formatListF(textF, "finished")
-        textW = sorted(textW)
-        textP = textP + self.formatListF(textW, "waiting")
-        yield ("\n".join(textP))
-        yield (end())
+        yield end()
 
 
     @botcmd(split_args_with=None, template="buffer")
