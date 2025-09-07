@@ -266,16 +266,17 @@ class Buffer(BotPlugin):
         time_files = glob.glob(time_files_pattern)
         
         if args:
-            service_arg = args.lower()
             allowed_stems = []
-            for key, rule_data in self.available.items():
-                if rule_data['name'].lower() == service_arg:
-                    for data_item in rule_data['data']:
-                        src = data_item['src']
-                        if src in self.rules.rules:
-                            for action in self.rules.rules[src]:
-                                stem = self.fileNameBase2(src, action)
-                                allowed_stems.append(stem)
+            for service_arg in args:
+                service_name = service_arg.lower()
+                for key, rule_data in self.available.items():
+                    if rule_data['name'].lower() == service_name:
+                        for data_item in rule_data['data']:
+                            src = data_item['src']
+                            if src in self.rules.rules:
+                                for action in self.rules.rules[src]:
+                                    stem = self.fileNameBase2(src, action)
+                                    allowed_stems.append(stem)
             
             time_files = [f for f in time_files if os.path.basename(f).split('__')[0] in allowed_stems]
 
