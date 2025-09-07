@@ -911,10 +911,13 @@ class Buffer(BotPlugin):
                           f"({nameAction}-{typeAction})")
             yield msgAction
 
+            apiDst = self.rules.readConfigDst('', action,
+                                            self.rules.more[src], None)
             if pos is not None and pos >= 0:
                 resExecute = self.rules.executeAction(src, self.rules.more[src],
                                                      action, msgAction,
                                                      apiSrc,
+                                                     apiDst,
                                                      noWait=True, timeSlots=0,
                                                      simmulate=False,
                                                      name=(f"{name} "
@@ -924,8 +927,6 @@ class Buffer(BotPlugin):
                 self.log.info(f"Res execute: {resExecute}")
                 yield f"{resExecute}"
             else:
-                apiDst = self.rules.readConfigDst('', action,
-                                                self.rules.more[src], None)
                 apiDst.publishPost(post_content, '', '')
 
     def _publish_post(self, element, mes):
