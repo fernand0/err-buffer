@@ -191,11 +191,93 @@ class Buffer(BotPlugin):
 
         return publication_info
 
+    def fileNameBase2(self, rule, action):
+        """
+        Generates a file name based on the rule and action.
+        """
+        nick = self.rules.getNickRule(rule)
+        if ('blogalia' in nick) \
+            or ('wordpress' in nick)\
+            or ('github.com' in nick)\
+            or ('feed.xml' in nick):
+            nick = urllib.parse.urlparse(nick).netloc
+        else:
+            nick = nick.replace('/','-').replace(':','-')
+        return (f"{self.rules.getNameRule(rule).capitalize()}_"
+                f"{self.rules.getTypeRule(rule)}_"
+                f"{nick}_" 
+                f"{self.rules.getSecondNameRule(rule).capitalize()}_"
+                f"_{self.rules.getNameAction(action).capitalize()}"
+                f"_{self.rules.getTypeAction(action)}s"
+                f"_{self.rules.getNickAction(action)}"
+                f"_{self.rules.getProfileAction(action).capitalize()}"
+               )
+
+    def cleanLine(self, line, key="", i=None):
+        """
+        Cleans a given line of text.
+        """
+        line = line.split('_')
+        if 'key' in key:
+            line = f"{line[0]} ({line[2]} {line[1]})"
+        elif key:
+            line = f"{key}{i} {line[0]} ({line[2]} {line[1]})"
+        else:
+            line = f"{line[0]} ({line[2]} {line[1]})"
+        line = line.replace('https', '').replace('http','')
+        line = line.replace('---','').replace('.com','')
+        line = line.replace('- ',' ')
+        return line
+
+    def _process_time_file(self, file_path, i):
+        """
+        Processes a single .timeNext file and returns a dictionary with publication info.
+        """
+        publication_info = None
+        try:
+            if not os.path.islink(file_path):
+                with open(file_path, 'rb') as f:
+                    tNow, tSleep = pickle.load(f)
+
+                next_publication_time = datetime.fromtimestamp(tNow + tSleep)
+                theTime = next_publication_time.strftime("%H:%M:%S")
+                
+                orig, dest = os.path.basename(file_path).split('__')
+                orig = self.cleanLine(orig, 'key', i)
+                dest = self.cleanLine(dest)
+                
+                textElement = f"{next_publication_time} | {theTime} {orig} -> {dest}"
+                status = "waiting" if time.time() < tNow + tSleep else "finished"
+
+                publication_info = {"text": textElement, "status": status}
+
+        except (pickle.UnpicklingError, EOFError, TypeError, ValueError) as e:
+            self.log.error(f"Error processing file {os.path.basename(file_path)}: {e}")
+        except Exception as e:
+            self.log.error(f"Unexpected error with file {os.path.basename(file_path)}: {e}")
+        
+        return publication_info
+
     @botcmd(split_args_with=None, template="buffer")
     def list_next(self, mess, args):
         """Lists upcoming and finished publications based on .timeNext files."""
+        self.setAvailable()
         time_files_pattern = os.path.join(DATADIR, "*.timeNext")
         time_files = glob.glob(time_files_pattern)
+        
+        if args:
+            service_arg = args.lower()
+            allowed_stems = []
+            for key, rule_data in self.available.items():
+                if rule_data['name'].lower() == service_arg:
+                    for data_item in rule_data['data']:
+                        src = data_item['src']
+                        if src in self.rules.rules:
+                            for action in self.rules.rules[src]:
+                                stem = self.fileNameBase2(src, action)
+                                allowed_stems.append(stem)
+            
+            time_files = [f for f in time_files if os.path.basename(f).split('__')[0] in allowed_stems]
 
         if not time_files:
             yield "Time files not found."
@@ -210,11 +292,12 @@ class Buffer(BotPlugin):
                     else:
                         finished_publications.append(publication_info["text"])
 
-            output_lines = self._format_publication_section(
-                finished_publications, "finished"
-            ) + self._format_publication_section(waiting_publications, "waiting")
+            output_lines = (
+                self._format_publication_section(finished_publications, "finished") +
+                self._format_publication_section(waiting_publications, "waiting")
+            )
             yield "\n".join(output_lines)
-
+            
         yield end()
 
     @botcmd(split_args_with=None, template="buffer")
