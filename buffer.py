@@ -20,11 +20,13 @@ import socialModules.moduleRules
 def end(msg=""):
     return "END" + msg
 
+
 class CommandArgs:
     """
     Parses command arguments from a string, preserving the original logic
     from getId, getSel, getPos, and getCont.
     """
+
     def __init__(self, arg_str):
         self.arg = arg_str if arg_str else ""
 
@@ -56,7 +58,7 @@ class CommandArgs:
         """
         if self.arg and len(self.arg) > 2:
             try:
-                part = self.arg[2:].split(' ')[0]
+                part = self.arg[2:].split(" ")[0]
                 return int(part)
             except ValueError:
                 pass  # Do nothing, result remains None
@@ -65,10 +67,11 @@ class CommandArgs:
     @property
     def content(self):
         """Extracts the content from the argument."""
-        if self.arg and ' ' in self.arg:
-            pos = self.arg.find(' ')
-            return self.arg[pos+1:]
+        if self.arg and " " in self.arg:
+            pos = self.arg.find(" ")
+            return self.arg[pos + 1 :]
         return None
+
 
 class Buffer(BotPlugin):
     """
@@ -96,16 +99,20 @@ class Buffer(BotPlugin):
         """
         Splits the available data if its length is greater than 9.
         """
-        if len(available_item['data']) > 9:
-            iniK, nKey = rules.getIniKey(available_item['name'].upper(),
-                                           myKeys,
-                                           myIniKeys)
-            self.availableN[key] = {'name': 'rss',
-                                    'data': available_item['data'][:10],
-                                    'social': []}
-            self.availableN[iniK] = {'name': 'rss',
-                                    'data': available_item['data'][10:],
-                                    'social': []}
+        if len(available_item["data"]) > 9:
+            iniK, nKey = rules.getIniKey(
+                available_item["name"].upper(), myKeys, myIniKeys
+            )
+            self.availableN[key] = {
+                "name": "rss",
+                "data": available_item["data"][:10],
+                "social": [],
+            }
+            self.availableN[iniK] = {
+                "name": "rss",
+                "data": available_item["data"][10:],
+                "social": [],
+            }
         else:
             self.availableN[key] = available_item
 
@@ -122,7 +129,9 @@ class Buffer(BotPlugin):
             myIniKeys = list(self.available.keys())
             self.availableN = dict(self.available)
             for key in self.available:
-                self._split_available_data(key, rules, myKeys, myIniKeys, self.available[key])
+                self._split_available_data(
+                    key, rules, myKeys, myIniKeys, self.available[key]
+                )
 
             self.rules = rules
             self.available = self.availableN
@@ -137,193 +146,62 @@ class Buffer(BotPlugin):
         )
         return response
 
-    def formatListF(self, text, status):
-        """
-        Formats a list of text elements with a given status.
-        """
+    def _format_publication_section(self, publications, status):
+        """Sorts and formats a list of publications for a given status."""
         textR = []
-        linePrev = ''
-        if text:
-            textR.append("=======")
-            textR.append(f"{status.capitalize()}:")
-            textR.append("=======")
-            for line in text:
-                lineS = line.split("|")[1]
-                line1, line2 = lineS.split("->")
-                self.log.debug(f"line 1 {line1}")
-                textR.append(line1)
-                textR.append(f"      ⟶{line2}")
-                linePrev = line
+        if not publications:
+            textR = ["===========", f"None {status}", "==========="]
         else:
-            textR.append("===========")
-            textR.append(f"None {status}")
-            textR.append("===========")
-
+            publications.sort()
+            textR = ["=======", f"{status.capitalize()}:", "======="]
+            for line in publications:
+                _, line_content = line.split("|", 1)
+                line1, line2 = line_content.split("->")
+                textR.append(line1.strip())
+                textR.append(f"      ⟶{line2.strip()}")
         return textR
 
-
-    def formatList(self, text, status):
-        """
-        Formats a list of text elements with a given status.
-        """
-        textR = []
-        linePrev = ''
-        if text:
-            textR.append("=======")
-            textR.append(f"{status.capitalize()}:")
-            textR.append("=======")
-            for line in text:
-                lineS = line.split("|")[1]
-                line1, line2 = lineS.split("->")
-                self.log.debug(f"line 1 {line1}")
-                if line[:8] == linePrev[:8]:
-                    # FIXME: dirty trick to avoid duplicate content while the
-                    # old and the new approach to file names coexists
-                    if line[9].isupper():
-                        textR[-2] = line1
-                        textR[-1] = f"      ⟶{line2}"
-                else:
-                    textR.append(line1)
-                    textR.append(f"      ⟶{line2}")
-                linePrev = line
-        else:
-            textR.append("===========")
-            textR.append(f"None {status}")
-            textR.append("===========")
-
-        return textR
-
-    def fileNameBase2(self, rule, action):
-        """
-        Generates a file name based on the rule and action.
-        """
-        nick = self.rules.getNickRule(rule)
-        if (('blogalia' in nick) 
-            or ('wordpress' in nick)
-            or ('github.com' in nick)
-            or ('feed.xml' in nick)):
-            nick = urllib.parse.urlparse(nick).netloc
-        else:
-            nick = nick.replace('/','-').replace(':','-')
-        return (f"{self.rules.getNameRule(rule).capitalize()}_"
-                f"{self.rules.getTypeRule(rule)}_"
-                f"{nick}_" 
-                # f"{self.rules.getIdRule(rule).capitalize()}_"
-                f"{self.rules.getSecondNameRule(rule).capitalize()}_"
-                f"_{self.rules.getNameAction(action).capitalize()}"
-                f"_{self.rules.getTypeAction(action)}s"
-                f"_{self.rules.getNickAction(action)}"
-                f"_{self.rules.getProfileAction(action).capitalize()}"
-               )
-
-    def cleanLine(self, line, key="", i=None):
-        """
-        Cleans a given line of text.
-        """
-        line = line.split('_')
-        if 'key' in key:
-            line = f"{line[0]} ({line[2]} {line[1]})"
-        elif key:
-            line = f"{key}{i} {line[0]} ({line[2]} {line[1]})"
-        else:
-            line = f"{line[0]} ({line[2]} {line[1]})"
-        line = line.replace('https', '').replace('http','')
-        line = line.replace('---','').replace('.com','')
-        line = line.replace('- ',' ')
-        return line
-
-    def _get_next_list_element(self, key, i, elem):
-        """
-        Processes a single element for the list_next command.
-        """
-        src = elem['src']
-        try:
-            hold = self.rules.more[src].get('hold', '')
-        except:
-            hold = None
-        
-        if hold and hold == 'yes':
-            return None, None
-
-        if src not in self.rules.rules:
-            return None, None
-
-        for action in self.rules.rules[src]:
-            actionF = self.fileNameBase2(src, action)
-            actionF = actionF.replace('caches', 'posts')
-            actionF = actionF.replace('cache', 'posts')
-            
-            if os.path.exists(f"{DATADIR}/{actionF}.timeNext"):
-                fileNext = f"{DATADIR}/{actionF}.timeNext"
-                with open(fileNext, "rb") as f:
-                    try:
-                        t1, t2 = pickle.load(f)
-                    except:
-                        t1, t2 = (0, 0)
-                
-                if t1:
-                    theTime = time.strftime("%H:%M:%S", time.localtime(t1 + t2))
-                    orig, dest = actionF.split('__')
-                    orig = f"{self.cleanLine(orig, key, i)}"
-                    dest = self.cleanLine(dest)
-                    textElement = (f"{theTime} | {theTime} {orig} -> {dest}")
-                    
-                    if time.time() < t1 + t2:
-                        return textElement, "waiting"
-                    else:
-                        return textElement, "finished"
-
-        return None, None
-
-    def _format_publication_list(self, publications, status):
-        """Sorts and formats a list of publications."""
-        publications.sort()
-        return self.formatListF(publications, status)
-
-    def _process_time_file(self, file_path, i):
         """
         Processes a single .timeNext file and returns a dictionary with publication info.
         """
         publication_info = None
         try:
             if not os.path.islink(file_path):
-                with open(file_path, 'rb') as f:
+                with open(file_path, "rb") as f:
                     tNow, tSleep = pickle.load(f)
 
                 next_publication_time = datetime.fromtimestamp(tNow + tSleep)
                 theTime = next_publication_time.strftime("%H:%M:%S")
-                
-                orig, dest = os.path.basename(file_path).split('__')
-                orig = f"{self.cleanLine(orig, 'key', i)}"
+
+                orig, dest = os.path.basename(file_path).split("__")
+                orig = self.cleanLine(orig, "key", i)
                 dest = self.cleanLine(dest)
-                
+
                 textElement = f"{next_publication_time} | {theTime} {orig} -> {dest}"
-                
                 status = "waiting" if time.time() < tNow + tSleep else "finished"
 
-                publication_info = {
-                    "text": textElement,
-                    "status": status
-                }
+                publication_info = {"text": textElement, "status": status}
 
         except (pickle.UnpicklingError, EOFError, TypeError, ValueError) as e:
             self.log.error(f"Error processing file {os.path.basename(file_path)}: {e}")
         except Exception as e:
-            self.log.error(f"Unexpected error with file {os.path.basename(file_path)}: {e}")
-        
+            self.log.error(
+                f"Unexpected error with file {os.path.basename(file_path)}: {e}"
+            )
+
         return publication_info
 
     @botcmd(split_args_with=None, template="buffer")
-    def list_nextF(self, mess, args):
-        waiting_publications = []
-        finished_publications = []
-        
+    def list_next(self, mess, args):
+        """Lists upcoming and finished publications based on .timeNext files."""
         time_files_pattern = os.path.join(DATADIR, "*.timeNext")
         time_files = glob.glob(time_files_pattern)
 
         if not time_files:
-            yield("Time files not found.")
+            yield "Time files not found."
         else:
+            waiting_publications = []
+            finished_publications = []
             for i, file_path in enumerate(time_files):
                 publication_info = self._process_time_file(file_path, i)
                 if publication_info:
@@ -332,35 +210,12 @@ class Buffer(BotPlugin):
                     else:
                         finished_publications.append(publication_info["text"])
 
-            formatted_finished = self._format_publication_list(finished_publications, "finished")
-            formatted_waiting = self._format_publication_list(waiting_publications, "waiting")
-            
-            final_output = formatted_finished + formatted_waiting
-            yield "\n".join(final_output)
+            output_lines = self._format_publication_section(
+                finished_publications, "finished"
+            ) + self._format_publication_section(waiting_publications, "waiting")
+            yield "\n".join(output_lines)
 
         yield end()
-
-
-    @botcmd(split_args_with=None, template="buffer")
-    def list_next(self, mess, args):
-        self.setAvailable()
-        textW = []
-        textF = []
-        for key in self.available:
-            for i, elem in enumerate(self.available[key]["data"]):
-                textElement, status = self._get_next_list_element(key, i, elem)
-                if textElement:
-                    if status == "waiting":
-                        textW.append(textElement)
-                    else:
-                        textF.append(textElement)
-
-        textF = sorted(textF)
-        textW = sorted(textW)
-        textP = self.formatList(textF, "finished")
-        textP = textP + self.formatList(textW, "waiting")
-        yield ("\n".join(textP))
-        yield (end())
 
     @botcmd(split_args_with=None, template="buffer")
     def list_last(self, mess, args):
@@ -393,26 +248,29 @@ class Buffer(BotPlugin):
         myIniKeys = []
         actions = {}
         self.log.debug(f"Rules: {rules.rules}")
-        rules.indent = ''
+        rules.indent = ""
         for rule in rules.rules:
             for action in rules.rules[rule]:
                 service = rules.getProfileAction(action)
                 if rules.hasPublishMethod(service):
-                    #FIXME: publishPost is in modulecontent
-                    iniK, nameK = rules.getIniKey(service.upper(), 
-                                                  myKeys, myIniKeys)
+                    # FIXME: publishPost is in modulecontent
+                    iniK, nameK = rules.getIniKey(service.upper(), myKeys, myIniKeys)
                     more = rules.more[rule]
                     if not (iniK in available):
-                        available[iniK] = {"name": service, 
-                                           "data": [], "social": [], 
-                                           "actions": []} 
+                        available[iniK] = {
+                            "name": service,
+                            "data": [],
+                            "social": [],
+                            "actions": [],
+                        }
                         available[iniK]["data"] = []
-                    available[iniK]["data"].append({'src': action,
-                                                    'more': more})
+                    available[iniK]["data"].append({"src": action, "more": more})
                     self.log.debug(f"Action: {action}")
                     self.log.debug(f"Service: {service}")
                     if service not in actions:
-                        actions[service] = [action, ]
+                        actions[service] = [
+                            action,
+                        ]
                     else:
                         actions[service].append(action)
                     if action not in available[iniK]["actions"]:
@@ -422,28 +280,33 @@ class Buffer(BotPlugin):
         self.log.debug(f"Available: {available}")
 
         myList = {}
-        theKey = ("M0")
+        theKey = "M0"
         myList[theKey] = []
         keys = []
         for key in available:
-            #yield f"- Key: {key} {available[key]['name']}"
-            for i,action in enumerate(available[key]['actions']):
+            # yield f"- Key: {key} {available[key]['name']}"
+            for i, action in enumerate(available[key]["actions"]):
                 service = rules.getProfileAction(action)
-                myList[theKey].append((f"{service.capitalize()} "
-                                       f"{rules.getNickAction(action)}@"
-                                       f"{service}"
-                                       f"{rules.getTypeAction(action)}",
-                                       key, f"{key}{i}"))
+                myList[theKey].append(
+                    (
+                        f"{service.capitalize()} "
+                        f"{rules.getNickAction(action)}@"
+                        f"{service}"
+                        f"{rules.getTypeAction(action)}",
+                        key,
+                        f"{key}{i}",
+                    )
+                )
                 # yield f"{key}{i}) {service} {rules.getNickAction(action)}"
             keys.append(f"{key}{i}")
         self.log.debug("list actions (myList): {str(myList)}")
-        keys = ','.join(keys)
+        keys = ",".join(keys)
         myList[theKey].append((keys, "", "I"))
 
         response = self.sendReply("", "", myList, ["sent", "pending"])
         for rep in response:
             # Discard the first, fake, result
-            yield ('\n'.join(rep.split('\n')[3:]))
+            yield ("\n".join(rep.split("\n")[3:]))
 
     @botcmd
     def list_all(self, mess, args):
@@ -457,35 +320,40 @@ class Buffer(BotPlugin):
         self.log.debug(f"Available all: {str(self.available)}")
         # yield("Available: %s" % str(self.available))
         myList = {}
-        theKey = ("L0")
+        theKey = "L0"
         myList[theKey] = []
         keys = []
         for key in self.available:
             if (args and (key.lower() == args.lower())) or not args:
                 for i, elem in enumerate(self.available[key]["data"]):
                     self.log.debug(f"Elem: {elem}")
-                    name = rules.getNameRule(elem['src'])
-                    profile = rules.getSecondNameRule(elem['src'])
-                    nick = rules.getNickRule(elem['src'])
+                    name = rules.getNameRule(elem["src"])
+                    profile = rules.getSecondNameRule(elem["src"])
+                    nick = rules.getNickRule(elem["src"])
                     if nick:
-                        if 'http' in nick:
-                            #FIXME: duplicate code
+                        if "http" in nick:
+                            # FIXME: duplicate code
                             nick = urllib.parse.urlparse(nick).netloc
-                        src = elem['src']
-                        myList[theKey].append((f"{name.capitalize()} "
-                                               f"({nick}@{profile} "
-                                               f"{self.rules.getTypeRule(src)})", 
-                                               key, f"{key}{i}"))
+                        src = elem["src"]
+                        myList[theKey].append(
+                            (
+                                f"{name.capitalize()} "
+                                f"({nick}@{profile} "
+                                f"{self.rules.getTypeRule(src)})",
+                                key,
+                                f"{key}{i}",
+                            )
+                        )
                 keys.append(f"{key}{i}")
         self.log.debug(f"myList: {str(myList)}")
-        keys = ','.join(keys)
+        keys = ",".join(keys)
         myList[theKey].append((keys, "", "I"))
         # yield("myList: %s" % str(myList))
 
         response = self.sendReply("", "", myList, ["sent", "pending"])
         for rep in response:
             # Discard the first, fake, result
-            yield ('\n'.join(rep.split('\n')[3:]))
+            yield ("\n".join(rep.split("\n")[3:]))
 
         return end
 
@@ -502,7 +370,7 @@ class Buffer(BotPlugin):
             pos = parsed_args.selection
             if pos is not None and pos < len(self.available[id_arg]["data"]):
                 myList.append(arg.capitalize())
-            
+
         self.log.debug(f"myList: {myList}")
 
     @botcmd(split_args_with=None, template="buffer")
@@ -537,8 +405,8 @@ class Buffer(BotPlugin):
                     thePosts = clients[element].getPosts()
                     if thePosts:
                         lenPosts = len(thePosts)
-                        link = clients[element].getLink(lenPosts-1)
-                        #link = thePosts[-1][1]
+                        link = clients[element].getLink(lenPosts - 1)
+                        # link = thePosts[-1][1]
                         service = clients[element].getService()
                         if service.lower() in ["forum", "reddit"]:
                             name = clients[element].getUrl()
@@ -558,7 +426,7 @@ class Buffer(BotPlugin):
             yield (parsed_args.id)
 
         if pos < len(self.config):
-            self.config = self.config[:pos] + self.config[pos + 1:]
+            self.config = self.config[:pos] + self.config[pos + 1 :]
             response = self.config
         else:
             response = self.addMore()
@@ -566,14 +434,13 @@ class Buffer(BotPlugin):
         yield (response)
         yield (end())
 
-
     def show_config(self):
         """
         Returns a formatted string of the current configuration.
         """
         response = ""
-        for i,ll in enumerate(self.config):
-            response = f"{response}{i}: {ll}\n" 
+        for i, ll in enumerate(self.config):
+            response = f"{response}{i}: {ll}\n"
         if not response:
             response = f"Empty list, you can add items with list add"
         return response
@@ -633,19 +500,21 @@ class Buffer(BotPlugin):
         if element not in self.clients:
             self.log.debug(f"Client {element} not found, creating a new one.")
             parsed_element = CommandArgs(element)
-            profile = self.available[parsed_element.id] # Reintroduced this line
+            profile = self.available[parsed_element.id]  # Reintroduced this line
             sel = parsed_element.selection
             if sel is not None and sel < len(profile["data"]):
                 myElem = profile["data"][sel]
-                src = myElem['src']
+                src = myElem["src"]
                 more = self.rules.more.get(src, [])
-                
+
                 api = self.rules.readConfigSrc(f"{element} ", src, more)
-                api.setPostsType(myElem['src'][3])
+                api.setPostsType(myElem["src"][3])
                 self.clients[element] = api
             else:
-                self.log.warning(f"Could not initialize client for element {element} due to invalid selection.")
-                return # Exit if client cannot be initialized
+                self.log.warning(
+                    f"Could not initialize client for element {element} due to invalid selection."
+                )
+                return  # Exit if client cannot be initialized
 
         self.clients[element].setPosts()
 
@@ -664,8 +533,8 @@ class Buffer(BotPlugin):
 
         if not args:
             # If no args, we asume we want the first one
-            args = ['0']
-        
+            args = ["0"]
+
         for arg in args:
             pos = -1
             if arg:
@@ -692,7 +561,7 @@ class Buffer(BotPlugin):
         self.lastList = myList
         clients = self.clients
 
-        if not myList: 
+        if not myList:
             yield (self.addMore())
 
         self.log.debug(f"Clients {str(clients)}")
@@ -713,7 +582,7 @@ class Buffer(BotPlugin):
             else:
                 postsTmp = client.getPosts
             if postsTmp:
-                for (i, post) in enumerate(postsTmp):
+                for i, post in enumerate(postsTmp):
                     if hasattr(client, "getPostLine"):
                         title = client.getPostLine(post)
                         link = ""
@@ -736,7 +605,7 @@ class Buffer(BotPlugin):
         self.clients = clients
         yield end()
 
-    @botcmd(split_args_with=' ')
+    @botcmd(split_args_with=" ")
     def last(self, command, args):
         """
         Handles the 'last' command to get the last published link.
@@ -753,16 +622,16 @@ class Buffer(BotPlugin):
         else:
             firstArg = args
         first = firstArg
-        lastLink = ''
+        lastLink = ""
 
         parsed_args = CommandArgs(" ".join(args))
         sel_arg = parsed_args.selection
 
-        if len(args)>1 and sel_arg is not None:
+        if len(args) > 1 and sel_arg is not None:
             lastLink = sel_arg
             yield f"Url: {lastLink}"
         # yield f"First: {first}"
-        
+
         parsed_first = CommandArgs(first)
         id_first = parsed_first.id
         if id_first not in available:
@@ -775,7 +644,7 @@ class Buffer(BotPlugin):
             return
 
         name = available[id_first]["name"]
-        src = available[id_first]["data"][sel_first]['src']
+        src = available[id_first]["data"][sel_first]["src"]
         yield (f"Name: {rules.getIdRule(src)}")
         myActions = rules.rules[src]
 
@@ -783,24 +652,26 @@ class Buffer(BotPlugin):
         selectClient = f"{parsed_first_arg.id}{parsed_first_arg.selection}"
         if not selectClient in clients:
             yield f"You should execute 'list {selectClient}' first"
-            return 
+            return
         apiSrc = clients[selectClient]
         for i, action in enumerate(myActions):
-            yield(f"Action {i}. {rules.getNickAction(action)}@"
-                  f"{rules.getProfileAction(action)}"
-                  f"({rules.getNameAction(action)}-"
-                  f"{rules.getTypeAction(action)})")
-            apiDst = rules.readConfigDst('', action, rules.more[src], apiSrc)
-            apiSrc.fileName = ''
+            yield (
+                f"Action {i}. {rules.getNickAction(action)}@"
+                f"{rules.getProfileAction(action)}"
+                f"({rules.getNameAction(action)}-"
+                f"{rules.getTypeAction(action)})"
+            )
+            apiDst = rules.readConfigDst("", action, rules.more[src], apiSrc)
+            apiSrc.fileName = ""
             apiSrc.setLastLink(apiDst)
             if lastLink:
                 self.log.debug(f"Updating last link")
-                yield(f"Updating last link")
+                yield (f"Updating last link")
                 apiSrc.updateLastLink(apiDst, lastLink)
                 myLastLink = apiSrc.getLastLinkPublished()
             else:
                 myLlastLink = apiSrc.getLastLinkPublished()
-            yield(f"Last link: {myLlastLink}")
+            yield (f"Last link: {myLlastLink}")
         yield end()
 
     def _get_client_for_command(self, args):
@@ -815,7 +686,11 @@ class Buffer(BotPlugin):
         idArg = parsed_args.id
         selArg = parsed_args.selection
 
-        if idArg not in self.available or selArg is None or selArg >= len(self.available[idArg]["data"]):
+        if (
+            idArg not in self.available
+            or selArg is None
+            or selArg >= len(self.available[idArg]["data"])
+        ):
             return None, None, f"Error: Invalid selection argument: {args}"
 
         myClient = f"{idArg}{selArg}".upper()
@@ -832,16 +707,18 @@ class Buffer(BotPlugin):
 
         if pos is not None:
             args_for_cmd.append(pos)
-        
+
         if argCont is not None:
             if isinstance(argCont, str) and argCont.capitalize() in self.clients:
                 args_for_cmd.append(self.clients[argCont.capitalize()])
             else:
                 args_for_cmd.append(argCont)
-                
+
         return args_for_cmd
 
-    def _format_success_response(self, command, original_args, update_result, profile_id):
+    def _format_success_response(
+        self, command, original_args, update_result, profile_id
+    ):
         """Formats the final string response for the user."""
         resTxt = f"Executing: {command}\n with args: {original_args}"
         updates = f"* {update_result} ({profile_id[0]})\n"
@@ -864,7 +741,9 @@ class Buffer(BotPlugin):
             self.log.error(f"Error executing command '{command}': {e}")
             return f"Error executing command '{command}'."
 
-        return self._format_success_response(command, args, update_result, parsed_args.id)
+        return self._format_success_response(
+            command, args, update_result, parsed_args.id
+        )
 
     @botcmd
     def insert(self, mess, args):
@@ -878,10 +757,10 @@ class Buffer(BotPlugin):
     def _parse_publish_args(self, args):
         """Parses arguments for the publish command."""
         self.log.debug(f"Parsing publish args: {args}")
-        if ' ' in args:
-            pos = args.find(' ')
+        if " " in args:
+            pos = args.find(" ")
             dst = args[:pos]
-            mes = args[pos+1:]
+            mes = args[pos + 1 :]
         else:
             dst = args
             mes = ""
@@ -893,41 +772,47 @@ class Buffer(BotPlugin):
                 myList.extend(self.config[pos])
         else:
             myList.append(dst)
-        
+
         return myList, mes
 
     def _publish_content(self, post_content, myActions, src, name, apiSrc, pos=None):
         """
         Publishes the given content to various social media platforms.
         """
-        if 'hold' in self.rules.more[src]:
-            self.rules.more[src]['hold'] = 'no'
+        if "hold" in self.rules.more[src]:
+            self.rules.more[src]["hold"] = "no"
 
         for i, action in enumerate(myActions):
             nameAction = self.rules.getNameAction(action)
             typeAction = self.rules.getTypeAction(action)
-            msgAction = (f"Action {i}. {self.rules.getNickAction(action)}@"
-                          f"{self.rules.getProfileAction(action)}"
-                          f"({nameAction}-{typeAction})")
+            msgAction = (
+                f"Action {i}. {self.rules.getNickAction(action)}@"
+                f"{self.rules.getProfileAction(action)}"
+                f"({nameAction}-{typeAction})"
+            )
             yield msgAction
 
-            apiDst = self.rules.readConfigDst('', action,
-                                            self.rules.more[src], None)
+            apiDst = self.rules.readConfigDst("", action, self.rules.more[src], None)
             if pos is not None and pos >= 0:
-                resExecute = self.rules.executeAction(src, self.rules.more[src],
-                                                     action, msgAction,
-                                                     apiSrc,
-                                                     apiDst,
-                                                     noWait=True, timeSlots=0,
-                                                     simmulate=False,
-                                                     name=(f"{name} "
-                                                           f"{typeAction}"),
-                                                     nextPost=False,
-                                                     pos=pos, delete=False)
+                resExecute = self.rules.executeAction(
+                    src,
+                    self.rules.more[src],
+                    action,
+                    msgAction,
+                    apiSrc,
+                    apiDst,
+                    noWait=True,
+                    timeSlots=0,
+                    simmulate=False,
+                    name=(f"{name} " f"{typeAction}"),
+                    nextPost=False,
+                    pos=pos,
+                    delete=False,
+                )
                 self.log.info(f"Res execute: {resExecute}")
                 yield f"{resExecute}"
             else:
-                apiDst.publishPost(post_content, '', '')
+                apiDst.publishPost(post_content, "", "")
 
     def _publish_post(self, element, mes):
         """
@@ -949,7 +834,7 @@ class Buffer(BotPlugin):
             yield "Error: Invalid selection for element."
             return
 
-        src = available[idArg]["data"][selArg]['src']
+        src = available[idArg]["data"][selArg]["src"]
         self.log.debug(f"Src: {src}")
 
         myActions = rules.rules[src]
@@ -964,15 +849,17 @@ class Buffer(BotPlugin):
             title = apiSrc.getPostTitle(post)
             link = apiSrc.getPostLink(post)
             post_content = f"{title} {link}"
-            yield(f"Will publish: {post_content}")
+            yield (f"Will publish: {post_content}")
         else:
             post_content = mes
 
         if not post_content:
             yield "We need some position or something to publish"
             return
-        
-        yield from self._publish_content(post_content, myActions, src, name, apiSrc, pos)
+
+        yield from self._publish_content(
+            post_content, myActions, src, name, apiSrc, pos
+        )
 
     @botcmd
     def publish(self, mess, args):
@@ -990,7 +877,7 @@ class Buffer(BotPlugin):
                     yield response
             yield (f"Finished actions!")
         else:
-            yield(f"We have no data, you should use 'list {args[:2]}'")
+            yield (f"We have no data, you should use 'list {args[:2]}'")
         yield end()
 
     @botcmd
@@ -1041,7 +928,7 @@ class Buffer(BotPlugin):
         """
         Adds edit arguments to the archive.
         """
-        argsArchive = self.argsArchive   # ????
+        argsArchive = self.argsArchive  # ????
         self.argsArchive.append(args)
 
     @botcmd
@@ -1065,7 +952,7 @@ class Buffer(BotPlugin):
         yield (res)
         yield end()
 
-    @botcmd #(split_args_with=None)
+    @botcmd  # (split_args_with=None)
     def copy(self, mess, args):
         """
         A command to copy some update.
@@ -1113,26 +1000,29 @@ class Buffer(BotPlugin):
             pos = int(socialNetwork[1])
             # self.log.debug(f"Data: {data['data'][pos]}")
             social = socialNetwork
-            src = data['data'][pos]['src']
+            src = data["data"][pos]["src"]
             try:
                 actions = self.rules.rules[src]
             except:
                 # Experimental. We will try with the rule associated to a
                 # similar src
-                altSrc = src[:-1]+ ('posts', )
+                altSrc = src[:-1] + ("posts",)
                 actions = self.rules.rules[altSrc]
             myDest = ""
-            if (src in self.rules.more 
-                and not (('hold' in self.rules.more[src])
-                    and (self.rules.more[src]['hold'] == 'yes'))):
+            if src in self.rules.more and not (
+                ("hold" in self.rules.more[src])
+                and (self.rules.more[src]["hold"] == "yes")
+            ):
                 for action in actions:
-                    myDest = (f"{myDest}\n"
-                              # f" {self.rules.getNameAction(action)} "
-                              f"        ⟶ "
-                              f"{self.rules.getNameAction(action).capitalize()} "
-                              f"({self.rules.getNickAction(action)}@"
-                              f"{self.rules.getProfileAction(action)} "
-                              f"{self.rules.getTypeAction(action)})")
+                    myDest = (
+                        f"{myDest}\n"
+                        # f" {self.rules.getNameAction(action)} "
+                        f"        ⟶ "
+                        f"{self.rules.getNameAction(action).capitalize()} "
+                        f"({self.rules.getNickAction(action)}@"
+                        f"{self.rules.getProfileAction(action)} "
+                        f"{self.rules.getTypeAction(action)})"
+                    )
             # self.log.debug(f"myDest: {myDest}")
             # self.log.debug(f"Actions: {actions}")
             # self.log.debug(f"Social ... {social}")
@@ -1140,7 +1030,7 @@ class Buffer(BotPlugin):
             typePosts = self.rules.getTypeRule(src)
             try:
                 socialNetworktxt = (
-                    f"{social.capitalize()} " 
+                    f"{social.capitalize()} "
                     f"{self.rules.getNameRule(src).capitalize()} "
                     f"({self.clients[socialNetwork].getNick()}@"
                     f"{self.rules.getSecondNameRule(src)} "
@@ -1148,14 +1038,22 @@ class Buffer(BotPlugin):
                 )
             except:
                 socialNetworktxt = (
-                    f"{social.capitalize()} " 
-                    f"{self.rules.getNameRule(src).capitalize()} ")
+                    f"{social.capitalize()} "
+                    f"{self.rules.getNameRule(src).capitalize()} "
+                )
             if theUpdates:
                 # self.log.debug(" not socialNetwork > 2")
                 compResponse.append((tt, socialNetworktxt, myDest, theUpdates))
             else:
                 # self.log.debug(" no updates")
-                compResponse.append((tt, socialNetworktxt, myDest, theUpdates,))
+                compResponse.append(
+                    (
+                        tt,
+                        socialNetworktxt,
+                        myDest,
+                        theUpdates,
+                    )
+                )
 
         return compResponse
 
@@ -1172,10 +1070,12 @@ class Buffer(BotPlugin):
                 tenv()
                 .get_template("buffer.md")
                 .render(
-                    {"type": rep[0],
-                        "nameSocialNetwork": rep[1], 
+                    {
+                        "type": rep[0],
+                        "nameSocialNetwork": rep[1],
                         "post": rep[2],
-                        "updates": rep[3]}
+                        "updates": rep[3],
+                    }
                 )
             )
             yield (response)
@@ -1206,8 +1106,10 @@ class Buffer(BotPlugin):
         """A command to show scheduled times"""
         self.setAvailable()
         if not self.clients:
-            yield(f"You have not selected any service to show. "
-                  f"You need to list at least one service")
+            yield (
+                f"You have not selected any service to show. "
+                f"You need to list at least one service"
+            )
         for profile in self.clients:
             self.log.debug(f"Profile: {str(profile)}")
             if "setSchedules" in dir(self.clients[profile]):
