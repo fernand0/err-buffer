@@ -110,6 +110,52 @@ class Buffer(BotPlugin):
                 f.write(line + '\n')
 
 
+    def _edit_buffer(self, link, title=None):
+        # Store the original title argument to differentiate between explicit None and derived title
+        original_title_arg = title
+
+        # If a title is explicitly provided, cache it.
+        if original_title_arg:
+            self.link_to_title_cache[link] = original_title_arg
+        # If no title is provided, try to get it from the cache.
+        elif link in self.link_to_title_cache:
+            title = self.link_to_title_cache[link]
+
+        entry_found = False
+        updated_lines = []
+        for line in self.buffer_lines:
+            if link in line:
+                entry_found = True
+                # Extract current title from the buffer line if it exists
+                current_title_from_line_match = re.search(r'\[(.*?)\]', line)
+                current_title_from_line = current_title_from_line_match.group(1) if current_title_from_line_match else ""
+
+                # If title is still None (not provided, not in cache), try to use title from line
+                if title is None and current_title_from_line:
+                    title = current_title_from_line
+                
+                # If after all attempts, title is still None for an existing entry, it's an error.
+                if title is None:
+                    print(f"Error: No title provided for link '{link}', and no cached or existing title found in buffer.")
+                    return # Exit the function, as we cannot proceed without a title
+
+                # Update the line with the determined title and link
+                updated_lines.append(f"- [{title}]({link})")
+            else:
+                updated_lines.append(line)
+
+        if not entry_found:
+            # If link not found, add a new entry
+            if title is None:
+                # If no title for a new entry, default to "Untitled"
+                title = "Untitled"
+            updated_lines.append(f"- [{title}]({link})")
+
+        self.buffer_lines = updated_lines
+        self._save_buffer()
+        print(f"Buffer updated for: {link}")
+
+
     def _split_available_data(self, key, rules, myKeys, myIniKeys, available_item):
         """
         Splits the available data if its length is greater than 9.
@@ -1008,9 +1054,23 @@ class Buffer(BotPlugin):
 
     @botcmd
     def edit_add(self, mess, args):
-        """A command to edit some update"""
-        res = self.execute("edita", args)
-        yield res
+        """A command to add/edit some update with caching"""
+        link = None
+        title = None
+
+        if " " in args:
+            parts = args.split(" ", 1)
+            title = parts[0]
+            link = parts[1]
+        else:
+            link = args
+            # title remains None
+
+        if link:
+            self._edit_buffer(link, title)
+            yield f"Attempted to add/edit buffer for link: {link}"
+        else:
+            yield "Error: No link provided for edit_add command."
         yield end()
 
     @botcmd
