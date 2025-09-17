@@ -121,7 +121,7 @@ class Buffer(BotPlugin):
         # Store the original title argument to differentiate between explicit None and derived title
         original_title_arg = title
 
-        yield self.link_to_title_cache
+        yield f"Cache: {self.link_to_title_cache}"
         # If a title is explicitly provided, cache it.
         if original_title_arg:
             self.link_to_title_cache[link] = original_title_arg
