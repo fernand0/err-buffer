@@ -1162,6 +1162,7 @@ class Buffer(BotPlugin):
         link = None
         title = None
 
+        parts = self.execute("show", args) 
         if not " " in args:
         #    parts = args.split(" ", 1)
         #    title = parts[0]
@@ -1179,6 +1180,7 @@ class Buffer(BotPlugin):
         else:
             parts = args.split(" ", 1)
             title = parts[1]
+            link = parts.split('\n')[-3]
 
         # Update local buffer
         self._edit_buffer(link, title)
