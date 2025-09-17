@@ -87,8 +87,7 @@ class Buffer(BotPlugin):
 
         self.clients = {}
         self.posts = {}
-        self.config = config
-        self.buffer_path = config.get('buffer_path', 'buffer.md')
+        self.buffer_path = self.config.get('buffer_path', 'buffer.md')
         self.link_to_title_cache = {}
         self._load_buffer()
         self.available = None
@@ -96,7 +95,20 @@ class Buffer(BotPlugin):
         self.lastList = None
         self.lastEdit = None
         self.lastLink = None
-        print(f
+        self.argsArchive = []
+
+    def _load_buffer(self):
+        if os.path.exists(self.buffer_path):
+            with open(self.buffer_path, 'r') as f:
+                self.buffer_lines = [line.strip() for line in f if line.strip()]
+        else:
+            self.buffer_lines = []
+
+    def _save_buffer(self):
+        with open(self.buffer_path, 'w') as f:
+            for line in self.buffer_lines:
+                f.write(line + '\n')
+
 
     def _split_available_data(self, key, rules, myKeys, myIniKeys, available_item):
         """
