@@ -125,10 +125,12 @@ class Buffer(BotPlugin):
             rules = socialModules.moduleRules.moduleRules()
             rules.checkRules()
             self.available = rules.available
+            #self.log.info(f"Available: {self.available}")
             myKeys = {}
             myIniKeys = list(self.available.keys())
             self.availableN = dict(self.available)
             for key in self.available:
+                # self.log.info(f"Available: {key} - {self.available[key]}")
                 self._split_available_data(
                     key, rules, myKeys, myIniKeys, self.available[key]
                 )
@@ -231,16 +233,21 @@ class Buffer(BotPlugin):
 
     def _process_time_file(self, file_path, i):
         """
-        Processes a single .timeNext file and returns a dictionary with publication info.
+        Processes a single .timeNext file and returns a dictionary with
+        publication info.  
         """
         publication_info = None
         try:
             if not os.path.islink(file_path):
                 with open(file_path, 'rb') as f:
                     tNow, tSleep = pickle.load(f)
+                self.log.info(f"tNow Textinfaaa: {file_path} ... {tNow} - {tSleep}")
+                self.log.info(f"tNow Textinfooo: {tNow + tSleep}")
 
                 next_publication_time = datetime.fromtimestamp(tNow + tSleep)
+                self.log.info(f"next Textinfooo: {next_publication_time}")
                 theTime = next_publication_time.strftime("%H:%M:%S")
+                self.log.info(f"next Textinfooo: {theTime}")
 
                 orig, dest = os.path.basename(file_path).split('__')
                 orig = self.cleanLine(orig, 'key', i)
@@ -250,6 +257,7 @@ class Buffer(BotPlugin):
                 status = "waiting" if time.time() < tNow + tSleep else "finished"
 
                 publication_info = {"text": textElement, "status": status}
+                self.log.info(f"Textinfooo: {textElement}")
 
         except (pickle.UnpicklingError, EOFError, TypeError, ValueError) as e:
             self.log.error(f"Error processing file {os.path.basename(file_path)}: {e}")
@@ -393,14 +401,16 @@ class Buffer(BotPlugin):
 
         rules = self.rules
 
-        self.log.debug(f"Available all: {str(self.available)}")
+        # self.log.debug(f"Available all: {str(self.available)}")
         # yield("Available: %s" % str(self.available))
         myList = {}
         theKey = "L0"
         myList[theKey] = []
         keys = []
         for key in self.available:
-            if (args and (key.lower() == args.lower())) or not args:
+            if ((args and ((key.lower() == args.lower())
+                          or (args.lower() in self.available[key]['name']))) 
+                or not args):
                 for i, elem in enumerate(self.available[key]["data"]):
                     self.log.debug(f"Elem: {elem}")
                     name = rules.getNameRule(elem["src"])
