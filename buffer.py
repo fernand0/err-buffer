@@ -89,6 +89,7 @@ class Buffer(BotPlugin):
         self.clients = {}
         self.posts = {}
         self.link_to_title_cache = {}
+        self.config = []
         self.buffer_path = '/tmp/buffer' #config.get('buffer_path', 'buffer.md')
         self.buffer_lines = [] # Initialize buffer_lines
         self._load_buffer()
