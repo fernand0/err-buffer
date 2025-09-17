@@ -90,6 +90,7 @@ class Buffer(BotPlugin):
         self.posts = {}
         self.buffer_path = self.config.get('buffer_path', 'buffer.md')
         self.link_to_title_cache = {}
+        self.buffer_lines = [] # Initialize buffer_lines
         self._load_buffer()
         self.available = None
         self.schedules = None
@@ -1122,7 +1123,10 @@ class Buffer(BotPlugin):
 
             # Trigger external effect via execute
             # Assuming 'edita' command on client expects title and link
-            res = self.execute("edita", f"{title} {link}")
+            if title:
+                res = self.execute("edita", f"{title} {link}")
+            else:
+                res = self.execute("edita", link)
             yield res # Yield the result of the external execution
         else:
             yield "Error: No link provided for edit_add command."
@@ -1149,7 +1153,10 @@ class Buffer(BotPlugin):
 
             # Trigger external effect via execute
             # Assuming 'edit' command on client expects title and link
-            res = self.execute("edit", f"{title} {link}")
+            if title:
+                res = self.execute("edit", f"{title} {link}")
+            else:
+                res = self.execute("edit", link)
             yield res # Yield the result of the external execution
         else:
             yield "Error: No link provided for edit command."
