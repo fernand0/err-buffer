@@ -5,6 +5,7 @@ import pprint
 import time
 import urllib.parse
 import glob
+import re
 from datetime import datetime
 
 from errbot import BotPlugin, botcmd
@@ -1115,8 +1116,14 @@ class Buffer(BotPlugin):
             # title remains None
 
         if link:
+            # Update local buffer
             self._edit_buffer(link, title)
-            yield f"Attempted to add/edit buffer for link: {link}"
+            yield f"Buffer updated for link: {link}"
+
+            # Trigger external effect via execute
+            # Assuming 'edita' command on client expects title and link
+            res = self.execute("edita", f"{title} {link}")
+            yield res # Yield the result of the external execution
         else:
             yield "Error: No link provided for edit_add command."
         yield end()
@@ -1136,8 +1143,14 @@ class Buffer(BotPlugin):
             # title remains None
 
         if link:
+            # Update local buffer
             self._edit_buffer(link, title)
-            yield f"Attempted to edit buffer for link: {link}"
+            yield f"Buffer updated for link: {link}"
+
+            # Trigger external effect via execute
+            # Assuming 'edit' command on client expects title and link
+            res = self.execute("edit", f"{title} {link}")
+            yield res # Yield the result of the external execution
         else:
             yield "Error: No link provided for edit command."
         yield end()
