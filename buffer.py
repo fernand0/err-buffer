@@ -1163,6 +1163,7 @@ class Buffer(BotPlugin):
         title = None
 
         parts = self.execute("show", args) 
+        yield f"Parts {parts}"
         if not " " in args:
         #    parts = args.split(" ", 1)
         #    title = parts[0]
@@ -1178,7 +1179,7 @@ class Buffer(BotPlugin):
             link = parts.split('\n')[-2]
             yield f"Link: {link}"
         else:
-            link = parts.split('\n')[-2]
+            link = parts.split('\n')[-1]
             title = parts[1]
             #link = parts.split('\n')[-3]
 
