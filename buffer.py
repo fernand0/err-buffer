@@ -1162,8 +1162,6 @@ class Buffer(BotPlugin):
         link = None
         title = None
 
-        parts = self.execute("show", args) 
-        yield f"Parts {parts}"
         if not " " in args:
         #    parts = args.split(" ", 1)
         #    title = parts[0]
@@ -1175,17 +1173,15 @@ class Buffer(BotPlugin):
             #parts = self.execute("show", args) 
             # title = parts[0]
             # link = parts[1]
+            parts = self.execute("show", args) 
             yield f"Args: {args}"
             link = parts.split('\n')[-2]
             yield f"Link: {link}"
-        else:
-            link = parts.split('\n')[-1]
-            title = parts[1]
-            #link = parts.split('\n')[-3]
 
         # Update local buffer
-        self._edit_buffer(link, title)
-        yield f"Buffer updated for link: {link}"
+        if link:
+            self._edit_buffer(link, title)
+            yield f"Buffer updated for link: {link}"
 
         # Trigger external effect via execute
         # Assuming 'edit' command on client expects title and link
