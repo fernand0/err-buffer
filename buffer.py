@@ -1167,8 +1167,8 @@ class Buffer(BotPlugin):
         # else:
         #     link = args
         #     # title remains None
-        else:
-           parts = self.execute("show", args).split(" ", 1) 
+        else: 
+            parts = self.execute("show", args).split(" ", 1) 
             title = parts[0]
             link = parts[1]
         yield f"Title: {title}"
