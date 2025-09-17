@@ -1190,6 +1190,7 @@ class Buffer(BotPlugin):
             res = self.execute("edit", f"{args} {title} {link}")
         else:
             yield "NO Title"
+            yield "Args: {args}"
             res = self.execute("edit", args) # Pass only link if no title
         yield res # Yield the result of the external execution
         yield end()
