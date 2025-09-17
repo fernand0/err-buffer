@@ -1186,8 +1186,10 @@ class Buffer(BotPlugin):
         # Trigger external effect via execute
         # Assuming 'edit' command on client expects title and link
         if title:
+            yield "Title"
             res = self.execute("edit", f"{args} {title} {link}")
         else:
+            yield "NO Title"
             res = self.execute("edit", args) # Pass only link if no title
         yield res # Yield the result of the external execution
         yield end()
