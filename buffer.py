@@ -88,10 +88,14 @@ class Buffer(BotPlugin):
 
         self.clients = {}
         self.posts = {}
-        self.buffer_path = self.config.get('buffer_path', 'buffer.md')
         self.link_to_title_cache = {}
+        self.buffer_path = '/tmp/buffer' #config.get('buffer_path', 'buffer.md')
         self.buffer_lines = [] # Initialize buffer_lines
         self._load_buffer()
+        # self.buffer_path = self.config.get('buffer_path', 'buffer.md')
+        # self.link_to_title_cache = {}
+        # self.buffer_lines = [] # Initialize buffer_lines
+        # self._load_buffer()
         self.available = None
         self.schedules = None
         self.lastList = None
