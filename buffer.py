@@ -896,20 +896,37 @@ class Buffer(BotPlugin):
 
         return self.clients[myClient], parsed_args, None
 
-    def _prepare_args_for_dispatch(self, parsed_args):
+    def _prepare_args_for_dispatch(self, parsed_args, command): # Added 'command' argument
         """Prepares the list of arguments for the dynamic command call."""
         args_for_cmd = []
-        pos = parsed_args.position
-        argCont = parsed_args.content
 
-        if pos is not None:
-            args_for_cmd.append(pos)
+        if command in ["edit", "edita"]:
+            # For 'edit' and 'edita', parsed_args.content contains "title link" or "link"
+            content = parsed_args.content
+            if content:
+                parts = content.split(" ", 1)
+                if len(parts) == 2:
+                    title = parts[0]
+                    link = parts[1]
+                else: # Only link provided
+                    title = None
+                    link = parts[0]
+                
+                args_for_cmd.append(title)
+                args_for_cmd.append(link)
+        else:
+            # Existing logic for other commands
+            pos = parsed_args.position
+            argCont = parsed_args.content
 
-        if argCont is not None:
-            if isinstance(argCont, str) and argCont.capitalize() in self.clients:
-                args_for_cmd.append(self.clients[argCont.capitalize()])
-            else:
-                args_for_cmd.append(argCont)
+            if pos is not None:
+                args_for_cmd.append(pos)
+
+            if argCont is not None:
+                if isinstance(argCont, str) and argCont.capitalize() in self.clients:
+                    args_for_cmd.append(self.clients[argCont.capitalize()])
+                else:
+                    args_for_cmd.append(argCont)
 
         return args_for_cmd
 
@@ -928,7 +945,7 @@ class Buffer(BotPlugin):
             self.log.warning(error)
             return error
 
-        command_args = self._prepare_args_for_dispatch(parsed_args)
+        command_args = self._prepare_args_for_dispatch(parsed_args, command) # Pass 'command' here
 
         try:
             client.setPosts()
@@ -1126,7 +1143,7 @@ class Buffer(BotPlugin):
             if title:
                 res = self.execute("edita", f"{title} {link}")
             else:
-                res = self.execute("edita", link)
+                res = self.execute("edita", link) # Pass only link if no title
             yield res # Yield the result of the external execution
         else:
             yield "Error: No link provided for edit_add command."
@@ -1156,7 +1173,7 @@ class Buffer(BotPlugin):
             if title:
                 res = self.execute("edit", f"{title} {link}")
             else:
-                res = self.execute("edit", link)
+                res = self.execute("edit", link) # Pass only link if no title
             yield res # Yield the result of the external execution
         else:
             yield "Error: No link provided for edit command."
