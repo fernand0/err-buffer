@@ -128,6 +128,7 @@ class Buffer(BotPlugin):
         elif link in self.link_to_title_cache:
             title = self.link_to_title_cache[link]
 
+        yield f"Recovered title: {title}"
         entry_found = False
         updated_lines = []
         for line in self.buffer_lines:
