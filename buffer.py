@@ -87,13 +87,16 @@ class Buffer(BotPlugin):
 
         self.clients = {}
         self.posts = {}
-        self.config = []
+        self.config = config
+        self.buffer_path = config.get('buffer_path', 'buffer.md')
+        self.link_to_title_cache = {}
+        self._load_buffer()
         self.available = None
         self.schedules = None
         self.lastList = None
         self.lastEdit = None
         self.lastLink = None
-        self.argsArchive = []
+        print(f
 
     def _split_available_data(self, key, rules, myKeys, myIniKeys, available_item):
         """
@@ -1001,13 +1004,22 @@ class Buffer(BotPlugin):
     @botcmd
     def edit(self, mess, args):
         """A command to edit some update"""
-        if " " not in args:
-            if self.lastEdit:
-                args = f"{args} {self.lastEdit}"
-        res = self.execute("edit", args)
-        self.addEditsCache(args)
-        self.lastEdit = args.split(" ", 1)[1:][0]
-        yield res
+        link = None
+        title = None
+
+        if " " in args:
+            parts = args.split(" ", 1)
+            title = parts[0]
+            link = parts[1]
+        else:
+            link = args
+            # title remains None
+
+        if link:
+            self._edit_buffer(link, title)
+            yield f"Attempted to edit buffer for link: {link}"
+        else:
+            yield "Error: No link provided for edit command."
         yield end()
 
     def addEditsCache(self, args):
