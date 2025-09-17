@@ -164,7 +164,7 @@ class Buffer(BotPlugin):
 
         self.buffer_lines = updated_lines
         self._save_buffer()
-        yield(f"Buffer updated for: {link}")
+        # yield(f"Buffer updated for: {link}")
 
 
     #def _edit_buffer(self, link, title=None):
