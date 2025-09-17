@@ -1172,7 +1172,7 @@ class Buffer(BotPlugin):
             # title = parts[0]
             # link = parts[1]
             yield f"Args: {args}"
-            link = parts.split('\n')[-1]
+            link = parts.split('\n')[-2]
             yield f"Link: {link}"
 
         if link:
