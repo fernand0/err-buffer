@@ -1164,9 +1164,15 @@ class Buffer(BotPlugin):
             parts = args.split(" ", 1)
             title = parts[0]
             link = parts[1]
+        # else:
+        #     link = args
+        #     # title remains None
         else:
-            link = args
-            # title remains None
+           parts = self.execute("show", args).split(" ", 1) 
+            title = parts[0]
+            link = parts[1]
+        yield f"Title: {title}"
+        yield f"Link: {link}"
 
         if link:
             # Update local buffer
