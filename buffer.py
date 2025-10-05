@@ -70,6 +70,8 @@ class CommandArgs:
         """Extracts the content from the argument."""
         if self.arg and " " in self.arg:
             pos = self.arg.find(" ")
+            import logging
+            logging.info(f"At pos: {self.arg[pos +1 : ]}")
             return self.arg[pos + 1 :]
         return None
 
@@ -121,6 +123,7 @@ class Buffer(BotPlugin):
         # Store the original title argument to differentiate between explicit None and derived title
         original_title_arg = title
 
+        self._load_buffer()
         self.log.info(f"Cache: {self.link_to_title_cache}")
         # If a title is explicitly provided, cache it.
         if original_title_arg:
@@ -130,6 +133,7 @@ class Buffer(BotPlugin):
             title = self.link_to_title_cache[link]
 
         self.log.info(f"Recovered title: {title}")
+        self.log.info(f"Cache: {self.buffer_lines}")
         entry_found = False
         updated_lines = []
         for line in self.buffer_lines:
@@ -569,6 +573,7 @@ class Buffer(BotPlugin):
         self.setAvailable()
 
         parsed_args = CommandArgs(arg)
+        self.log.info(f"After: {parsed_args.content}")
         id_arg = parsed_args.id
         if id_arg in self.available:
             pos = parsed_args.selection
@@ -886,9 +891,13 @@ class Buffer(BotPlugin):
         if not self.available:
             return None, None, "Error: No available services found."
 
+        self.log.info(f"Before")
         parsed_args = CommandArgs(args)
+        self.log.info(f"After: {parsed_args.content}")
         idArg = parsed_args.id
         selArg = parsed_args.selection
+        self.log.info(f"idArg: {idArg}, selArg: {selArg}")
+        self.log.info(f"Pos: {parsed_args.position}, content: {parsed_args.content}")
 
         if (
             idArg not in self.available
@@ -898,6 +907,7 @@ class Buffer(BotPlugin):
             return None, None, f"Error: Invalid selection argument: {args}"
 
         myClient = f"{idArg}{selArg}".upper()
+
         if myClient not in self.clients:
             return None, None, f"You should execute 'list {myClient}' first"
 
@@ -910,6 +920,7 @@ class Buffer(BotPlugin):
         if command in ["edit", "edita"]:
             # For 'edit' and 'edita', parsed_args.content contains "title link" or "link"
             content = parsed_args.content
+            self.log.info(f"contenttt: {content}")
             if content:
                 parts = content.split(" ", 1)
                 if len(parts) == 2:
@@ -919,8 +930,9 @@ class Buffer(BotPlugin):
                     title = None
                     link = parts[0]
                 
-                args_for_cmd.append(title)
-                args_for_cmd.append(link)
+                args_for_cmd.append(parsed_args.position)
+                args_for_cmd.append(f"{title} {link}")
+                #args_for_cmd.append(link)
         else:
             # Existing logic for other commands
             pos = parsed_args.position
@@ -928,12 +940,14 @@ class Buffer(BotPlugin):
 
             if pos is not None:
                 args_for_cmd.append(pos)
-
-            if argCont is not None:
-                if isinstance(argCont, str) and argCont.capitalize() in self.clients:
-                    args_for_cmd.append(self.clients[argCont.capitalize()])
-                else:
+                if argCont:
                     args_for_cmd.append(argCont)
+
+            # if argCont is not None:
+            #     if isinstance(argCont, str) and argCont.capitalize() in self.clients:
+            #         args_for_cmd.append(self.clients[argCont.capitalize()])
+            #     else:
+            #         args_for_cmd.append(argCont)
 
         return args_for_cmd
 
@@ -948,17 +962,25 @@ class Buffer(BotPlugin):
     def execute(self, command, args):
         """Executes a command by coordinating helper methods."""
         client, parsed_args, error = self._get_client_for_command(args)
+
         if error:
             self.log.warning(error)
             return error
 
         command_args = self._prepare_args_for_dispatch(parsed_args, command) # Pass 'command' here
+        self.log.info(f"Commanddd args: {command}")
+        self.log.info(f"Commanddd args: {command_args}")
 
-        try:
+        if True:
             client.setPosts()
             command_method = getattr(client, command)
-            update_result = command_method(*command_args)
-        except Exception as e:
+            self.log.info(f"Commanddd meth: {command_method}")
+            self.log.info(f"Commanddd meth: {command_args}")
+            try:
+                update_result = command_method(parsed_args.selection, *command_args)
+            except:
+                update_result = command_method(*command_args)
+        else:
             self.log.error(f"Error executing command '{command}': {e}")
             return f"Error executing command '{command}'."
 
@@ -1175,8 +1197,18 @@ class Buffer(BotPlugin):
             # link = parts[1]
             parts = self.execute("show", args) 
             yield f"Args: {args}"
-            link = parts.split('\n')[-2]
             yield f"Link: {link}"
+            link = parts.split('\n')[-2].split(' ')[0]
+        else: 
+            yield f"show Args: {args}"
+            argsS = args[:args.find(" ")]
+            yield f"show Args: {args}"
+            parts = self.execute("show", argsS) 
+            title = args.split(' ', 1)[1]
+            link = parts.split('\n')[-2].split(' ')[0]
+        yield f"Title: {title}"
+        yield f"Link: {link}"
+
 
         # Update local buffer
         if link:
@@ -1186,12 +1218,15 @@ class Buffer(BotPlugin):
         # Trigger external effect via execute
         # Assuming 'edit' command on client expects title and link
         if title:
-            yield "Title"
-            res = self.execute("edit", f"{args} {title} {link}")
+            yield f"Title: {title}"
+            res = self.execute("edit", args)
+            self.link_to_title_cache[link] = title
         else:
+            title = self.link_to_title_cache[link]
             yield "NO Title"
             yield f"Args: {args}"
-            res = self.execute("edit", args) # Pass only link if no title
+            argsT = f"{args} {title}"
+            res = self.execute("edit", argsT) # Pass only link if no title
         yield res # Yield the result of the external execution
         yield end()
 
