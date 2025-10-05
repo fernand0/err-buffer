@@ -931,8 +931,11 @@ class Buffer(BotPlugin):
                     link = parts[0]
                 
                 args_for_cmd.append(parsed_args.position)
-                args_for_cmd.append(f"{title} {link}")
-                #args_for_cmd.append(link)
+                # If title is provided, keep "title link" together, else just the link
+                if title:
+                    args_for_cmd.append(f"{title} {link}")
+                else:
+                    args_for_cmd.append(link)
         else:
             # Existing logic for other commands
             pos = parsed_args.position
@@ -967,26 +970,26 @@ class Buffer(BotPlugin):
             self.log.warning(error)
             return error
 
-        command_args = self._prepare_args_for_dispatch(parsed_args, command) # Pass 'command' here
+        command_args = self._prepare_args_for_dispatch(parsed_args, command)  # Pass 'command' here
         self.log.info(f"Commanddd args: {command}")
         self.log.info(f"Commanddd args: {command_args}")
 
-        if True:
+        try:
             client.setPosts()
             command_method = getattr(client, command)
             self.log.info(f"Commanddd meth: {command_method}")
             self.log.info(f"Commanddd meth: {command_args}")
             try:
+                # First try calling with selection as first argument
                 update_result = command_method(parsed_args.selection, *command_args)
-            except:
+            except TypeError:
+                # Fall back to calling without the selection if signature differs
                 update_result = command_method(*command_args)
-        else:
+        except Exception as e:
             self.log.error(f"Error executing command '{command}': {e}")
             return f"Error executing command '{command}'."
 
-        return self._format_success_response(
-            command, args, update_result, parsed_args.id
-        )
+        return self._format_success_response(command, args, update_result, parsed_args.id)
 
     @botcmd
     def insert(self, mess, args):
