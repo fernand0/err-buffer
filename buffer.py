@@ -460,7 +460,8 @@ class Buffer(BotPlugin):
                 service = rules.getProfileAction(action)
                 if rules.hasPublishMethod(service):
                     # FIXME: publishPost is in modulecontent
-                    iniK, nameK = rules.getIniKey(service.upper(), myKeys, myIniKeys)
+                    iniK, nameK = rules.getIniKey(service.upper(), 
+                                                  myKeys, myIniKeys)
                     more = rules.more[rule]
                     if not (iniK in available):
                         available[iniK] = {
@@ -1043,7 +1044,6 @@ class Buffer(BotPlugin):
                     action,
                     msgAction,
                     apiSrc,
-                    apiDst,
                     noWait=True,
                     timeSlots=0,
                     simmulate=False,
@@ -1127,7 +1127,7 @@ class Buffer(BotPlugin):
     def show(self, mess, args):
         """A command to show the content of some update"""
         res = self.execute("show", args)
-        yield res
+        yield res.replace('\n',' ')
         yield end()
 
     @botcmd
