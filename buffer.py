@@ -219,22 +219,30 @@ class Buffer(BotPlugin):
 
     def _split_available_data(self, key, rules, myKeys, myIniKeys, available_item):
         """
-        Splits the available data if its length is greater than 9.
+        Splits the available data into chunks of 10 if its length is greater than 9.
         """
-        if len(available_item["data"]) > 9:
-            iniK, nKey = rules.getIniKey(
-                available_item["name"].upper(), myKeys, myIniKeys
-            )
+        data = available_item["data"]
+        if len(data) > 9:
+            chunk_size = 10
+            chunks = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
+
+            # First chunk uses the original key
             self.availableN[key] = {
                 "name": "rss",
-                "data": available_item["data"][:10],
+                "data": chunks[0],
                 "social": [],
             }
-            self.availableN[iniK] = {
-                "name": "rss",
-                "data": available_item["data"][10:],
-                "social": [],
-            }
+
+            # Subsequent chunks get new keys
+            for i in range(1, len(chunks)):
+                iniK, nKey = rules.getIniKey(
+                    available_item["name"].upper(), myKeys, myIniKeys
+                )
+                self.availableN[iniK] = {
+                    "name": "rss",
+                    "data": chunks[i],
+                    "social": [],
+                }
         else:
             self.availableN[key] = available_item
 
