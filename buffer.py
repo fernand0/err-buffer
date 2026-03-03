@@ -219,8 +219,10 @@ class Buffer(BotPlugin):
 
     def _split_available_data(self, key, rules, myKeys, myIniKeys, available_item):
         """
-        Splits the available data into chunks of 10 if its length is greater than 9.
+        Splits the available data into chunks of 10 if its length is greater
+        than 9.  
         """
+        self.log.info(f"available_items: {available_item}")
         data = available_item["data"]
         if len(data) > 9:
             chunk_size = 10
@@ -725,7 +727,13 @@ class Buffer(BotPlugin):
                 src = myElem["src"]
                 more = self.rules.more.get(src, [])
 
-                api = self.rules.readConfigSrc(f"{element} ", src, more)
+                if self.rules.rules[src]:
+                    action = self.rules.rules[src][0]
+                else:
+                    action = src
+                base_name = self.rules._get_filename_base(src, action)
+                api = self.rules.readConfigSrc(f"{element} ", 
+                                            src, more, fileName=base_name)
                 api.setPostsType(myElem["src"][3])
                 self.clients[element] = api
             else:
@@ -798,7 +806,7 @@ class Buffer(BotPlugin):
                 else:
                     postsTmp = client.getPosts()
             else:
-                postsTmp = client.getPosts
+                postsTmp = client.getPosts()
             if postsTmp:
                 for i, post in enumerate(postsTmp):
                     if hasattr(client, "getPostLine"):
@@ -1048,17 +1056,20 @@ class Buffer(BotPlugin):
             yield msgAction
 
             apiDst = self.rules.readConfigDst("", action, self.rules.more[src], None)
+            #FIXME: Is this needed now?
             if pos is not None and pos >= 0:
                 resExecute = self.rules.executeAction(
                     src,
                     self.rules.more[src],
                     action,
-                    msgAction,
-                    apiSrc,
+                    # msgAction, #FIXME to be eliminated
+                    #apiSrc,
+                    #apiDst,
                     noWait=True,
                     timeSlots=0,
                     simmulate=False,
                     name=(f"{name} " f"{typeAction}"),
+                    action_index=1,
                     nextPost=False,
                     pos=pos,
                     delete=False,
