@@ -958,16 +958,19 @@ class Buffer(BotPlugin):
             pos = parsed_args.position
             argCont = parsed_args.content
 
-            if pos is not None:
-                args_for_cmd.append(pos)
-                if argCont:
+            if argCont is not None:
+                # If content can be resolved to a client, use the client object
+                if isinstance(argCont, str) and argCont.capitalize() in self.clients:
+                    if pos is not None:
+                        args_for_cmd.append(pos)
+                    args_for_cmd.append(self.clients[argCont.capitalize()])
+                else:
+                    # Otherwise pass position and content as-is
+                    if pos is not None:
+                        args_for_cmd.append(pos)
                     args_for_cmd.append(argCont)
-
-            # if argCont is not None:
-            #     if isinstance(argCont, str) and argCont.capitalize() in self.clients:
-            #         args_for_cmd.append(self.clients[argCont.capitalize()])
-            #     else:
-            #         args_for_cmd.append(argCont)
+            elif pos is not None:
+                args_for_cmd.append(pos)
 
         return args_for_cmd
 
