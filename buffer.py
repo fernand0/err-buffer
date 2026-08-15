@@ -92,7 +92,8 @@ class Buffer(BotPlugin):
         self.posts = {}
         self.link_to_title_cache = {}
         self.config = []
-        self.buffer_path = '/tmp/buffer' #config.get('buffer_path', 'buffer.md')
+        bot_data_dir = getattr(self.bot_config, 'BOT_DATA_DIR', '/tmp')
+        self.buffer_path = os.path.join(bot_data_dir, 'buffer.md')
         self.buffer_lines = [] # Initialize buffer_lines
         self._load_buffer()
         # self.buffer_path = self.config.get('buffer_path', 'buffer.md')
@@ -114,6 +115,7 @@ class Buffer(BotPlugin):
             self.buffer_lines = []
 
     def _save_buffer(self):
+        self.buffer_lines = self.buffer_lines[-100:]
         with open(self.buffer_path, 'w') as f:
             for line in self.buffer_lines:
                 f.write(line + '\n')
@@ -148,10 +150,10 @@ class Buffer(BotPlugin):
                 # If title is still None (not provided, not in cache), try to use title from line
                 if title is None and current_title_from_line:
                     title = current_title_from_line
-                
+
                 # If after all attempts, title is still None for an existing entry, it's an error.
                 if title is None:
-                    print(f"Error: No title provided for link '{link}', and no cached or existing title found in buffer.")
+                    self.log.error(f"Error: No title provided for link '{link}', and no cached or existing title found in buffer.")
                     return # Exit the function, as we cannot proceed without a title
 
                 # Update the line with the determined title and link
@@ -194,7 +196,7 @@ class Buffer(BotPlugin):
     #            # If title is still None (not provided, not in cache), try to use title from line
     #            if title is None and current_title_from_line:
     #                title = current_title_from_line
-    #            
+    #
     #            # If after all attempts, title is still None for an existing entry, it's an error.
     #            if title is None:
     #                print(f"Error: No title provided for link '{link}', and no cached or existing title found in buffer.")
@@ -220,7 +222,7 @@ class Buffer(BotPlugin):
     def _split_available_data(self, key, rules, myKeys, myIniKeys, available_item):
         """
         Splits the available data into chunks of 10 if its length is greater
-        than 9.  
+        than 9.
         """
         self.log.info(f"available_items: {available_item}")
         data = available_item["data"]
@@ -295,48 +297,28 @@ class Buffer(BotPlugin):
                 textR.append(f"      ⟶{line2.strip()}")
         return textR
 
+    def _get_clean_nick(self, nick):
         """
-        Processes a single .timeNext file and returns a dictionary with publication info.
+        Extracts the domain from a URL or cleans a nickname string.
         """
-        publication_info = None
-        try:
-            if not os.path.islink(file_path):
-                with open(file_path, "rb") as f:
-                    tNow, tSleep = pickle.load(f)
-
-                next_publication_time = datetime.fromtimestamp(tNow + tSleep)
-                theTime = next_publication_time.strftime("%H:%M:%S")
-
-                orig, dest = os.path.basename(file_path).split("__")
-                orig = self.cleanLine(orig, "key", i)
-                dest = self.cleanLine(dest)
-
-                textElement = f"{next_publication_time} | {theTime} {orig} -> {dest}"
-                status = "waiting" if time.time() < tNow + tSleep else "finished"
-
-                publication_info = {"text": textElement, "status": status}
-
-        except (pickle.UnpicklingError, EOFError, TypeError, ValueError) as e:
-            self.log.error(f"Error processing file {os.path.basename(file_path)}: {e}")
-        except Exception as e:
-            self.log.error(
-                f"Unexpected error with file {os.path.basename(file_path)}: {e}"
-            )
-
-        return publication_info
+        if not nick:
+            return nick
+        if ("http" in nick) \
+            or ('blogalia' in nick) \
+            or ('wordpress' in nick) \
+            or ('github.com' in nick) \
+            or ('feed.xml' in nick):
+            try:
+                return urllib.parse.urlparse(nick).netloc
+            except Exception:
+                pass
+        return nick.replace('/', '-').replace(':', '-')
 
     def fileNameBase2(self, rule, action):
         """
         Generates a file name based on the rule and action.
         """
-        nick = self.rules.getNickRule(rule)
-        if ('blogalia' in nick) \
-            or ('wordpress' in nick)\
-            or ('github.com' in nick)\
-            or ('feed.xml' in nick):
-            nick = urllib.parse.urlparse(nick).netloc
-        else:
-            nick = nick.replace('/','-').replace(':','-')
+        nick = self._get_clean_nick(self.rules.getNickRule(rule))
         return (f"{self.rules.getNameRule(rule).capitalize()}_"
                 f"{self.rules.getTypeRule(rule)}_"
                 f"{nick}_"
@@ -366,7 +348,7 @@ class Buffer(BotPlugin):
     def _process_time_file(self, file_path, i):
         """
         Processes a single .timeNext file and returns a dictionary with
-        publication info.  
+        publication info.
         """
         publication_info = None
         try:
@@ -403,7 +385,7 @@ class Buffer(BotPlugin):
         """Lists upcoming and finished publications based on .timeNext files."""
         time_files_pattern = os.path.join(DATADIR, "*.timeNext")
         time_files = glob.glob(time_files_pattern)
-        
+
         if args:
             filtered_files = []
             for f in time_files:
@@ -430,7 +412,7 @@ class Buffer(BotPlugin):
                 self._format_publication_section(waiting_publications, "waiting")
             )
             yield "\n".join(output_lines)
-            
+
         yield end()
 
     @botcmd(split_args_with=None, template="buffer")
@@ -470,7 +452,7 @@ class Buffer(BotPlugin):
                 service = rules.getProfileAction(action)
                 if rules.hasPublishMethod(service):
                     # FIXME: publishPost is in modulecontent
-                    iniK, nameK = rules.getIniKey(service.upper(), 
+                    iniK, nameK = rules.getIniKey(service.upper(),
                                                   myKeys, myIniKeys)
                     more = rules.more[rule]
                     if not (iniK in available):
@@ -542,17 +524,14 @@ class Buffer(BotPlugin):
         keys = []
         for key in self.available:
             if ((args and ((key.lower() == args.lower())
-                          or (args.lower() in self.available[key]['name']))) 
+                          or (args.lower() in self.available[key]['name'])))
                 or not args):
                 for i, elem in enumerate(self.available[key]["data"]):
                     self.log.debug(f"Elem: {elem}")
                     name = rules.getNameRule(elem["src"])
                     profile = rules.getSecondNameRule(elem["src"])
-                    nick = rules.getNickRule(elem["src"])
+                    nick = self._get_clean_nick(rules.getNickRule(elem["src"]))
                     if nick:
-                        if "http" in nick:
-                            # FIXME: duplicate code
-                            nick = urllib.parse.urlparse(nick).netloc
                         src = elem["src"]
                         myList[theKey].append(
                             (
@@ -732,7 +711,7 @@ class Buffer(BotPlugin):
                 else:
                     action = src
                 base_name = self.rules._get_filename_base(src, action)
-                api = self.rules.readConfigSrc(f"{element} ", 
+                api = self.rules.readConfigSrc(f"{element} ",
                                             src, more, fileName=base_name)
                 api.setPostsType(myElem["src"][3])
                 self.clients[element] = api
@@ -946,7 +925,7 @@ class Buffer(BotPlugin):
                 else: # Only link provided
                     title = None
                     link = parts[0]
-                
+
                 args_for_cmd.append(parsed_args.position)
                 # If title is provided, keep "title link" together, else just the link
                 if title:
@@ -1216,19 +1195,19 @@ class Buffer(BotPlugin):
         # else:
         #     link = args
         #     # title remains None
-        # else: 
-            #parts = self.execute("show", args) 
+        # else:
+            #parts = self.execute("show", args)
             # title = parts[0]
             # link = parts[1]
-            parts = self.execute("show", args) 
+            parts = self.execute("show", args)
             yield f"Args: {args}"
             yield f"Link: {link}"
             link = parts.split('\n')[-2].split(' ')[0]
-        else: 
+        else:
             yield f"show Args: {args}"
             argsS = args[:args.find(" ")]
             yield f"show Args: {args}"
-            parts = self.execute("show", argsS) 
+            parts = self.execute("show", argsS)
             title = args.split(' ', 1)[1]
             link = parts.split('\n')[-2].split(' ')[0]
         yield f"Title: {title}"
@@ -1334,7 +1313,7 @@ class Buffer(BotPlugin):
             src = data["data"][pos]["src"]
             try:
                 actions = self.rules.rules[src]
-            except:
+            except KeyError:
                 # Experimental. We will try with the rule associated to a
                 # similar src
                 altSrc = src[:-1] + ("posts",)
@@ -1367,7 +1346,7 @@ class Buffer(BotPlugin):
                     f"{self.rules.getSecondNameRule(src)} "
                     f"{typePosts})"
                 )
-            except:
+            except Exception:
                 socialNetworktxt = (
                     f"{social.capitalize()} "
                     f"{self.rules.getNameRule(src).capitalize()} "
