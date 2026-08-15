@@ -1104,6 +1104,7 @@ class Buffer(BotPlugin):
             yield "We need some position or something to publish"
             return
 
+        yield f"Actions: {myActions}"
         yield from self._publish_content(
             post_content, myActions, src, name, apiSrc, pos
         )
