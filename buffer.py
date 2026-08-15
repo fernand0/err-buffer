@@ -314,20 +314,6 @@ class Buffer(BotPlugin):
                 pass
         return nick.replace('/', '-').replace(':', '-')
 
-    def fileNameBase2(self, rule, action):
-        """
-        Generates a file name based on the rule and action.
-        """
-        nick = self._get_clean_nick(self.rules.getNickRule(rule))
-        return (f"{self.rules.getNameRule(rule).capitalize()}_"
-                f"{self.rules.getTypeRule(rule)}_"
-                f"{nick}_"
-                f"{self.rules.getSecondNameRule(rule).capitalize()}_"
-                f"_{self.rules.getNameAction(action).capitalize()}"
-                f"_{self.rules.getTypeAction(action)}s"
-                f"_{self.rules.getNickAction(action)}"
-                f"_{self.rules.getProfileAction(action).capitalize()}"
-               )
 
     def cleanLine(self, line, key="", i=None):
         """
