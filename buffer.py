@@ -297,28 +297,12 @@ class Buffer(BotPlugin):
                 textR.append(f"      ⟶{line2.strip()}")
         return textR
 
-    def _get_clean_nick(self, nick):
-        """
-        Extracts the domain from a URL or cleans a nickname string.
-        """
-        if not nick:
-            return nick
-        if ("http" in nick) \
-            or ('blogalia' in nick) \
-            or ('wordpress' in nick) \
-            or ('github.com' in nick) \
-            or ('feed.xml' in nick):
-            try:
-                return urllib.parse.urlparse(nick).netloc
-            except Exception:
-                pass
-        return nick.replace('/', '-').replace(':', '-')
 
     def fileNameBase2(self, rule, action):
         """
         Generates a file name based on the rule and action.
         """
-        nick = self._get_clean_nick(self.rules.getNickRule(rule))
+        nick = extract_nick_from_url(self.rules.getNickRule(rule))
         return (f"{self.rules.getNameRule(rule).capitalize()}_"
                 f"{self.rules.getTypeRule(rule)}_"
                 f"{nick}_"
@@ -530,7 +514,7 @@ class Buffer(BotPlugin):
                     self.log.debug(f"Elem: {elem}")
                     name = rules.getNameRule(elem["src"])
                     profile = rules.getSecondNameRule(elem["src"])
-                    nick = self._get_clean_nick(rules.getNickRule(elem["src"]))
+                    nick = extract_nick_from_url(rules.getNickRule(elem["src"]))
                     if nick:
                         src = elem["src"]
                         myList[theKey].append(
