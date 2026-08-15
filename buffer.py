@@ -91,6 +91,7 @@ class Buffer(BotPlugin):
         self.clients = {}
         self.posts = {}
         self.link_to_title_cache = {}
+        self.link_to_link_cache = {}
         self.config = []
         bot_data_dir = getattr(self.bot_config, 'BOT_DATA_DIR', '/tmp')
         self.buffer_path = os.path.join(bot_data_dir, 'buffer.md')
@@ -104,7 +105,6 @@ class Buffer(BotPlugin):
         self.schedules = None
         self.lastList = None
         self.lastEdit = None
-        self.lastLink = None
         self.argsArchive = []
 
     def _load_buffer(self):
@@ -297,21 +297,6 @@ class Buffer(BotPlugin):
                 textR.append(f"      ⟶{line2.strip()}")
         return textR
 
-
-    def fileNameBase2(self, rule, action):
-        """
-        Generates a file name based on the rule and action.
-        """
-        nick = extract_nick_from_url(self.rules.getNickRule(rule))
-        return (f"{self.rules.getNameRule(rule).capitalize()}_"
-                f"{self.rules.getTypeRule(rule)}_"
-                f"{nick}_"
-                f"{self.rules.getSecondNameRule(rule).capitalize()}_"
-                f"_{self.rules.getNameAction(action).capitalize()}"
-                f"_{self.rules.getTypeAction(action)}s"
-                f"_{self.rules.getNickAction(action)}"
-                f"_{self.rules.getProfileAction(action).capitalize()}"
-               )
 
     def cleanLine(self, line, key="", i=None):
         """
@@ -1129,11 +1114,32 @@ class Buffer(BotPlugin):
     @botcmd
     def edit_link(self, mess, args):
         """A command to edit the link of some update"""
+        new_link = None
+
         if " " not in args:
-            if self.lastLink:
-                args = f"{args} {self.lastLink}"
+            # No new link provided, retrieve original link via show
+            # and look up cached replacement link
+            parts = self.execute("show", args)
+            yield f"Args: {args}"
+            original_link = parts.split('\n')[-2].split(' ')[0]
+            yield f"Original link: {original_link}"
+            if original_link in self.link_to_link_cache:
+                new_link = self.link_to_link_cache[original_link]
+                args = f"{args} {new_link}"
+            else:
+                yield "Error: No cached link found for this post."
+                yield end()
+                return
+        else:
+            # New link provided, retrieve original link via show and cache it
+            argsS = args[:args.find(" ")]
+            parts = self.execute("show", argsS)
+            original_link = parts.split('\n')[-2].split(' ')[0]
+            new_link = args.split(" ", 1)[1]
+            self.link_to_link_cache[original_link] = new_link
+
+        yield f"New link: {new_link}"
         res = self.execute("editl", args)
-        self.lastLink = args.split(" ", 1)[1:][0]
         yield res
         yield end()
 
